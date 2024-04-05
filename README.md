@@ -21,29 +21,29 @@ The whole project is writte in plain `Java` and `Eclipse IDE`, so it is recommen
 To install the repo you have multiple options:
 
 ### Option 1: ###
-**1.1** Download the repo as `ZIP` for instance.
-**1.2** Extract the files out of the ZIP-File.
-**1.3** Now open Eclipse IDE and Head over to `File -> Import -> General -> Filesystem` and select the extracted folder. You're also able to import it as a project.
+**1.1** Download the repo as `ZIP` for instance.  
+**1.2** Extract the files out of the ZIP-File.  
+**1.3** Now open Eclipse IDE and Head over to `File -> Import -> General -> Filesystem` and select the extracted folder. You're also able to import it as a project.  
 
 ### Option 2: ###
-**2.1** Open Eclipse IDE.
-**2.2** Configure `EGit` in Eclipse.
-**2.3** Now right click the `Package Explorer` and head to `Team -> Pull`
+**2.1** Open Eclipse IDE.  
+**2.2** Configure `EGit` in Eclipse.  
+**2.3** Now right click the `Package Explorer` and head to `Team -> Pull`.  
 
 ### Running YAVC ###
-To run YAVC just press the provided `Run button` in Eclipse IDE or use the shortcut `F5`
+To run YAVC just press the provided `Run button` in Eclipse IDE or use the shortcut `F5`.  
 
 > [!NOTE]
 > Due to its early stage and implementation the compressor runs multithreaded and ending the UI does NOT terminate the compression thread.
 
 # 3. UI navigation #
-The UI is relatively simple and the only major issues may occur at the different sliders, which I'll explain in a bit.
-**Encode** -> This button is the entry to the encoding process.
-**Decode** -> This button starts the decoding process for a YAVC file.
-**Slider 1** -> This slider defines the edge recognition damping. (The lower the tolerance to precise the compression)
-**Slider 2** -> This slider manages the color damping tolerance. (If the slider is at its highest the damping occures if 100% of the colors match)
-**Slider 3** -> This slider is for edge detection in the vector creation process. (The higher the higher the precision)
-**Slider 4** -> This slider manages the gradient filtering. (The lower, the better the gradient matches in the vectorization)
+The UI is relatively simple and the only major issues may occur at the different sliders, which I'll explain in a bit.  
+**Encode** -> This button is the entry to the encoding process.  
+**Decode** -> This button starts the decoding process for a YAVC file.  
+**Slider 1** -> This slider defines the edge recognition damping. (The lower the tolerance to precise the compression)  
+**Slider 2** -> This slider manages the color damping tolerance. (If the slider is at its highest the damping occures if 100% of the colors match)  
+**Slider 3** -> This slider is for edge detection in the vector creation process. (The higher the higher the precision)  
+**Slider 4** -> This slider manages the gradient filtering. (The lower, the better the gradient matches in the vectorization)  
 
 > [!TIP]
 > Just play a little with the sliders until you get your desired results. Massive changes are followed by massive changes.
