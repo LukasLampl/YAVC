@@ -238,7 +238,7 @@ public class OutputWriter {
 			}
 		}
 		
-		File out = new File("C:\\Users\\Lukas Lampl\\Documents\\FRAMES\\out" + output++ + ".png");
+		File out = new File("src/res/" + output++ + ".png");
 		
 		try {
 			ImageIO.write(img, "png", out);
