@@ -11,7 +11,8 @@ public class MakroDifferenceEngine {
 	 * Return Type: ArrayList<MakroBlocks> => List of differences
 	 * Params: ArrayList<MakroBlock> list1 => List1 to be compared with list2;
 	 * 			ArrayList<MakroBlock> list2 => List2 to be compared with list1;
-	 * 			BufferedImage img => Image in which the current MakroBlocks are located in
+	 * 			BufferedImage img => Image in which the current MakroBlocks are located in;
+	 * 			int EDGE_TOLERANCE => Tolerance with which edges are filtered
 	 */
 	public ArrayList<MakroBlock> get_MakroBlock_difference(ArrayList<MakroBlock> list1, ArrayList<MakroBlock> list2, BufferedImage img, int EDGE_TOLERANCE) {
 		ArrayList<MakroBlock> diffs = new ArrayList<MakroBlock>();
@@ -35,7 +36,8 @@ public class MakroDifferenceEngine {
 	 * Purpose: Validate whether the MakroBlock is an edge or outline or not
 	 * Return Type: boolean => true = is edge or outline; false = not an edge or outline
 	 * Params: MakroBlock block => MakroBlock to be validated;
-	 * 			BufferedImage img => Image in which the MakroBlock can be found
+	 * 			BufferedImage img => Image in which the MakroBlock can be found;
+	 * 			int EDGE_TOLERANCE => Tolerance with which edges are filtered
 	 */
 	private boolean is_edge(MakroBlock block, BufferedImage img, int EDGE_TOLERANCE) {
 		int strength = 0;

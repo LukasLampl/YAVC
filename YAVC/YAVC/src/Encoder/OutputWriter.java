@@ -193,7 +193,8 @@ public class OutputWriter {
 	 * Return Type: void
 	 * Params: BufferedImage org => previous build frame;
 	 * 			ArrayList<MakroBlock> diffs => Differencs to the prev img;
-	 * 			ArrayList<Vector> vecs => Vectors from the differences
+	 * 			ArrayList<Vector> vecs => Vectors from the differences;
+	 * 			File outputFile => File to which to write (DIR)
 	 */
 	public int output = 0;
 	

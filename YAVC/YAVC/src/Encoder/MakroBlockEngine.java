@@ -31,7 +31,10 @@ public class MakroBlockEngine {
 	 * 			The algorithm also takes the edges and heights of the current frame in count.
 	 * Return Type: ArrayList<MakroBlock> => List of damped MakroBlocks
 	 * Params: ArrayList<MakroBlock> list1 => Previous frame MakroBlocks to check;
-	 * 			ArrayList<MakroBlock> list2 => Current frame in which the colors should be damped
+	 * 			ArrayList<MakroBlock> list2 => Current frame in which the colors should be damped;
+	 * 			BufferedImage curImg => Current frame image;
+	 * 			double dampingTolerance => Tolerance at which color damping occurs;
+	 * 			int edgeTolerance => Tolerance at which the edges get recognized
 	 */
 	public ArrayList<MakroBlock> damp_MakroBlock_colors(ArrayList<MakroBlock> list1, ArrayList<MakroBlock> list2, BufferedImage curImg, double dampingTolerance, int edgeTolerance) {
 		//Error on dimension mismatching

@@ -14,9 +14,10 @@ public class VectorEngine {
 	/*
 	 * Purpose: Get the MovementVectors between two frames and removes a match from the differences
 	 * Return Type: ArrayList<Vector> => Movement vectors
-	 * Params: ArrayList<MakroBlock> prevFrameBlocks => MakroBlocks from the previous frame;
+	 * Params: BufferedImage prevFrame => Previous frame image;
 	 * 			ArrayList<MakroBlock> diff => Differences between the previous and current frame
 	 * 			(Vectors are applied to the differences);
+	 * 			int maxMADTolerance => Max MAD tolerance
 	 */
 	public ArrayList<Vector> calculate_movement_vectors(BufferedImage prevFrame, ArrayList<MakroBlock> diff, int maxMADTolerance) {
 		int threads = Runtime.getRuntime().availableProcessors();
@@ -77,7 +78,8 @@ public class VectorEngine {
 	 * Purpose: Search the most equal MakroBlock from the previous frame using Three-Step-Search
 	 * Return Type: MakroBlock => Most similar MakroBlock
 	 * Params: MakroBlock blockToBeSearched => MakroBlock to be matched in the previous frame;
-	 * 			ArrayList<MakroBlock> prevFrameBlocks => MakroBlocks from the previous frame
+	 * 			BufferedImage prevFrame => Image of the previous frame;
+	 * 			int maxMADTolerance => Max tolerance of the MAD
 	 */
 	private MakroBlock get_most_equal_MakroBlock(MakroBlock blockToBeSearched, BufferedImage prevFrame, int maxMADTolerance) {
 		MakroBlock mostEqualBlock = null;
@@ -148,8 +150,6 @@ public class VectorEngine {
 	 * Return Type: int => Equality; The lower the more equal the colors; -1 = out of tolerance
 	 * Params: int[][] colors1 => List 1 of int colors;
 	 * 			int[][] colors2 => Second list of int colors;
-	 * 			int grayscaleTolerance => Tolerance for edge detection;
-	 * 			double magnitudeTolerance => Tolerance for gradient matching
 	 */
 	public double get_MAD_of_colors(int[][] colors1, int[][] colors2) {
 		int resR = 0;
