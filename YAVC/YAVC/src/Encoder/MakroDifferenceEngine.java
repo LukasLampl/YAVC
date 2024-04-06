@@ -13,7 +13,7 @@ public class MakroDifferenceEngine {
 	 * 			ArrayList<MakroBlock> list2 => List2 to be compared with list1;
 	 * 			BufferedImage img => Image in which the current MakroBlocks are located in
 	 */
-	public ArrayList<MakroBlock> get_MakroBlock_difference(ArrayList<MakroBlock> list1, ArrayList<MakroBlock> list2, BufferedImage img) {
+	public ArrayList<MakroBlock> get_MakroBlock_difference(ArrayList<MakroBlock> list1, ArrayList<MakroBlock> list2, BufferedImage img, int EDGE_TOLERANCE) {
 		ArrayList<MakroBlock> diffs = new ArrayList<MakroBlock>();
 		
 		if (list1.size() != list2.size()) {
@@ -23,7 +23,7 @@ public class MakroDifferenceEngine {
 		
 		for (int i = 0; i < list1.size(); i++) {
 			if (!list1.get(i).getID().equals(list2.get(i).getID())) {
-				list2.get(i).setEdgeBlock(is_edge(list2.get(i), img));
+				list2.get(i).setEdgeBlock(is_edge(list2.get(i), img, EDGE_TOLERANCE));
 				diffs.add(list2.get(i));
 			}
 		}
@@ -37,7 +37,7 @@ public class MakroDifferenceEngine {
 	 * Params: MakroBlock block => MakroBlock to be validated;
 	 * 			BufferedImage img => Image in which the MakroBlock can be found
 	 */
-	private boolean is_edge(MakroBlock block, BufferedImage img) {
+	private boolean is_edge(MakroBlock block, BufferedImage img, int EDGE_TOLERANCE) {
 		int strength = 0;
 		
 		for (int y = 0; y < block.getColors().length; y++) {
@@ -47,7 +47,7 @@ public class MakroDifferenceEngine {
 			}
 		}
 		
-		return strength > ((Math.pow(config.MAKRO_BLOCK_SIZE, 2) * 128) / 4) ? true : false;
+		return strength > ((Math.pow(config.MAKRO_BLOCK_SIZE, 2) * 128) / EDGE_TOLERANCE) ? true : false;
 	}
 	
 	/*

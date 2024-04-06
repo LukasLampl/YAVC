@@ -28,7 +28,8 @@ public class Frame extends JFrame {
 	
 	private double DAMING_TOLERANCE = 0.75;
 	private int EDGE_TOLERANCE = 4;
-	private int GRAYSCALE_TOLERANCE = 100;
+	private int VEC_EDGE_TOLERANCE = 50;
+	private int VEC_MAD_TOLERANCE = 32768;
 	
 	private JLabel prevFrameHolder = new JLabel();
 	private JLabel curFrameHolder = new JLabel();
@@ -118,7 +119,6 @@ public class Frame extends JFrame {
 		});
 		
 		panel.add(edgeSlider, cons);
-		
 		cons.gridy++;
 		
 		JSlider dampingSlider = new JSlider();
@@ -134,22 +134,37 @@ public class Frame extends JFrame {
 		});
 		
 		panel.add(dampingSlider, cons);
-		
 		cons.gridy++;
 		
-		JSlider grayscaleSlider = new JSlider();
-		grayscaleSlider.setValue(this.GRAYSCALE_TOLERANCE);
-		grayscaleSlider.setMinimum(0);
-		grayscaleSlider.setMaximum(1000);
-		grayscaleSlider.setPaintLabels(true);
-		grayscaleSlider.addChangeListener(new ChangeListener() {
+		JSlider vecEdgeSlider = new JSlider();
+		vecEdgeSlider.setValue(this.VEC_EDGE_TOLERANCE);
+		vecEdgeSlider.setMinimum(0);
+		vecEdgeSlider.setMaximum(1000);
+		vecEdgeSlider.setPaintLabels(true);
+		vecEdgeSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				GRAYSCALE_TOLERANCE = grayscaleSlider.getValue();
+				VEC_EDGE_TOLERANCE = vecEdgeSlider.getValue();
 			}
 		});
 		
-		panel.add(grayscaleSlider, cons);
+		panel.add(vecEdgeSlider, cons);
+		cons.gridy++;
+		
+		JSlider vecMADSlider = new JSlider();
+		vecMADSlider.setValue(this.VEC_MAD_TOLERANCE);
+		vecMADSlider.setMinimum(0);
+		vecMADSlider.setMaximum(10000000);
+		vecMADSlider.setPaintLabels(true);
+		vecMADSlider.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				VEC_MAD_TOLERANCE = vecMADSlider.getValue();
+			}
+		});
+		
+		panel.add(vecMADSlider, cons);
+		
 		return panel;
 	}
 	
@@ -199,8 +214,12 @@ public class Frame extends JFrame {
 		return this.EDGE_TOLERANCE;
 	}
 	
-	public int get_grayscale_tolerance() {
-		return this.GRAYSCALE_TOLERANCE;
+	public int get_vec_edge_tolerance() {
+		return this.VEC_EDGE_TOLERANCE;
+	}
+	
+	public int get_vec_mad_tolerance() {
+		return this.VEC_MAD_TOLERANCE;
 	}
 	
 	public void updateFrameCount(int currentFrame, int totalFrame) {

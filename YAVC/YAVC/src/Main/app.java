@@ -177,10 +177,10 @@ public class app {
 				
 				ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
 				curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
-				ArrayList<MakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage);
+				ArrayList<MakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage, f.get_vec_edge_tolerance());
 				f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 
-				ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(prevImage, differences);
+				ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(prevImage, differences, f.get_vec_mad_tolerance());
 				f.setVectorizedImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 				
 				ArrayList<YUVMakroBlock> curImgYUVBlocks = makroBlockEngine.convert_MakroBlocks_to_YUVMarkoBlocks(curImgBlocks);

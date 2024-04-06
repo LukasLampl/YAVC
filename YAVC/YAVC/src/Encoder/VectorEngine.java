@@ -18,7 +18,7 @@ public class VectorEngine {
 	 * 			ArrayList<MakroBlock> diff => Differences between the previous and current frame
 	 * 			(Vectors are applied to the differences);
 	 */
-	public ArrayList<Vector> calculate_movement_vectors(BufferedImage prevFrame, ArrayList<MakroBlock> diff) {
+	public ArrayList<Vector> calculate_movement_vectors(BufferedImage prevFrame, ArrayList<MakroBlock> diff, int maxMADTolerance) {
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
@@ -32,7 +32,7 @@ public class VectorEngine {
 						return null;
 					}
 					
-					MakroBlock mostEqual = get_most_equal_MakroBlock(block, prevFrame);
+					MakroBlock mostEqual = get_most_equal_MakroBlock(block, prevFrame, maxMADTolerance);
 					Vector vec = null;
 					
 					if (mostEqual != null) {
@@ -79,7 +79,7 @@ public class VectorEngine {
 	 * Params: MakroBlock blockToBeSearched => MakroBlock to be matched in the previous frame;
 	 * 			ArrayList<MakroBlock> prevFrameBlocks => MakroBlocks from the previous frame
 	 */
-	private MakroBlock get_most_equal_MakroBlock(MakroBlock blockToBeSearched, BufferedImage prevFrame) {
+	private MakroBlock get_most_equal_MakroBlock(MakroBlock blockToBeSearched, BufferedImage prevFrame, int maxMADTolerance) {
 		MakroBlock mostEqualBlock = null;
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 		
@@ -134,6 +134,10 @@ public class VectorEngine {
 				lowestMAD = mad;
 				mostEqualBlock = blockAtPosP;
 			}
+		}
+		
+		if (lowestMAD > maxMADTolerance) {
+			return null;
 		}
 		
 		return mostEqualBlock;
