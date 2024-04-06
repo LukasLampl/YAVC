@@ -29,7 +29,6 @@ public class Frame extends JFrame {
 	private double DAMING_TOLERANCE = 0.75;
 	private int EDGE_TOLERANCE = 4;
 	private int GRAYSCALE_TOLERANCE = 100;
-	private double MAGNITUDE_TOLERANCE = 0.0125;
 	
 	private JLabel prevFrameHolder = new JLabel();
 	private JLabel curFrameHolder = new JLabel();
@@ -151,23 +150,6 @@ public class Frame extends JFrame {
 		});
 		
 		panel.add(grayscaleSlider, cons);
-		
-		cons.gridy++;
-		
-		JSlider magnitudeSlider = new JSlider();
-		magnitudeSlider.setValue((int)(this.MAGNITUDE_TOLERANCE * 1000));
-		magnitudeSlider.setMinimum(0);
-		magnitudeSlider.setMaximum(100);
-		magnitudeSlider.setPaintLabels(true);
-		magnitudeSlider.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				MAGNITUDE_TOLERANCE = (double)magnitudeSlider.getValue() / 1000;
-			}
-		});
-		
-		panel.add(magnitudeSlider, cons);
-		
 		return panel;
 	}
 	
@@ -208,11 +190,7 @@ public class Frame extends JFrame {
 		this.interactivePanel.add(btn, cons);
 		update();
 	}
-	
-	public double get_magnitude_tolerance() {
-		return this.MAGNITUDE_TOLERANCE;
-	}
-	
+
 	public double get_damping_tolerance() {
 		return this.DAMING_TOLERANCE;
 	}
