@@ -82,11 +82,12 @@ public class MakroBlockEngine {
 	 * 			int y => Y Coordinate in the image;
 	 * 			BufferedImage img => Image that requires the edge detection
 	 */
+	private static int[][] sobelX = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
+    private static int[][] sobelY = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
+	
 	private int detect_edge_and_outlines(int x, int y, BufferedImage img) {
-        int[][] sobelX = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
-        int[][] sobelY = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
-        
         int gx = 0, gy = 0;
+        
         for (int j = -1; j <= 1; j++) {
             for (int i = -1; i <= 1; i++) {
                 int pixelX = Math.min(Math.max(x + i, 0), img.getWidth() - 1);

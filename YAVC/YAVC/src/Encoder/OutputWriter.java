@@ -197,7 +197,7 @@ public class OutputWriter {
 	 */
 	public int output = 0;
 	
-	public void build_Frame(BufferedImage org, ArrayList<MakroBlock> diffs, ArrayList<Vector> vecs) {
+	public void build_Frame(BufferedImage org, ArrayList<MakroBlock> diffs, ArrayList<Vector> vecs, File outputFile) {
 		BufferedImage img = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		
 		for (MakroBlock block : diffs) {
@@ -238,7 +238,7 @@ public class OutputWriter {
 			}
 		}
 		
-		File out = new File("src/res/" + output++ + ".png");
+		File out = new File(outputFile.getAbsolutePath() + "/" + output++ + ".png");
 		
 		try {
 			ImageIO.write(img, "png", out);

@@ -17,50 +17,58 @@ public class VectorEngine {
 	 * Params: ArrayList<MakroBlock> prevFrameBlocks => MakroBlocks from the previous frame;
 	 * 			ArrayList<MakroBlock> diff => Differences between the previous and current frame
 	 * 			(Vectors are applied to the differences);
-	 * 			int grayscaleTolerance => Tolerance for edge detection;
-	 * 			double magnitudeTolerance => Tolerance for gradient matching
 	 */
-	public ArrayList<Vector> calculate_movement_vectors(BufferedImage prevFrame, ArrayList<MakroBlock> diff, int grayscaleTolerance, double magnitudeTolerance) {
+	public ArrayList<Vector> calculate_movement_vectors(BufferedImage prevFrame, ArrayList<MakroBlock> diff) {
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
 		ArrayList<Vector> vectors = new ArrayList<Vector>(diff.size());
 		ArrayList<Future<Vector>> fvecs = new ArrayList<Future<Vector>>(vectors.size());
 		
-		for (MakroBlock block : diff) {
-			Callable<Vector> task = () -> {
-				MakroBlock mostEqual = get_most_equal_MakroBlock(block, prevFrame, grayscaleTolerance, magnitudeTolerance);
-				Vector vec = null;
+		try {
+			for (MakroBlock block : diff) {
+				Callable<Vector> task = () -> {
+					if (block.isEdgeBlock()) {
+						return null;
+					}
+					
+					MakroBlock mostEqual = get_most_equal_MakroBlock(block, prevFrame);
+					Vector vec = null;
+					
+					if (mostEqual != null) {
+						vec = new Vector();
+						vec.setAppendedBlock(block);
+						vec.setMostEqualBlock(mostEqual);
+						vec.setStartingPoint(mostEqual.getPosition());
+						vec.setSpanX(block.getPosition().x - mostEqual.getPosition().x);
+						vec.setSpanY(block.getPosition().y - mostEqual.getPosition().y);
+					}
+					
+					return vec;
+				};
 				
-				if (mostEqual != null) {
-					vec = new Vector();
-					vec.setAppendedBlock(block);
-					vec.setMostEqualBlock(mostEqual);
-					vec.setStartingPoint(mostEqual.getPosition());
-					vec.setSpanX(block.getPosition().x - mostEqual.getPosition().x);
-					vec.setSpanY(block.getPosition().y - mostEqual.getPosition().y);
-				}
-				
-				return vec;
-			};
-			
-			fvecs.add(executor.submit(task));
-		}
-		
-		for (Future<Vector> f : fvecs) {
-			try {
-				Vector vec = f.get();
-				
-				if (vec != null) {
-					vectors.add(vec);
-					diff.remove(vec.getAppendedBlock());
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
+				fvecs.add(executor.submit(task));
 			}
+			
+			for (Future<Vector> f : fvecs) {
+				try {
+					Vector vec = f.get();
+					
+					if (vec != null) {
+						vectors.add(vec);
+						diff.remove(vec.getAppendedBlock());
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			executor.shutdown();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			executor.shutdown();
 		}
-		
-		executor.shutdown();
 		
 		return vectors;
 	}
@@ -69,11 +77,9 @@ public class VectorEngine {
 	 * Purpose: Search the most equal MakroBlock from the previous frame using Three-Step-Search
 	 * Return Type: MakroBlock => Most similar MakroBlock
 	 * Params: MakroBlock blockToBeSearched => MakroBlock to be matched in the previous frame;
-	 * 			ArrayList<MakroBlock> prevFrameBlocks => MakroBlocks from the previous frame;
-	 * 			int grayscaleTolerance => Tolerance for edge detection;
-	 * 			double magnitudeTolerance => Tolerance for gradient matching	
+	 * 			ArrayList<MakroBlock> prevFrameBlocks => MakroBlocks from the previous frame
 	 */
-	private MakroBlock get_most_equal_MakroBlock(MakroBlock blockToBeSearched, BufferedImage prevFrame, int grayscaleTolerance, double magnitudeTolerance) {
+	private MakroBlock get_most_equal_MakroBlock(MakroBlock blockToBeSearched, BufferedImage prevFrame) {
 		MakroBlock mostEqualBlock = null;
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 		

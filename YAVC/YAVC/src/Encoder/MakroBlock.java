@@ -8,6 +8,7 @@ public class MakroBlock {
 	private int[][] colors = new int[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
 	private Point position = new Point(0, 0);
 	private String uniqueID = "";
+	private boolean isEdgeBlock = false;
 	
 	public MakroBlock(int[][] colors, Point position) {
 		this.colors = colors;
@@ -49,5 +50,13 @@ public class MakroBlock {
 	
 	public String getID() {
 		return this.uniqueID;
+	}
+
+	public boolean isEdgeBlock() {
+		return isEdgeBlock;
+	}
+
+	public void setEdgeBlock(boolean isEdgeBlock) {
+		this.isEdgeBlock = isEdgeBlock;
 	}
 }

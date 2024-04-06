@@ -37,11 +37,14 @@ public class app {
 					chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 					chooser.showOpenDialog(null);
 					
-					File file = chooser.getSelectedFile();
+					File input = chooser.getSelectedFile();
 					
-					if (file != null) {
+					chooser.showOpenDialog(null);
+					File output = chooser.getSelectedFile();
+					
+					if (input != null && output != null) {
 						Thread worker = new Thread(() -> {
-							encode(file);
+							encode(input, output);
 						});
 						
 						worker.start();
@@ -123,12 +126,10 @@ public class app {
 	 * Return Type: void
 	 * Params: File file => Folder location
 	 */
-	private static void encode(File file) {
+	private static void encode(File input, File output) {
 		long timeStart = System.currentTimeMillis();
 		f.setProgress(0);
-		
-		File framesDir = new File("C:\\Users\\Lukas Lampl\\Downloads\\Frames");
-		
+
 		try {
 			BufferedImage prevImage = null;
 			BufferedImage currentImage = null;
@@ -136,9 +137,9 @@ public class app {
 			MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 			MakroDifferenceEngine makroDifferenceEngine = new MakroDifferenceEngine();
 			VectorEngine vectorEngine = new VectorEngine();
-			OutputWriter outputWriter = new OutputWriter(file.getAbsolutePath());
+			OutputWriter outputWriter = new OutputWriter(output.getAbsolutePath());
 			
-			int filesCount = framesDir.listFiles().length;
+			int filesCount = input.listFiles().length;
 			
 			for (int i = 0; i < filesCount; i++) {
 				f.updateFrameCount(i, filesCount);
@@ -154,7 +155,7 @@ public class app {
 					name = "" + i;
 				}
 				
-				File frame = new File(framesDir.getAbsolutePath() + "/" + name + ".bmp");
+				File frame = new File(input.getAbsolutePath() + "/" + name + ".bmp");
 				
 				if (!frame.exists()) {
 					System.out.println("SKIP:" + frame.getAbsolutePath());
@@ -176,19 +177,19 @@ public class app {
 				
 				ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
 				curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
-				ArrayList<MakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks);
+				ArrayList<MakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage);
 				f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 
-				ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(prevImage, differences, f.get_grayscale_tolerance(), f.get_magnitude_tolerance());
+				ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(prevImage, differences);
 				f.setVectorizedImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 				
 				ArrayList<YUVMakroBlock> curImgYUVBlocks = makroBlockEngine.convert_MakroBlocks_to_YUVMarkoBlocks(curImgBlocks);
 				
 				outputWriter.bake_frame(differences);
 				outputWriter.bake_vectors(movementVectors, i);
-				outputWriter.build_Frame(prevImage, differences, movementVectors);
+				outputWriter.build_Frame(prevImage, differences, movementVectors, output);
 				prevImage = currentImage;
-				double per = (((double)(i + 1) / (double)framesDir.listFiles().length) * 100);
+				double per = (((double)(i + 1) / (double)input.listFiles().length) * 100);
 				f.setProgress((int)Math.round(per));
 			}
 			
