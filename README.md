@@ -41,10 +41,12 @@ The UI is relatively simple and the only major issues may occur at the different
 **Decode** -> This button starts the decoding process for a YAVC file.  
 **Slider 1** -> This slider defines the edge recognition damping. (The lower the tolerance to precise the compression)  
 **Slider 2** -> This slider manages the color damping tolerance. (If the slider is at its highest the damping occures if 100% of the colors match)  
-**Slider 3** -> This slider is for edge detection in the vector creation process. (The higher the higher the precision)
+**Slider 3** -> This slider is for edge detection in the vector creation process. (The higher the higher the precision)  
+**Slider 4** -> This slider determines the maximum MAD a block can have before getting filtered. (The lower the higher the precision)
 
 > [!TIP]
 > Just play a little with the sliders until you get your desired results. Massive changes are followed by massive changes.
+> The better the result, the worse the compression ration!
 
 # How it works #
 Since I want to keep everything simple, I do not go into theoretical and high detail.
