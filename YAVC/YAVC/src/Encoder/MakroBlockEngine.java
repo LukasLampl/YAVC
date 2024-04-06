@@ -164,7 +164,8 @@ public class MakroBlockEngine {
 					currentRow = 0;
 				}
 				
-				if (x >= img.getWidth() || y >= img.getHeight()) {
+				if (x >= img.getWidth() || y >= img.getHeight()
+					|| x < 0 || y < 0) {
 					colors[currentColumn][currentRow++] = 89658667; //ASCII for YAVC
 					continue;
 				}

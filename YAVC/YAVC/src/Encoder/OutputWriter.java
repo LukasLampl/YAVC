@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import javax.imageio.ImageIO;
+
 import Main.config;
 
 public class OutputWriter {
@@ -180,6 +182,66 @@ public class OutputWriter {
 	        bis.close();
 	        zipOut.close();
 	        this.META_DIR.delete();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/*
+	 * Purpose: Builds the encoded frame and writes it to the destination
+	 * 			DEBUGGING ONLY!
+	 * Return Type: void
+	 * Params: BufferedImage org => previous build frame;
+	 * 			ArrayList<MakroBlock> diffs => Differencs to the prev img;
+	 * 			ArrayList<Vector> vecs => Vectors from the differences
+	 */
+	public int output = 0;
+	
+	public void build_Frame(BufferedImage org, ArrayList<MakroBlock> diffs, ArrayList<Vector> vecs) {
+		BufferedImage img = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		
+		for (MakroBlock block : diffs) {
+			for (int y = 0; y < block.getColors().length; y++) {
+				for (int x = 0; x < block.getColors()[y].length; x++) {
+					if (block.getPosition().x + x >= img.getWidth()
+						|| block.getPosition().y + y >= img.getHeight()) {
+						continue;
+					}
+					
+					if (block.getColors()[y][x] == 89658667) { //ASCII for YAVC
+						continue;
+					}
+					
+					Color col = new Color(block.getColors()[y][x]);
+					img.setRGB(block.getPosition().x + x, block.getPosition().y + y, col.getRGB());
+				}
+			}
+		}
+		
+		if (vecs != null) {
+			for (Vector vec : vecs) {
+				int[][] cols = vec.getMostEqualBlock().getColors();
+				
+				for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
+					for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
+						int vecEndX = vec.getStartingPoint().x + vec.getSpanX();
+						int vecEndY = vec.getStartingPoint().y + vec.getSpanY();
+						
+						if (vecEndX + x >= img.getWidth()
+							|| vecEndY + y >= img.getHeight()) {
+							continue;
+						}
+						
+						img.setRGB(vecEndX + x, vecEndY + y, cols[y][x]);
+					}
+				}
+			}
+		}
+		
+		File out = new File("C:\\Users\\Lukas Lampl\\Documents\\FRAMES\\out" + output++ + ".png");
+		
+		try {
+			ImageIO.write(img, "png", out);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

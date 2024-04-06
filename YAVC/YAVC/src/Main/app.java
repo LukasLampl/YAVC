@@ -179,13 +179,14 @@ public class app {
 				ArrayList<MakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks);
 				f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 
-				ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(prevImgBlocks, differences, f.get_grayscale_tolerance(), f.get_magnitude_tolerance());
+				ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(prevImage, differences, f.get_grayscale_tolerance(), f.get_magnitude_tolerance());
 				f.setVectorizedImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 				
 				ArrayList<YUVMakroBlock> curImgYUVBlocks = makroBlockEngine.convert_MakroBlocks_to_YUVMarkoBlocks(curImgBlocks);
 				
 				outputWriter.bake_frame(differences);
 				outputWriter.bake_vectors(movementVectors, i);
+				outputWriter.build_Frame(prevImage, differences, movementVectors);
 				prevImage = currentImage;
 				double per = (((double)(i + 1) / (double)framesDir.listFiles().length) * 100);
 				f.setProgress((int)Math.round(per));
