@@ -94,9 +94,11 @@ public class app {
 	private static void decode(File file) {
 		System.out.println("Start unzipping...");
 		DataGrabber grabber = new DataGrabber();
-		String content = grabber.slice(file);
+		grabber.slice(file);
+		
 		System.out.println("Finished unzipping...");
-		DataPipeEngine dataPipeEngine = new DataPipeEngine(content);
+		
+		DataPipeEngine dataPipeEngine = new DataPipeEngine(grabber);
 		DataPipeValveEngine dataPipeValveEngine = new DataPipeValveEngine("C:\\Users\\Lukas Lampl\\Documents");
 		
 		int frameCounter = 0;
@@ -105,13 +107,12 @@ public class app {
 		
 		while (dataPipeEngine.hasNext(frameCounter)) {
 			if (prevFrame == null) {
-				prevFrame = dataPipeEngine.scrape_main_image();
+				prevFrame = dataPipeEngine.scrape_main_image(grabber.get_start_frame());
 				dataPipeValveEngine.release_image(prevFrame);
 				continue;
 			}
 			
-			dataPipeEngine.jump_to_frame_number(frameCounter);
-			currFrame = dataPipeEngine.scrape_next_frame();
+			currFrame = dataPipeEngine.scrape_next_frame(frameCounter);
 			
 			ArrayList<Vector> vecs = dataPipeEngine.scrape_vectors(frameCounter++);
 			BufferedImage result = dataPipeEngine.build_frame(vecs, prevFrame, currFrame);
@@ -186,13 +187,13 @@ public class app {
 				outputWriter.build_Frame(prevImage, differences, null, output, 1);
 				ArrayList<YCbCrMakroBlock> curImgYCbCrBlocks = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(differences);
 				ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(prevImage, curImgYCbCrBlocks, f.get_vec_mad_tolerance());
-				
+
 				Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
 				f.setVectorizedImage(vectorEngine.construct_vector_path(dim, movementVectors), dim);
 				
 				outputWriter.build_Frame(prevImage, differences, movementVectors, output, 2);
-				outputWriter.bake_frame(differences);
-				outputWriter.bake_vectors(movementVectors, i);
+				File frameFile =  outputWriter.bake_frame(differences);
+				outputWriter.bake_vectors(movementVectors, frameFile);
 				outputWriter.build_Frame(prevImage, differences, movementVectors, output, 3);
 				prevImage = currentImage;
 				prevImgBlocks = curImgBlocks;

@@ -86,24 +86,33 @@ public class VectorEngine {
 	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, BufferedImage prevFrame, int maxMADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
+		int searchWindow = 32;
 		
 		Point blockCenter = new Point(blockToBeSearched.getPosition().x + config.MAKRO_BLOCK_SIZE / 2, blockToBeSearched.getPosition().y + config.MAKRO_BLOCK_SIZE / 2);
+		Point minPos = new Point(blockCenter.x - searchWindow, blockCenter.y - searchWindow);
+		Point maxPos = new Point(blockCenter.x + searchWindow, blockCenter.y + searchWindow);
+		
 		Point[] searchPositions = new Point[7];
 		
 		int step = 4;
 		Point initPos = new Point(0, 0);
-		double lowestMAD = Double.MAX_VALUE;
+		double lowestSAD = Double.MAX_VALUE;
 		
 		while (step > 1) {
 			searchPositions = get_hexagon_points(step, blockCenter);
 			
 			for (Point p : searchPositions) {
+				if (p.x < minPos.x || p.y < minPos.y
+					|| p.x > maxPos.x || p.y > maxPos.y) {
+					continue;
+				}
+				
 				MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame);
 				YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_MakroBlock_to_YCbCrMarkoBlock(blockAtPosP);
-				double mad = get_MAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
+				double sad = get_SAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
 				
-				if (mad < lowestMAD) {
-					lowestMAD = mad;
+				if (sad < lowestSAD) {
+					lowestSAD = sad;
 					mostEqualBlock = YCbCrBlockAtPosP;
 					initPos = p;
 				}
@@ -127,10 +136,10 @@ public class VectorEngine {
 		for (Point p : searchPositions) {
 			MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame);
 			YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_MakroBlock_to_YCbCrMarkoBlock(blockAtPosP);
-			double mad = get_MAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
+			double sad = get_SAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
 			
-			if (mad < lowestMAD) {
-				lowestMAD = mad;
+			if (sad < lowestSAD) {
+				lowestSAD = sad;
 				mostEqualBlock = YCbCrBlockAtPosP;
 			}
 		}
@@ -168,7 +177,7 @@ public class VectorEngine {
 	 * Params: int[][] colors1 => List 1 of int colors;
 	 * 			int[][] colors2 => Second list of int colors;
 	 */
-	public double get_MAD_of_colors(YCbCrColor[][] colors1, YCbCrColor[][] colors2) {
+	public double get_SAD_of_colors(YCbCrColor[][] colors1, YCbCrColor[][] colors2) {
 		double resY = 0;
 		double resCb = 0;
 		double resCr = 0;
@@ -184,7 +193,7 @@ public class VectorEngine {
 			}
 		}
 		
-		return Math.sqrt(Math.pow(resCb, 2) + Math.pow(resCr, 2)) / Math.pow(resY, 2);
+		return (resY + resCb + resCr) / Math.pow(Math.pow(config.MAKRO_BLOCK_SIZE, 2), 2);
 	}
 	
 	public BufferedImage construct_vector_path(Dimension dim, ArrayList<Vector> vecs) {

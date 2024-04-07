@@ -13,17 +13,18 @@ import Encoder.MakroBlockEngine;
 import Encoder.Vector;
 
 public class DataPipeEngine {
-	private String data = null;
+	private DataGrabber grabber = null;
 	private Dimension DIMENSION = null;
 	private boolean hasNext = true;
 	
 	private int MAX_FRAMES = 0;
-	private int FRAME_NUMBER_START = 0;
-	private int FRAME_NUMBER_END = 0;
+	private String CURRENT_FRAME_DATA = "";
 	
-	public DataPipeEngine(String content) {
-		this.data = content;
-		this.DIMENSION = scrape_meta_data();
+	public DataPipeEngine(DataGrabber grabber) {
+		this.grabber = grabber;
+		scrape_meta_data(grabber.get_metadata());
+		
+		System.out.println("META: " + DIMENSION + ", " + MAX_FRAMES);
 	}
 	
 	/*
@@ -31,29 +32,16 @@ public class DataPipeEngine {
 	 * Return Type: BufferedImage => Built image
 	 * Params: void
 	 */
-	public BufferedImage scrape_main_image() {
+	public BufferedImage scrape_main_image(String startFrameContent) {
 		BufferedImage render = new BufferedImage(this.DIMENSION.width, this.DIMENSION.height, BufferedImage.TYPE_INT_ARGB);
-		
-		int start = this.data.indexOf("$S$") + 3;
-		int end = start;
-		
-		for (int i = start; i < this.data.length(); i++) {
-			if (this.data.charAt(i) != '?') {
-				end++;
-			} else {
-				break;
-			}
-		}
-
-		String stream = this.data.substring(start, end);
-		String[] stepInfos = stream.split("\\.");
+		String[] stepInfos = startFrameContent.split("\\.");
 		
 		int x = 0;
 		int y = 0;
 		
 		for (String s : stepInfos) {
 			if (x >= render.getWidth()) {
-				y++;
+				y++;	
 				x = 0;
 			} else if (y + 1 >= render.getHeight()) {
 				break;
@@ -75,38 +63,20 @@ public class DataPipeEngine {
 	}
 	
 	/*
-	 * Purpose: Let the pointer jump to the desired frameNumber
-	 * Return Type: void
-	 * Params: int frameNumber => Frame to jump to
-	 */
-	public void jump_to_frame_number(int frameNumber) {
-		String regex = "$P" + frameNumber + "$";
-		int startPos = this.data.indexOf(regex);
-		
-		if (startPos == -1) {
-			this.hasNext = false;
-			return;
-		}
-		
-		this.FRAME_NUMBER_START = startPos + regex.length();
-		
-		for (int i = this.FRAME_NUMBER_START; i < this.data.length(); i++) {
-			if (this.data.charAt(i) == '?') {
-				this.FRAME_NUMBER_END = i;
-				break;
-			}
-		}
-	}
-	
-	/*
 	 * Purpose: Build the next frame based on the FRAME_START_POSITION
 	 * Return Type: BufferedImage => Built image
 	 * Params: void
 	 */
-	public BufferedImage scrape_next_frame() {
+	public BufferedImage scrape_next_frame(int frameNumber) {
 		BufferedImage render = new BufferedImage(this.DIMENSION.width, this.DIMENSION.height, BufferedImage.TYPE_INT_ARGB);
-		String stream = this.data.substring(this.FRAME_NUMBER_START, this.FRAME_NUMBER_END);
-		String[] set = stream.split("\\.");
+		this.CURRENT_FRAME_DATA = this.grabber.get_frame(frameNumber);
+		
+		if (this.CURRENT_FRAME_DATA == null) {
+			return null;
+		}
+		
+		int end = this.CURRENT_FRAME_DATA.indexOf("$V$");
+		String[] set = this.CURRENT_FRAME_DATA.substring(0, end).split("\\.");
 		
 		int x = 0;
 		int y = 0;
@@ -132,28 +102,15 @@ public class DataPipeEngine {
 	 */
 	public ArrayList<Vector> scrape_vectors(int frameNumber) {
 		ArrayList<Vector> vecs = new ArrayList<Vector>();
-		String regex = "$V" + frameNumber + "$";
-		int start = this.data.indexOf(regex);
+		int start = this.CURRENT_FRAME_DATA.indexOf("$V$");
+		String data = this.CURRENT_FRAME_DATA.substring(start, this.CURRENT_FRAME_DATA.length());
 		
-		if (start == -1) {
-			System.err.println("MISSING VECTOR FOUND!!! (" + regex + ")");
+		if (data == null) {
+			System.err.println("MISSING VECTOR FOUND!!! (F_" + frameNumber + ")");
 			return null;
 		}
 		
-		start += regex.length();
-		int end = start + 1;
-
-		for (int i = end; i < this.data.length(); i++) {
-			if (this.data.charAt(i) == '$') {
-				end = i;
-				break;
-			} else if (i + 1 == this.data.length()) {
-				end = i;
-			}
-		}
-		
-		String stream = this.data.substring(start, end);
-		String[] streamSet = stream.split("\\[");
+		String[] streamSet = data.split("\\[");
 		
 		for (int i = 1; i < streamSet.length; i++) {
 			String s = streamSet[i];
@@ -183,11 +140,7 @@ public class DataPipeEngine {
 	public BufferedImage build_frame(ArrayList<Vector> vecs, BufferedImage prevImg, BufferedImage currImg) {
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 		BufferedImage render = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = render.createGraphics();
-		g2d.drawImage(prevImg, 0, 0, prevImg.getWidth(), prevImg.getHeight(), null, null);
-		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.0f));
-		g2d.drawImage(currImg, 0, 0, currImg.getWidth(), currImg.getHeight(), null, null);
-		g2d.dispose();
+		BufferedImage vectors = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		
 		if (vecs == null) {
 			return render;	
@@ -210,40 +163,48 @@ public class DataPipeEngine {
 						continue;
 					}
 					
-					render.setRGB(p.x + vec.getSpanX() + x, p.y + vec.getSpanY() + y, block.getColors()[y][x]);
+					vectors.setRGB(p.x + vec.getSpanX() + x, p.y + vec.getSpanY() + y, Color.magenta.getRGB());//block.getColors()[y][x]);
 				}
 			}
 		}
 		
+		Graphics2D g2d = render.createGraphics();
+		g2d.drawImage(prevImg, 0, 0, prevImg.getWidth(), prevImg.getHeight(), null, null);
+		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+		g2d.drawImage(currImg, 0, 0, currImg.getWidth(), currImg.getHeight(), null, null);
+		g2d.drawImage(vectors, 0, 0, vectors.getWidth(), vectors.getHeight(), null, null);
+		g2d.dispose();
+		
 		return render;
 	}
 	
-	private Dimension scrape_meta_data() {
-		int start = this.data.indexOf("META[D[");
+	private void scrape_meta_data(String metaFileContent) {
+		int start = metaFileContent.indexOf("META[D[");
 		StringBuilder rawDimension = new StringBuilder(16);
 		
-		for (int i = start + 7; i < this.data.length(); i++) {
-			if (this.data.charAt(i) == ']') {
+		for (int i = start + 7; i < metaFileContent.length(); i++) {
+			if (metaFileContent.charAt(i) == ']') {
 				break;
 			}
 			
-			rawDimension.append(this.data.charAt(i));
+			rawDimension.append(metaFileContent.charAt(i));
 		}
 		
-		start = this.data.indexOf("]FC[");
+		String[] dims = rawDimension.toString().split("\\,");
+		this.DIMENSION = new Dimension(Integer.parseInt(dims[0]), Integer.parseInt(dims[1]));
+		
+		start = metaFileContent.indexOf("]FC[");
+		
 		StringBuilder rawFC = new StringBuilder(16);
 		
-		for (int i = start + 4; i < this.data.length(); i++) {
-			if (this.data.charAt(i) == ']') {
+		for (int i = start + 4; i < metaFileContent.length(); i++) {
+			if (metaFileContent.charAt(i) == ']') {
 				break;
 			}
 			
-			rawFC.append(this.data.charAt(i));
+			rawFC.append(metaFileContent.charAt(i));
 		}
 		
 		this.MAX_FRAMES = Integer.parseInt(rawFC.toString());
-		
-		String[] dims = rawDimension.toString().split("\\,");
-		return new Dimension(Integer.parseInt(dims[0]), Integer.parseInt(dims[1]));
 	}
 }

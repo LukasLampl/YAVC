@@ -49,7 +49,7 @@ public class MakroDifferenceEngine {
 			}
 		}
 		
-		return strength > ((Math.pow(config.MAKRO_BLOCK_SIZE, 2) * 128) / EDGE_TOLERANCE) ? true : false;
+		return strength > ((Math.pow(config.MAKRO_BLOCK_SIZE, 2) * 64) / EDGE_TOLERANCE) ? true : false;
 	}
 	
 	/*

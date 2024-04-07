@@ -9,16 +9,15 @@ public class ColorManager {
 	 * Params: Color color => Color to be converted
 	 */
 	public YCbCrColor convert_RGB_to_YCbCr(Color color) {
-		double Y = 16 + (65.738 * color.getRed() / 256) + (129.057 * color.getGreen() / 256) + (25.064 * color.getBlue() / 256);
-		double Cb = 128 - (37.945 * color.getRed() / 256) - (74.494 * color.getGreen() / 256) + (112.439 * color.getBlue() / 256);
-		double Cr = 128 + (112.439 * color.getRed() / 256) - (94.154 * color.getGreen() / 256) - (18.285 * color.getBlue() / 256);
-		
+		double Y = (0.299 * color.getRed()) + (0.587 * color.getGreen()) + (0.114 * color.getBlue());
+		double Cb = 128 - (0.168736 * color.getRed()) - (0.331264 * color.getGreen()) + (0.5 * color.getBlue());
+		double Cr = 128 + (0.5 * color.getRed()) - (0.418688 * color.getGreen()) - (0.081312 * color.getBlue());
 		return new YCbCrColor(Y, Cb, Cr);
 	}
 	
 	public Color convert_YCbCr_to_RGB(YCbCrColor color) {
 		int red = (int)(color.getY() + 1.402 * (color.getCr() - 128));
-		int green = (int)(color.getY() - 0.344 * (color.getCb() - 128) - 0.714 * (color.getCr() - 128));
+		int green = (int)(color.getY() - 0.344136 * (color.getCb() - 128) - 0.714136 * (color.getCr() - 128));
 		int blue = (int)(color.getY() + 1.772 * (color.getCb() - 128));
 		return new Color(red, green, blue);
 	}

@@ -22,13 +22,13 @@ import javax.imageio.ImageIO;
 import Main.config;
 
 public class OutputWriter {
-	private File META_DIR = null;
+	private File COMPRESS_DIR = null;
 	private Dimension META_DIMENSION = null;
 	
 	public OutputWriter(String path) {
 		try {
-			this.META_DIR = new File(path + "/YAVC-VIDEO.yavc.part");
-			this.META_DIR.createNewFile();
+			this.COMPRESS_DIR = new File(path + "/YAVC-COMP");
+			this.COMPRESS_DIR.mkdir();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -51,9 +51,13 @@ public class OutputWriter {
 			String meta = "META["
 					+ "D[" + originalImage.getWidth() + "," + originalImage.getHeight() + "]"
 					+ "FC[" + frameNum + "]"
+					+ "MBS[" + config.MAKRO_BLOCK_SIZE + "]"
 					+ "]";
 			
-			Files.write(Path.of(this.META_DIR.getAbsolutePath()), meta.getBytes(), StandardOpenOption.WRITE);
+			File metaFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/META.DESC");
+			metaFile.createNewFile();
+			
+			Files.write(Path.of(metaFile.getAbsolutePath()), meta.getBytes(), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -74,9 +78,10 @@ public class OutputWriter {
 		}
 		
 		try {
-			Files.write(Path.of(this.META_DIR.getAbsolutePath()), "$S$".getBytes(), StandardOpenOption.APPEND);
-			Files.write(Path.of(this.META_DIR.getAbsolutePath()), imgInChar.toString().getBytes(), StandardOpenOption.APPEND);
-			Files.write(Path.of(this.META_DIR.getAbsolutePath()), "?".getBytes(), StandardOpenOption.APPEND);
+			File startFrameFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/SF.YAVCF");
+			startFrameFile.createNewFile();
+			
+			Files.write(Path.of(startFrameFile.getAbsolutePath()), imgInChar.toString().getBytes(), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -89,7 +94,7 @@ public class OutputWriter {
 	 */
 	private int outputFrames = 0;
 	
-	public void bake_frame(ArrayList<MakroBlock> differences) {
+	public File bake_frame(ArrayList<MakroBlock> differences) {
 		BufferedImage render = new BufferedImage(this.META_DIMENSION.width, this.META_DIMENSION.height, BufferedImage.TYPE_INT_ARGB);
 		
 		for (MakroBlock b : differences) {
@@ -118,13 +123,17 @@ public class OutputWriter {
 			}
 		}
 		
+		File frameFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/F_" + outputFrames++ + ".YAVCF");
+		
 		try {
-			Files.write(Path.of(this.META_DIR.getAbsolutePath()), ("$P" + (this.outputFrames++) + "$").getBytes(), StandardOpenOption.APPEND);
-			Files.write(Path.of(this.META_DIR.getAbsolutePath()), imgInChar.toString().getBytes(), StandardOpenOption.APPEND);
-			Files.write(Path.of(this.META_DIR.getAbsolutePath()), "?".getBytes(), StandardOpenOption.APPEND);
+			frameFile.createNewFile();
+			
+			Files.write(Path.of(frameFile.getAbsolutePath()), imgInChar.toString().getBytes(), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		return frameFile;
 	}
 	
 	/*
@@ -133,13 +142,8 @@ public class OutputWriter {
 	 * Params: ArrayList<Vector> movementVectors => Calculated vectors of the current frame
 	 * 			int frame => Frame number to which the vectors are applied
 	 */
-	public void bake_vectors(ArrayList<Vector> movementVectors, int frame) {
+	public void bake_vectors(ArrayList<Vector> movementVectors, File frameFile) {
 		if (movementVectors == null) {
-			return;
-		}
-		
-		if (this.META_DIR == null) {
-			System.err.println("No output dir!");
 			return;
 		}
 		
@@ -150,8 +154,8 @@ public class OutputWriter {
 				vecRes.append("[" + vec.getStartingPoint().x + "," + vec.getStartingPoint().y + ";" + vec.getSpanX() + "," + vec.getSpanY() + "]");
 			}
 			
-			Files.write(Path.of(this.META_DIR.getAbsolutePath()), ("$V" + (this.outputFrames - 1) + "$").getBytes(), StandardOpenOption.APPEND);
-			Files.write(Path.of(this.META_DIR.getAbsolutePath()), vecRes.toString().getBytes(), StandardOpenOption.APPEND);
+			Files.write(Path.of(frameFile.getAbsolutePath()), ("$V$").getBytes(), StandardOpenOption.APPEND);
+			Files.write(Path.of(frameFile.getAbsolutePath()), vecRes.toString().getBytes(), StandardOpenOption.APPEND);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -165,25 +169,27 @@ public class OutputWriter {
 	 */
 	public void compress_result() {
 		try {
-			FileInputStream fis = new FileInputStream(this.META_DIR.getAbsolutePath());
-	        BufferedInputStream bis = new BufferedInputStream(fis);
-	
-	        FileOutputStream fos = new FileOutputStream(this.META_DIR.getAbsolutePath().substring(0, this.META_DIR.getAbsolutePath().length() - 5));
-	        BufferedOutputStream bos = new BufferedOutputStream(fos);
-	        ZipOutputStream zipOut = new ZipOutputStream(bos);
-	
-	        zipOut.putNextEntry(new ZipEntry(new File(this.META_DIR.getAbsolutePath()).getName()));
-	
-	        byte[] buffer = new byte[8192];
-	        int bytesRead;
-	        while ((bytesRead = bis.read(buffer)) != -1) {
-	            zipOut.write(buffer, 0, bytesRead);
+			FileOutputStream fos = new FileOutputStream(this.COMPRESS_DIR.getAbsolutePath() + ".yavc");
+	        ZipOutputStream zipOut = new ZipOutputStream(fos);
+	        
+	        for (File f : this.COMPRESS_DIR.listFiles()) {
+	        	zipOut.putNextEntry(new ZipEntry(f.getName()));
+	        	
+	        	FileInputStream fis = new FileInputStream(f);
+	        	byte[] bytes = new byte[4096];
+		        int length;
+	        	
+		        while ((length = fis.read(bytes)) >= 0) {
+		        	zipOut.write(bytes, 0, length);
+		        }
+	        	
+		        fis.close();
+	        	zipOut.closeEntry();
 	        }
-	
+	        
 	        zipOut.closeEntry();
-	        bis.close();
 	        zipOut.close();
-	        this.META_DIR.delete();
+	        this.COMPRESS_DIR.delete();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -242,20 +248,13 @@ public class OutputWriter {
 							continue;
 						}
 						
-						if (vec.getSpanX() > 0 && vec.getSpanY() > 0) {
-							v_g2d.setColor(Color.BLUE);
-						} else if (vec.getSpanX() > 0 && vec.getSpanY() < 0) {
-							v_g2d.setColor(Color.RED);
-						} else if (vec.getSpanX() < 0 && vec.getSpanY() < 0) {
-							v_g2d.setColor(Color.GREEN);
-						} else if (vec.getSpanX() < 0 && vec.getSpanY() > 0) {
-							v_g2d.setColor(Color.YELLOW);
-						} else {
-							v_g2d.setColor(Color.black);
+						int color = colorManager.convert_YCbCr_to_RGB(cols[y][x]).getRGB();
+						
+						if (color == 89658667) {
+							continue;
 						}
 						
-						v_g2d.drawLine(vec.getStartingPoint().x, vec.getStartingPoint().y, vecEndX, vecEndY);
-						img_v.setRGB(vecEndX + x, vecEndY + y, colorManager.convert_YCbCr_to_RGB(cols[y][x]).getRGB());
+						img_v.setRGB(vecEndX + x, vecEndY + y, color);
 					}
 				}
 			}
@@ -279,12 +278,12 @@ public class OutputWriter {
 				ImageIO.write(render, "png", out);
 			} else if (diff == 2) {
 				File out_v = new File(outputFile.getAbsolutePath() + "/V_" + output + ".png");
-				ImageIO.write(img, "png", out_v);
+				ImageIO.write(img_v, "png", out_v);
 			} else {
 				BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
 				Graphics2D g2d = render.createGraphics();
 				g2d.drawImage(org, 0, 0, img.getWidth(), img.getHeight(), null, null);
-				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.0f));
+				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
 				g2d.drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null, null);
 				g2d.drawImage(img_v, 0, 0, img_v.getWidth(), img_v.getHeight(), null, null);
 				g2d.dispose();
