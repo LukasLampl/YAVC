@@ -6,8 +6,8 @@ public class Vector {
 	private Point startingPoint = new Point(0, 0);
 	private int spanX = 0;
 	private int spanY = 0;
-	private MakroBlock appendedBlock = null;
-	private MakroBlock mostEqualBlock = null;
+	private YCbCrMakroBlock appendedBlock = null;
+	private YCbCrMakroBlock mostEqualBlock = null;
 	
 	public Point getStartingPoint() {
 		return startingPoint;
@@ -33,19 +33,19 @@ public class Vector {
 		this.spanY = span;
 	}
 
-	public MakroBlock getAppendedBlock() {
+	public YCbCrMakroBlock getAppendedBlock() {
 		return appendedBlock;
 	}
 
-	public void setAppendedBlock(MakroBlock appendedBlock) {
+	public void setAppendedBlock(YCbCrMakroBlock appendedBlock) {
 		this.appendedBlock = appendedBlock;
 	}
 
-	public MakroBlock getMostEqualBlock() {
+	public YCbCrMakroBlock getMostEqualBlock() {
 		return mostEqualBlock;
 	}
 
-	public void setMostEqualBlock(MakroBlock mostEqualBlock) {
+	public void setMostEqualBlock(YCbCrMakroBlock mostEqualBlock) {
 		this.mostEqualBlock = mostEqualBlock;
 	}
 }

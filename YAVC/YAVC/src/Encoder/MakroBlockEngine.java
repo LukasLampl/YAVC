@@ -109,11 +109,11 @@ public class MakroBlockEngine {
 	 * Return Type: ArrayList<YUVMakroBlock> => Converted MakroBlocks list
 	 * Params: ArrayList<MakroBlock> blocks => List of MakroBlocks to be converted
 	 */
-	public ArrayList<YUVMakroBlock> convert_MakroBlocks_to_YUVMarkoBlocks(ArrayList<MakroBlock> blocks) {
-		ArrayList<YUVMakroBlock> convertedBlocks = new ArrayList<YUVMakroBlock>(blocks.size());
+	public ArrayList<YCbCrMakroBlock> convert_MakroBlocks_to_YCbCrMarkoBlocks(ArrayList<MakroBlock> blocks) {
+		ArrayList<YCbCrMakroBlock> convertedBlocks = new ArrayList<YCbCrMakroBlock>(blocks.size());
 		
 		for (MakroBlock makroBlock : blocks) {
-			YUVMakroBlock block = convert_single_MakroBlock_to_YUVMakroBlock(makroBlock);
+			YCbCrMakroBlock block = convert_single_MakroBlock_to_YCbCrMakroBlock(makroBlock);
 			block.setID(makroBlock.getID());
 			convertedBlocks.add(block);
 		}
@@ -121,23 +121,27 @@ public class MakroBlockEngine {
 		return convertedBlocks;
 	}
 	
+	public YCbCrMakroBlock convert_MakroBlock_to_YCbCrMarkoBlock(MakroBlock block) {
+		return convert_single_MakroBlock_to_YCbCrMakroBlock(block);
+	}
+	
 	/*
 	 * Purpose: Converts a single MakroBlock to an YUVMakroBlock
 	 * Return Type: YUVMakroBlock => Converted MakroBlock
 	 * Params: MakroBlock block => MakroBlock to be converted
 	 */
-	private YUVMakroBlock convert_single_MakroBlock_to_YUVMakroBlock(MakroBlock block) {
+	private YCbCrMakroBlock convert_single_MakroBlock_to_YCbCrMakroBlock(MakroBlock block) {
 		ColorManager colorManager = new ColorManager();
-		YUVColor[][] cols = new YUVColor[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
+		YCbCrColor[][] cols = new YCbCrColor[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
 		
 		for (int y = 0; y < block.getColors().length; y++) {
 			for (int x = 0; x < block.getColors()[y].length; x++) {
-				YUVColor yuvCol = colorManager.convert_RGB_to_YUV(new Color(block.getColors()[y][x]));
-				cols[y][x] = yuvCol;
+				YCbCrColor ycbcrCol = colorManager.convert_RGB_to_YCbCr(new Color(block.getColors()[y][x]));
+				cols[y][x] = ycbcrCol;
 			}
 		}
 		
-		return new YUVMakroBlock(cols, block.getPosition());
+		return new YCbCrMakroBlock(cols, block.getPosition());
 	}
 	
 	/*

@@ -1,7 +1,9 @@
 package Encoder;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -198,8 +200,15 @@ public class OutputWriter {
 	 */
 	public int output = 0;
 	
-	public void build_Frame(BufferedImage org, ArrayList<MakroBlock> diffs, ArrayList<Vector> vecs, File outputFile) {
+	public void build_Frame(BufferedImage org, ArrayList<MakroBlock> diffs, ArrayList<Vector> vecs, File outputFile, int diff) {
 		BufferedImage img = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		BufferedImage img_v = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		
+		BufferedImage vectors = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D v_g2d = vectors.createGraphics();
+		v_g2d.setColor(Color.red);
+		
+		ColorManager colorManager = new ColorManager();
 		
 		for (MakroBlock block : diffs) {
 			for (int y = 0; y < block.getColors().length; y++) {
@@ -221,28 +230,68 @@ public class OutputWriter {
 		
 		if (vecs != null) {
 			for (Vector vec : vecs) {
-				int[][] cols = vec.getMostEqualBlock().getColors();
+				YCbCrColor[][] cols = vec.getMostEqualBlock().getColors();
 				
 				for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
 					for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
 						int vecEndX = vec.getStartingPoint().x + vec.getSpanX();
 						int vecEndY = vec.getStartingPoint().y + vec.getSpanY();
 						
-						if (vecEndX + x >= img.getWidth()
-							|| vecEndY + y >= img.getHeight()) {
+						if (vecEndX + x >= img_v.getWidth()
+							|| vecEndY + y >= img_v.getHeight()) {
 							continue;
 						}
 						
-						img.setRGB(vecEndX + x, vecEndY + y, cols[y][x]);
+						if (vec.getSpanX() > 0 && vec.getSpanY() > 0) {
+							v_g2d.setColor(Color.BLUE);
+						} else if (vec.getSpanX() > 0 && vec.getSpanY() < 0) {
+							v_g2d.setColor(Color.RED);
+						} else if (vec.getSpanX() < 0 && vec.getSpanY() < 0) {
+							v_g2d.setColor(Color.GREEN);
+						} else if (vec.getSpanX() < 0 && vec.getSpanY() > 0) {
+							v_g2d.setColor(Color.YELLOW);
+						} else {
+							v_g2d.setColor(Color.black);
+						}
+						
+						v_g2d.drawLine(vec.getStartingPoint().x, vec.getStartingPoint().y, vecEndX, vecEndY);
+						img_v.setRGB(vecEndX + x, vecEndY + y, colorManager.convert_YCbCr_to_RGB(cols[y][x]).getRGB());
 					}
 				}
 			}
 		}
 		
-		File out = new File(outputFile.getAbsolutePath() + "/" + output++ + ".png");
+		v_g2d.dispose();
 		
 		try {
-			ImageIO.write(img, "png", out);
+			File print = new File(outputFile.getAbsolutePath() + "/print_" + output + ".png");
+			ImageIO.write(vectors, "png", print);
+			
+			if (diff == 1) {
+				File out = new File(outputFile.getAbsolutePath() + "/" + output + ".png");
+				BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+				Graphics2D g2d = render.createGraphics();
+				g2d.drawImage(org, 0, 0, img.getWidth(), img.getHeight(), null, null);
+				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+				g2d.drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null, null);
+				g2d.dispose();
+				
+				ImageIO.write(render, "png", out);
+			} else if (diff == 2) {
+				File out_v = new File(outputFile.getAbsolutePath() + "/V_" + output + ".png");
+				ImageIO.write(img, "png", out_v);
+			} else {
+				BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+				Graphics2D g2d = render.createGraphics();
+				g2d.drawImage(org, 0, 0, img.getWidth(), img.getHeight(), null, null);
+				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.0f));
+				g2d.drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null, null);
+				g2d.drawImage(img_v, 0, 0, img_v.getWidth(), img_v.getHeight(), null, null);
+				g2d.dispose();
+				
+				File out_v = new File(outputFile.getAbsolutePath() + "/F_" + output++ + ".png");
+				ImageIO.write(render, "png", out_v);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

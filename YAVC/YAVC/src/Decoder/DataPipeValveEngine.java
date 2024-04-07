@@ -9,7 +9,7 @@ public class DataPipeValveEngine {
 	private File output = null;
 	
 	public DataPipeValveEngine(String path) {
-		this.output = new File(path + "/FRAMES");
+		this.output = new File(path + "/result");
 		this.output.mkdir();
 	}
 	

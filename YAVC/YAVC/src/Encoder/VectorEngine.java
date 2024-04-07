@@ -1,5 +1,8 @@
 package Encoder;
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -19,7 +22,7 @@ public class VectorEngine {
 	 * 			(Vectors are applied to the differences);
 	 * 			int maxMADTolerance => Max MAD tolerance
 	 */
-	public ArrayList<Vector> calculate_movement_vectors(BufferedImage prevFrame, ArrayList<MakroBlock> diff, int maxMADTolerance) {
+	public ArrayList<Vector> calculate_movement_vectors(BufferedImage prevFrame, ArrayList<YCbCrMakroBlock> diff, int maxMADTolerance) {
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
@@ -27,13 +30,13 @@ public class VectorEngine {
 		ArrayList<Future<Vector>> fvecs = new ArrayList<Future<Vector>>(vectors.size());
 		
 		try {
-			for (MakroBlock block : diff) {
+			for (YCbCrMakroBlock block : diff) {
 				Callable<Vector> task = () -> {
-					if (block.isEdgeBlock()) {
+					if (block.isEdgeBlock() == true) {
 						return null;
 					}
 					
-					MakroBlock mostEqual = get_most_equal_MakroBlock(block, prevFrame, maxMADTolerance);
+					YCbCrMakroBlock mostEqual = get_most_equal_MakroBlock(block, prevFrame, maxMADTolerance);
 					Vector vec = null;
 					
 					if (mostEqual != null) {
@@ -67,7 +70,6 @@ public class VectorEngine {
 			executor.shutdown();
 		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
 			executor.shutdown();
 		}
 		
@@ -81,30 +83,28 @@ public class VectorEngine {
 	 * 			BufferedImage prevFrame => Image of the previous frame;
 	 * 			int maxMADTolerance => Max tolerance of the MAD
 	 */
-	private MakroBlock get_most_equal_MakroBlock(MakroBlock blockToBeSearched, BufferedImage prevFrame, int maxMADTolerance) {
-		MakroBlock mostEqualBlock = null;
+	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, BufferedImage prevFrame, int maxMADTolerance) {
+		YCbCrMakroBlock mostEqualBlock = null;
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 		
 		Point blockCenter = new Point(blockToBeSearched.getPosition().x + config.MAKRO_BLOCK_SIZE / 2, blockToBeSearched.getPosition().y + config.MAKRO_BLOCK_SIZE / 2);
-		Point[] searchPositions = new Point[5];
+		Point[] searchPositions = new Point[7];
 		
-		int step = 8;
+		int step = 4;
+		Point initPos = new Point(0, 0);
 		double lowestMAD = Double.MAX_VALUE;
-		Point initPos = blockCenter;
 		
 		while (step > 1) {
-			searchPositions[0] = blockCenter;
-			searchPositions[1] = new Point(blockCenter.x + step, blockCenter.y);
-			searchPositions[2] = new Point(blockCenter.x - step, blockCenter.y);
-			searchPositions[3] = new Point(blockCenter.x, blockCenter.y + step);
-			searchPositions[4] = new Point(blockCenter.x, blockCenter.y - step);
+			searchPositions = get_hexagon_points(step, blockCenter);
 			
 			for (Point p : searchPositions) {
 				MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame);
-				double mad = get_MAD_of_colors(blockAtPosP.getColors(), blockToBeSearched.getColors());
+				YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_MakroBlock_to_YCbCrMarkoBlock(blockAtPosP);
+				double mad = get_MAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
 				
 				if (mad < lowestMAD) {
 					lowestMAD = mad;
+					mostEqualBlock = YCbCrBlockAtPosP;
 					initPos = p;
 				}
 			}
@@ -117,32 +117,49 @@ public class VectorEngine {
 			blockCenter = initPos;
 		}
 		
-		searchPositions = new Point[9];
+		searchPositions = new Point[5];
 		searchPositions[0] = blockCenter;
 		searchPositions[1] = new Point(blockCenter.x + step, blockCenter.y);
 		searchPositions[2] = new Point(blockCenter.x - step, blockCenter.y);
 		searchPositions[3] = new Point(blockCenter.x, blockCenter.y + step);
 		searchPositions[4] = new Point(blockCenter.x, blockCenter.y - step);
-		searchPositions[5] = new Point(blockCenter.x + step, blockCenter.y - step);
-		searchPositions[6] = new Point(blockCenter.x - step, blockCenter.y - step);
-		searchPositions[7] = new Point(blockCenter.x - step, blockCenter.y + step);
-		searchPositions[8] = new Point(blockCenter.x + step, blockCenter.y + step + step);
 		
 		for (Point p : searchPositions) {
 			MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame);
-			double mad = get_MAD_of_colors(blockAtPosP.getColors(), blockToBeSearched.getColors());
+			YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_MakroBlock_to_YCbCrMarkoBlock(blockAtPosP);
+			double mad = get_MAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
 			
 			if (mad < lowestMAD) {
 				lowestMAD = mad;
-				mostEqualBlock = blockAtPosP;
+				mostEqualBlock = YCbCrBlockAtPosP;
 			}
 		}
 		
-		if (lowestMAD > maxMADTolerance) {
-			return null;
-		}
+//		if (lowestMAD > maxMADTolerance
+//			|| mostEqualBlock == null) {
+//			return null;
+//		}
+//		
+//		double grad1 = compute_gradient_ratio(blockToBeSearched.getColors());
+//		double grad2 = compute_gradient_ratio(mostEqualBlock.getColors());
+//		System.out.println(Math.abs(grad1 - grad2));
+//		if (Math.abs(grad1 - grad2) > 0.08) {
+//			return null;
+//		}
 		
 		return mostEqualBlock;
+	}
+	
+	private Point[] get_hexagon_points(int radius, Point center) {
+		Point[] points = new Point[7];
+		points[6] = center;
+		
+		for (int i = 0; i < 6; i++) {
+			double rad = Math.PI / 3 * (i + 1);
+			points[i] = new Point((int)(Math.cos(rad) * radius + center.x), (int)(Math.sin(rad) * radius + center.y));
+		}
+		
+		return points;
 	}
 	
 	/*
@@ -151,30 +168,56 @@ public class VectorEngine {
 	 * Params: int[][] colors1 => List 1 of int colors;
 	 * 			int[][] colors2 => Second list of int colors;
 	 */
-	public double get_MAD_of_colors(int[][] colors1, int[][] colors2) {
-		int resR = 0;
-		int resG = 0;
-		int resB = 0;
+	public double get_MAD_of_colors(YCbCrColor[][] colors1, YCbCrColor[][] colors2) {
+		double resY = 0;
+		double resCb = 0;
+		double resCr = 0;
 		
 		for (int y = 0; y < colors2.length; y++) {
 			for (int x = 0; x < colors1.length; x++) {
-				int prevCol = colors1[y][x];
-				int curCol = colors2[y][x];
+				YCbCrColor prevCol = colors1[y][x];
+				YCbCrColor curCol = colors2[y][x];
 				
-				int prevRed = (prevCol >> 16) & 0xFF;
-				int prevGreen = (prevCol >> 8) & 0xFF;
-				int prevBlue = prevCol & 0xFF;
-				
-				int curRed = (curCol >> 16) & 0xFF;
-				int curGreen = (curCol >> 8) & 0xFF;
-				int curBlue = curCol & 0xFF;
-				
-				resR += Math.abs(prevRed - curRed);
-				resG += Math.abs(prevGreen - curGreen);
-				resB += Math.abs(prevBlue - curBlue);
+				resY += Math.abs(prevCol.getY() - curCol.getY());
+				resCb += Math.abs(prevCol.getCb() - curCol.getCb());
+				resCr += Math.abs(prevCol.getCr() - curCol.getCr());
 			}
 		}
 		
-		return Math.sqrt(Math.pow(resR, 2) + Math.pow(resG, 2) + Math.pow(resB, 2));
+		return Math.sqrt(Math.pow(resCb, 2) + Math.pow(resCr, 2)) / Math.pow(resY, 2);
+	}
+	
+	public BufferedImage construct_vector_path(Dimension dim, ArrayList<Vector> vecs) {
+		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = render.createGraphics();
+		g2d.setColor(Color.red);
+		
+		for (Vector vec : vecs) {
+			int vecEndX = vec.getStartingPoint().x + vec.getSpanX();
+			int vecEndY = vec.getStartingPoint().y + vec.getSpanY();
+			
+			if (vecEndX >= render.getWidth()
+				|| vecEndY >= render.getHeight()) {
+				continue;
+			}
+			
+			if (vec.getSpanX() > 0 && vec.getSpanY() > 0) {
+				g2d.setColor(Color.BLUE);
+			} else if (vec.getSpanX() > 0 && vec.getSpanY() < 0) {
+				g2d.setColor(Color.RED);
+			} else if (vec.getSpanX() < 0 && vec.getSpanY() < 0) {
+				g2d.setColor(Color.GREEN);
+			} else if (vec.getSpanX() < 0 && vec.getSpanY() > 0) {
+				g2d.setColor(Color.YELLOW);
+			} else {
+				g2d.setColor(Color.black);
+			}
+			
+			g2d.drawLine(vec.getStartingPoint().x, vec.getStartingPoint().y, vecEndX, vecEndY);
+		}
+		
+		g2d.dispose();
+		
+		return render;
 	}
 }

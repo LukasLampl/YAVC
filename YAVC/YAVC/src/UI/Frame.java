@@ -16,6 +16,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -50,7 +51,7 @@ public class Frame extends JFrame {
 		JPanel propsPanel = set_up_props_panel();
 		this.add(propsPanel, BorderLayout.NORTH);
 		
-		JPanel prevPanel = set_up_preview_panel();
+		JScrollPane prevPanel = set_up_preview_panel();
 		this.add(prevPanel, BorderLayout.CENTER);
 		
 		JPanel interPanel = set_up_interactive_panel();
@@ -59,12 +60,16 @@ public class Frame extends JFrame {
 	
 	/*
 	 * Purpose: Setup the preview for the compression progress
-	 * Return Type: JPanel => JPanel with the preview parts
+	 * Return Type: JScrollPane => JScrollPane with the preview parts
 	 * Params: void
 	 */
-	private JPanel set_up_preview_panel() {
+	private JScrollPane set_up_preview_panel() {
+		JScrollPane scroll = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		
 		JPanel panel = new JPanel();
+		panel.setBackground(new Color(40, 40, 40));
 		panel.setLayout(new GridBagLayout());
+		scroll.setViewportView(panel);
 		
 		this.prevFrameHolder.setBorder(BorderFactory.createTitledBorder("Previous Frame"));
 		this.curFrameHolder.setBorder(BorderFactory.createTitledBorder("Current Frame"));
@@ -90,7 +95,7 @@ public class Frame extends JFrame {
 		cons.gridy++;
 		panel.add(progressBar, cons);
 		
-		return panel;
+		return scroll;
 	}
 	
 	/*
@@ -154,7 +159,7 @@ public class Frame extends JFrame {
 		JSlider vecMADSlider = new JSlider();
 		vecMADSlider.setValue(this.VEC_MAD_TOLERANCE);
 		vecMADSlider.setMinimum(0);
-		vecMADSlider.setMaximum(10000000);
+		vecMADSlider.setMaximum(1000000000);
 		vecMADSlider.setPaintLabels(true);
 		vecMADSlider.addChangeListener(new ChangeListener() {
 			@Override
@@ -249,15 +254,14 @@ public class Frame extends JFrame {
 	/*
 	 * Purpose: Sets the vectorized image in the encoding process for preview
 	 * Return Type: void
-	 * Params: ArrayList<MakroBlock> differences => Found differences between two frames (With vectors);
-	 * 			Dimension dim => Dimension of the voctorized image
+	 * Params: BufferedImage img => Image with the vector paths
+	 * 			Dimension dim => Dimension of the vectorized image
 	 */
-	public void setVectorizedImage(ArrayList<MakroBlock> differences, Dimension dim) {
-		BufferedImage render = render_image(differences, dim);
+	public void setVectorizedImage(BufferedImage img, Dimension dim) {
 		int width = this.prevFrameHolder.getIcon().getIconWidth();
 		int height = this.prevFrameHolder.getIcon().getIconHeight();
 		
-		this.vectorDiffsHolder.setIcon(new ImageIcon(render.getScaledInstance(width, height, Image.SCALE_FAST)));
+		this.vectorDiffsHolder.setIcon(new ImageIcon(img.getScaledInstance(width, height, Image.SCALE_FAST)));
 		update();
 	}
 	
