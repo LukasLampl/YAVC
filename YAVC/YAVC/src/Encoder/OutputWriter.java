@@ -263,9 +263,6 @@ public class OutputWriter {
 		v_g2d.dispose();
 		
 		try {
-			File print = new File(outputFile.getAbsolutePath() + "/print_" + output + ".png");
-			ImageIO.write(vectors, "png", print);
-			
 			if (diff == 1) {
 				File out = new File(outputFile.getAbsolutePath() + "/" + output + ".png");
 				BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);

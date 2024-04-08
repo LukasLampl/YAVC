@@ -22,13 +22,14 @@ public class VectorEngine {
 	 * 			(Vectors are applied to the differences);
 	 * 			int maxMADTolerance => Max MAD tolerance
 	 */
-	public ArrayList<Vector> calculate_movement_vectors(BufferedImage prevFrame, ArrayList<YCbCrMakroBlock> diff, int maxMADTolerance) {
+	public ArrayList<Vector> calculate_movement_vectors(ArrayList<BufferedImage> refs, ArrayList<YCbCrMakroBlock> diff, int maxMADTolerance) {
 		int threads = Runtime.getRuntime().availableProcessors();
+		final int maxGuesses = refs.size();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
 		ArrayList<Vector> vectors = new ArrayList<Vector>(diff.size());
 		ArrayList<Future<Vector>> fvecs = new ArrayList<Future<Vector>>(vectors.size());
-		
+		System.out.println(maxGuesses);
 		try {
 			for (YCbCrMakroBlock block : diff) {
 				Callable<Vector> task = () -> {
@@ -36,16 +37,24 @@ public class VectorEngine {
 						return null;
 					}
 					
-					YCbCrMakroBlock mostEqual = get_most_equal_MakroBlock(block, prevFrame, maxMADTolerance);
+					YCbCrMakroBlock[] bestGuesses = new YCbCrMakroBlock[maxGuesses];
+					
+					for (int i = 0; i < maxGuesses; i++) {
+						bestGuesses[i] = get_most_equal_MakroBlock(block, refs.get(i), maxMADTolerance);
+						bestGuesses[i].setReferenceDrawback(maxGuesses - i);
+					}
+					
+					YCbCrMakroBlock bestGuess = evaluate_best_guesses(bestGuesses);
 					Vector vec = null;
 					
-					if (mostEqual != null) {
+					if (bestGuess != null) {
 						vec = new Vector();
 						vec.setAppendedBlock(block);
-						vec.setMostEqualBlock(mostEqual);
-						vec.setStartingPoint(mostEqual.getPosition());
-						vec.setSpanX(block.getPosition().x - mostEqual.getPosition().x);
-						vec.setSpanY(block.getPosition().y - mostEqual.getPosition().y);
+						vec.setMostEqualBlock(bestGuess);
+						vec.setReferenceDrawback(bestGuess.getReferenceDrawback());
+						vec.setStartingPoint(bestGuess.getPosition());
+						vec.setSpanX(block.getPosition().x - bestGuess.getPosition().x);
+						vec.setSpanY(block.getPosition().y - bestGuess.getPosition().y);
 					}
 					
 					return vec;
@@ -74,6 +83,18 @@ public class VectorEngine {
 		}
 		
 		return vectors;
+	}
+	
+	private YCbCrMakroBlock evaluate_best_guesses(YCbCrMakroBlock bestGuesses[]) {
+		YCbCrMakroBlock bestGuess = bestGuesses[0];
+		
+		for (YCbCrMakroBlock b : bestGuesses) {
+			if (b.getSAD() < bestGuess.getSAD()) {
+				bestGuess = b;
+			}
+		}
+		
+		return bestGuess;
 	}
 	
 	/*
@@ -114,6 +135,7 @@ public class VectorEngine {
 				if (sad < lowestSAD) {
 					lowestSAD = sad;
 					mostEqualBlock = YCbCrBlockAtPosP;
+					mostEqualBlock.setSAD(sad);
 					initPos = p;
 				}
 			}
@@ -141,20 +163,9 @@ public class VectorEngine {
 			if (sad < lowestSAD) {
 				lowestSAD = sad;
 				mostEqualBlock = YCbCrBlockAtPosP;
+				mostEqualBlock.setSAD(sad);
 			}
 		}
-		
-//		if (lowestMAD > maxMADTolerance
-//			|| mostEqualBlock == null) {
-//			return null;
-//		}
-//		
-//		double grad1 = compute_gradient_ratio(blockToBeSearched.getColors());
-//		double grad2 = compute_gradient_ratio(mostEqualBlock.getColors());
-//		System.out.println(Math.abs(grad1 - grad2));
-//		if (Math.abs(grad1 - grad2) > 0.08) {
-//			return null;
-//		}
 		
 		return mostEqualBlock;
 	}
@@ -186,14 +197,14 @@ public class VectorEngine {
 			for (int x = 0; x < colors1.length; x++) {
 				YCbCrColor prevCol = colors1[y][x];
 				YCbCrColor curCol = colors2[y][x];
-				
+
 				resY += Math.abs(prevCol.getY() - curCol.getY());
 				resCb += Math.abs(prevCol.getCb() - curCol.getCb());
 				resCr += Math.abs(prevCol.getCr() - curCol.getCr());
 			}
 		}
 		
-		return (resY + resCb + resCr) / Math.pow(Math.pow(config.MAKRO_BLOCK_SIZE, 2), 2);
+		return (resY + resCb + resCr) / Math.pow(config.MAKRO_BLOCK_SIZE, 2);
 	}
 	
 	public BufferedImage construct_vector_path(Dimension dim, ArrayList<Vector> vecs) {
@@ -210,16 +221,25 @@ public class VectorEngine {
 				continue;
 			}
 			
-			if (vec.getSpanX() > 0 && vec.getSpanY() > 0) {
-				g2d.setColor(Color.BLUE);
-			} else if (vec.getSpanX() > 0 && vec.getSpanY() < 0) {
-				g2d.setColor(Color.RED);
-			} else if (vec.getSpanX() < 0 && vec.getSpanY() < 0) {
-				g2d.setColor(Color.GREEN);
-			} else if (vec.getSpanX() < 0 && vec.getSpanY() > 0) {
+			switch (vec.getReferenceDrawback()) {
+			case 0:
+				g2d.setColor(Color.ORANGE);
+				break;
+			case 1:
 				g2d.setColor(Color.YELLOW);
-			} else {
-				g2d.setColor(Color.black);
+				break;
+			case 2:
+				g2d.setColor(Color.BLUE);
+				break;
+			case 3:
+				g2d.setColor(Color.RED);
+				break;
+			case 4:
+				g2d.setColor(Color.GREEN);
+				break;
+			default:
+				g2d.setColor(Color.MAGENTA);
+				break;
 			}
 			
 			g2d.drawLine(vec.getStartingPoint().x, vec.getStartingPoint().y, vecEndX, vecEndY);

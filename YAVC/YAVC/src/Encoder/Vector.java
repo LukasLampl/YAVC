@@ -6,6 +6,7 @@ public class Vector {
 	private Point startingPoint = new Point(0, 0);
 	private int spanX = 0;
 	private int spanY = 0;
+	private int referenceDrawback = 0;
 	private YCbCrMakroBlock appendedBlock = null;
 	private YCbCrMakroBlock mostEqualBlock = null;
 	
@@ -47,5 +48,13 @@ public class Vector {
 
 	public void setMostEqualBlock(YCbCrMakroBlock mostEqualBlock) {
 		this.mostEqualBlock = mostEqualBlock;
+	}
+
+	public int getReferenceDrawback() {
+		return referenceDrawback;
+	}
+
+	public void setReferenceDrawback(int referenceDrawback) {
+		this.referenceDrawback = referenceDrawback;
 	}
 }
