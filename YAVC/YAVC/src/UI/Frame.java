@@ -27,7 +27,7 @@ import Main.config;
 public class Frame extends JFrame {
 	private static final long serialVersionUID = 1L;
 	
-	private double DAMING_TOLERANCE = 0.75;
+	private float DAMING_TOLERANCE = 0.75F;
 	private int EDGE_TOLERANCE = 4;
 	private int VEC_EDGE_TOLERANCE = 50;
 	private int VEC_MAD_TOLERANCE = 32768;
@@ -134,7 +134,7 @@ public class Frame extends JFrame {
 		dampingSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				DAMING_TOLERANCE = ((double)dampingSlider.getValue() / (double)100);
+				DAMING_TOLERANCE = ((float)dampingSlider.getValue() / (float)100);
 			}
 		});
 		
@@ -211,7 +211,7 @@ public class Frame extends JFrame {
 		update();
 	}
 
-	public double get_damping_tolerance() {
+	public float get_damping_tolerance() {
 		return this.DAMING_TOLERANCE;
 	}
 	

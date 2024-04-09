@@ -8,17 +8,22 @@ import java.util.ArrayList;
 import Main.config;
 
 public class MakroBlockEngine {
+	private ColorManager COLOR_MANAGER = new ColorManager();
+	
 	/*
 	 * Purpose: Get a list of MakroBlocks out of an image
 	 * Return Type: ArrayList<MakroBlock> => MakroBlocks of the image
 	 * Params: BufferedImage img => Image from which the MakroBlocks should be ripped off
 	 */
-	public ArrayList<MakroBlock> get_makroblocks_from_image(PixelRaster img) {
-		int estimatedSize = (int)Math.round((double)(img.getWidth() * img.getHeight()) / (double)Math.pow(config.MAKRO_BLOCK_SIZE, 2));
+	public ArrayList<MakroBlock> get_makroblocks_from_image(BufferedImage img) {
+		int estimatedSize = (int)Math.round((double)(img.getWidth() * img.getHeight()) / (double)config.MBS_SQ);
 		ArrayList<MakroBlock> blocks = new ArrayList<MakroBlock>(estimatedSize);
 		
-		for (int y = 0; y < img.getHeight(); y += config.MAKRO_BLOCK_SIZE) {
-			for (int x = 0; x < img.getWidth(); x += config.MAKRO_BLOCK_SIZE) {
+		int width = img.getWidth();
+		int height = img.getHeight();
+		
+		for (int y = 0; y < height; y += config.MAKRO_BLOCK_SIZE) {
+			for (int x = 0; x < width; x += config.MAKRO_BLOCK_SIZE) {
 				blocks.add(get_single_makro_block(new Point(x, y), img));
 			}
 		}
@@ -33,10 +38,10 @@ public class MakroBlockEngine {
 	 * Params: ArrayList<MakroBlock> list1 => Previous frame MakroBlocks to check;
 	 * 			ArrayList<MakroBlock> list2 => Current frame in which the colors should be damped;
 	 * 			BufferedImage curImg => Current frame image;
-	 * 			double dampingTolerance => Tolerance at which color damping occurs;
+	 * 			float dampingTolerance => Tolerance at which color damping occurs;
 	 * 			int edgeTolerance => Tolerance at which the edges get recognized
 	 */
-	public ArrayList<MakroBlock> damp_MakroBlock_colors(ArrayList<MakroBlock> list1, ArrayList<MakroBlock> list2, BufferedImage curImg, double dampingTolerance, int edgeTolerance) {
+	public ArrayList<MakroBlock> damp_MakroBlock_colors(ArrayList<MakroBlock> list1, ArrayList<MakroBlock> list2, BufferedImage curImg, float dampingTolerance, int edgeTolerance) {
 		//Error on dimension mismatching
 		if (list1.size() != list2.size()) {
 			System.err.println("Not the same size!");
@@ -48,8 +53,8 @@ public class MakroBlockEngine {
 		for (int i = 0; i < list2.size(); i++) {
 			int slightEquality = 0;
 			
-			for (int y = 0; y < list2.get(i).getColors().length; y++) {
-				for (int x = 0; x < list2.get(i).getColors()[y].length; x++) {
+			for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
+				for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
 					Color prevCol = new Color(list1.get(i).getColors()[y][x]);
 					Color curCol = new Color(list2.get(i).getColors()[y][x]);
 					
@@ -68,7 +73,7 @@ public class MakroBlockEngine {
 			}
 			
 			//75% Equality recommended (else you'll have a lot of artifacts)
-			if (slightEquality >= (int)((double)Math.pow(config.MAKRO_BLOCK_SIZE, 2) * (double)dampingTolerance)) {
+			if (slightEquality >= (int)((double)config.MBS_SQ * dampingTolerance)) {
 				damped.add(list1.get(i));
 			} else {
 				damped.add(list2.get(i));
@@ -112,10 +117,9 @@ public class MakroBlockEngine {
 	public ArrayList<YCbCrMakroBlock> convert_MakroBlocks_to_YCbCrMarkoBlocks(ArrayList<MakroBlock> blocks) {
 		ArrayList<YCbCrMakroBlock> convertedBlocks = new ArrayList<YCbCrMakroBlock>(blocks.size());
 		
-		for (MakroBlock makroBlock : blocks) {
-			YCbCrMakroBlock block = convert_single_MakroBlock_to_YCbCrMakroBlock(makroBlock);
-			convertedBlocks.add(block);
-		}
+		blocks.parallelStream().forEach(block -> {
+			convertedBlocks.add(convert_single_MakroBlock_to_YCbCrMakroBlock(block));
+		});
 		
 		return convertedBlocks;
 	}
@@ -130,13 +134,11 @@ public class MakroBlockEngine {
 	 * Params: MakroBlock block => MakroBlock to be converted
 	 */
 	private YCbCrMakroBlock convert_single_MakroBlock_to_YCbCrMakroBlock(MakroBlock block) {
-		ColorManager colorManager = new ColorManager();
 		YCbCrColor[][] cols = new YCbCrColor[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
 		
-		for (int y = 0; y < block.getColors().length; y++) {
-			for (int x = 0; x < block.getColors()[y].length; x++) {
-				YCbCrColor ycbcrCol = colorManager.convert_RGB_to_YCbCr(new Color(block.getColors()[y][x]));
-				cols[y][x] = ycbcrCol;
+		for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
+			for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
+				cols[y][x] = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(block.getColors()[y][x]));
 			}
 		}
 		
@@ -149,7 +151,7 @@ public class MakroBlockEngine {
 	 * Params: Point position => Position from where to grab the MakroBlock;
 	 * 			img => Image from which the MakroBlock should be grabbed
 	 */
-	public MakroBlock get_single_makro_block(Point position, PixelRaster img) {
+	public MakroBlock get_single_makro_block(Point position, BufferedImage img) {
 		/*
 		 * Imagine the colors as a table:
 		 * +---+---+---+---+---+---+---+---+
@@ -164,6 +166,9 @@ public class MakroBlockEngine {
 		int currentColumn = 0;
 		int currentRow = 0;
 		
+		int maxX = img.getWidth();
+		int maxY = img.getHeight();
+		
 		for (int y = position.y; y < position.y + config.MAKRO_BLOCK_SIZE; y++) {
 			for (int x = position.x; x < position.x + config.MAKRO_BLOCK_SIZE; x++) {
 				if (currentRow == config.MAKRO_BLOCK_SIZE) {
@@ -171,17 +176,16 @@ public class MakroBlockEngine {
 					currentRow = 0;
 				}
 				
-				if (x >= img.getWidth() || y >= img.getHeight()
+				if (x >= maxX || y >= maxY
 					|| x < 0 || y < 0) {
 					colors[currentColumn][currentRow++] = 89658667; //ASCII for YAVC
 					continue;
 				}
-				
+
 				colors[currentColumn][currentRow++] = img.getRGB(x, y);
 			}
 		}
 		
-		MakroBlock block = new MakroBlock(colors, position);
-		return block;
+		return new MakroBlock(colors, position);
 	}
 }

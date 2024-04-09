@@ -5,8 +5,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -24,8 +22,6 @@ import Main.config;
 public class OutputWriter {
 	private File COMPRESS_DIR = null;
 	private Dimension META_DIMENSION = null;
-	
-	private ArrayList<SequenceObject> WORK_SEQUENCE = new ArrayList<SequenceObject>();
 	
 	public OutputWriter(String path) {
 		try {

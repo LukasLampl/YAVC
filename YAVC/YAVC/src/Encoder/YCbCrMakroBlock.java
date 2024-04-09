@@ -7,8 +7,7 @@ import Main.config;
 public class YCbCrMakroBlock {
 	private YCbCrColor[][] colors = new YCbCrColor[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
 	private Point position = new Point(0, 0);
-	private String ID = "";
-	private double SAD = Double.MAX_VALUE;
+	private double SAD = Float.MAX_VALUE;
 	private int referenceDrawback = 0;
 	private boolean edgeBlock = false;
 	
@@ -35,14 +34,6 @@ public class YCbCrMakroBlock {
 	
 	public void setPosition(Point position) {
 		this.position = position;
-	}
-	
-	public void setID(String id) {
-		this.ID = id;
-	}
-	
-	public String getID() {
-		return this.ID;
 	}
 
 	public boolean isEdgeBlock() {

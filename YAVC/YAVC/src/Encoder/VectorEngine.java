@@ -22,7 +22,7 @@ public class VectorEngine {
 	 * 			(Vectors are applied to the differences);
 	 * 			int maxMADTolerance => Max MAD tolerance
 	 */
-	public ArrayList<Vector> calculate_movement_vectors(ArrayList<PixelRaster> refs, ArrayList<YCbCrMakroBlock> diff, int maxMADTolerance) {
+	public ArrayList<Vector> calculate_movement_vectors(ArrayList<BufferedImage> refs, ArrayList<YCbCrMakroBlock> diff, int maxMADTolerance) {
 		int threads = Runtime.getRuntime().availableProcessors();
 		final int maxGuesses = refs.size();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -104,7 +104,7 @@ public class VectorEngine {
 	 * 			BufferedImage prevFrame => Image of the previous frame;
 	 * 			int maxMADTolerance => Max tolerance of the MAD
 	 */
-	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, PixelRaster prevFrame, int maxMADTolerance) {
+	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, BufferedImage prevFrame, int maxMADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 		int searchWindow = 32;
@@ -193,18 +193,19 @@ public class VectorEngine {
 		double resCb = 0;
 		double resCr = 0;
 		
-		for (int y = 0; y < colors2.length; y++) {
-			for (int x = 0; x < colors1.length; x++) {
+		for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
+			for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
 				YCbCrColor prevCol = colors1[y][x];
 				YCbCrColor curCol = colors2[y][x];
-
-				resY += Math.pow(Math.abs(prevCol.getY() - curCol.getY()), 2);
+				double deltaY = (float)Math.abs(prevCol.getY() - curCol.getY());
+				
+				resY += deltaY * deltaY;
 				resCb += Math.abs(prevCol.getCb() - curCol.getCb());
 				resCr += Math.abs(prevCol.getCr() - curCol.getCr());
 			}
 		}
 		
-		return (resY + resCb + resCr) / Math.pow(config.MAKRO_BLOCK_SIZE, 2);
+		return (resY + resCb + resCr) / (double)(config.MAKRO_BLOCK_SIZE * config.MAKRO_BLOCK_SIZE);
 	}
 	
 	public BufferedImage construct_vector_path(Dimension dim, ArrayList<Vector> vecs) {
