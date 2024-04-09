@@ -22,14 +22,14 @@ public class VectorEngine {
 	 * 			(Vectors are applied to the differences);
 	 * 			int maxMADTolerance => Max MAD tolerance
 	 */
-	public ArrayList<Vector> calculate_movement_vectors(ArrayList<BufferedImage> refs, ArrayList<YCbCrMakroBlock> diff, int maxMADTolerance) {
+	public ArrayList<Vector> calculate_movement_vectors(ArrayList<PixelRaster> refs, ArrayList<YCbCrMakroBlock> diff, int maxMADTolerance) {
 		int threads = Runtime.getRuntime().availableProcessors();
 		final int maxGuesses = refs.size();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
 		ArrayList<Vector> vectors = new ArrayList<Vector>(diff.size());
 		ArrayList<Future<Vector>> fvecs = new ArrayList<Future<Vector>>(vectors.size());
-		System.out.println(maxGuesses);
+		
 		try {
 			for (YCbCrMakroBlock block : diff) {
 				Callable<Vector> task = () -> {
@@ -104,7 +104,7 @@ public class VectorEngine {
 	 * 			BufferedImage prevFrame => Image of the previous frame;
 	 * 			int maxMADTolerance => Max tolerance of the MAD
 	 */
-	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, BufferedImage prevFrame, int maxMADTolerance) {
+	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, PixelRaster prevFrame, int maxMADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 		int searchWindow = 32;
@@ -198,7 +198,7 @@ public class VectorEngine {
 				YCbCrColor prevCol = colors1[y][x];
 				YCbCrColor curCol = colors2[y][x];
 
-				resY += Math.abs(prevCol.getY() - curCol.getY());
+				resY += Math.pow(Math.abs(prevCol.getY() - curCol.getY()), 2);
 				resCb += Math.abs(prevCol.getCb() - curCol.getCb());
 				resCr += Math.abs(prevCol.getCr() - curCol.getCr());
 			}

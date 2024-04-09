@@ -13,7 +13,7 @@ public class MakroBlockEngine {
 	 * Return Type: ArrayList<MakroBlock> => MakroBlocks of the image
 	 * Params: BufferedImage img => Image from which the MakroBlocks should be ripped off
 	 */
-	public ArrayList<MakroBlock> get_makroblocks_from_image(BufferedImage img) {
+	public ArrayList<MakroBlock> get_makroblocks_from_image(PixelRaster img) {
 		int estimatedSize = (int)Math.round((double)(img.getWidth() * img.getHeight()) / (double)Math.pow(config.MAKRO_BLOCK_SIZE, 2));
 		ArrayList<MakroBlock> blocks = new ArrayList<MakroBlock>(estimatedSize);
 		
@@ -114,7 +114,6 @@ public class MakroBlockEngine {
 		
 		for (MakroBlock makroBlock : blocks) {
 			YCbCrMakroBlock block = convert_single_MakroBlock_to_YCbCrMakroBlock(makroBlock);
-			block.setID(makroBlock.getID());
 			convertedBlocks.add(block);
 		}
 		
@@ -150,7 +149,7 @@ public class MakroBlockEngine {
 	 * Params: Point position => Position from where to grab the MakroBlock;
 	 * 			img => Image from which the MakroBlock should be grabbed
 	 */
-	public MakroBlock get_single_makro_block(Point position, BufferedImage img) {
+	public MakroBlock get_single_makro_block(Point position, PixelRaster img) {
 		/*
 		 * Imagine the colors as a table:
 		 * +---+---+---+---+---+---+---+---+
@@ -183,7 +182,6 @@ public class MakroBlockEngine {
 		}
 		
 		MakroBlock block = new MakroBlock(colors, position);
-		block.calculateID();
 		return block;
 	}
 }

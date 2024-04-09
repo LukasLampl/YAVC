@@ -146,28 +146,28 @@ public class DataPipeEngine {
 			return render;	
 		}
 		
-		for (Vector vec : vecs) {
-			Point p = new Point(vec.getStartingPoint().x, vec.getStartingPoint().y);
-			MakroBlock block = makroBlockEngine.get_single_makro_block(p, prevImg);
-			
-			for (int y = 0; y < block.getColors().length; y++) {
-				for (int x = 0; x < block.getColors()[y].length; x++) {
-					if (p.x + vec.getSpanX() + x >= render.getWidth()
-						|| p.y + vec.getSpanY() + y >= render.getHeight()
-						|| p.x < 0 || p.y < 0) {
-						System.err.println("Too small!");
-						continue;
-					}
-					
-					if (block.getColors()[y][x] == 89658667) { //ASCII for YAVC
-						continue;
-					}
-					
-					vectors.setRGB(p.x + vec.getSpanX() + x, p.y + vec.getSpanY() + y, Color.magenta.getRGB());//block.getColors()[y][x]);
-				}
-			}
-		}
-		
+//		for (Vector vec : vecs) {
+//			Point p = new Point(vec.getStartingPoint().x, vec.getStartingPoint().y);
+//			MakroBlock block = makroBlockEngine.get_single_makro_block(p, prevImg);
+//			
+//			for (int y = 0; y < block.getColors().length; y++) {
+//				for (int x = 0; x < block.getColors()[y].length; x++) {
+//					if (p.x + vec.getSpanX() + x >= render.getWidth()
+//						|| p.y + vec.getSpanY() + y >= render.getHeight()
+//						|| p.x < 0 || p.y < 0) {
+//						System.err.println("Too small!");
+//						continue;
+//					}
+//					
+//					if (block.getColors()[y][x] == 89658667) { //ASCII for YAVC
+//						continue;
+//					}
+//					
+//					vectors.setRGB(p.x + vec.getSpanX() + x, p.y + vec.getSpanY() + y, Color.magenta.getRGB());//block.getColors()[y][x]);
+//				}
+//			}
+//		}
+//		
 		Graphics2D g2d = render.createGraphics();
 		g2d.drawImage(prevImg, 0, 0, prevImg.getWidth(), prevImg.getHeight(), null, null);
 		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));

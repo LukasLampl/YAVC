@@ -19,6 +19,7 @@ import Encoder.MakroBlock;
 import Encoder.MakroBlockEngine;
 import Encoder.MakroDifferenceEngine;
 import Encoder.OutputWriter;
+import Encoder.PixelRaster;
 import Encoder.Vector;
 import Encoder.VectorEngine;
 import Encoder.YCbCrMakroBlock;
@@ -134,10 +135,14 @@ public class app {
 		f.setProgress(0);
 
 		try {
-			ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(MAX_REFERENCES);
+			ArrayList<PixelRaster> referenceImages = new ArrayList<PixelRaster>(MAX_REFERENCES);
 			ArrayList<MakroBlock> prevImgBlocks = null;
+			
 			BufferedImage prevImage = null;
+			PixelRaster prevPixRaster = new PixelRaster();
+			
 			BufferedImage currentImage = null;
+			PixelRaster curPixRaster = new PixelRaster();
 			
 			MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 			MakroDifferenceEngine makroDifferenceEngine = new MakroDifferenceEngine();
@@ -170,22 +175,24 @@ public class app {
 				
 				if (prevImage == null) {
 					prevImage = ImageIO.read(frame);
-					referenceImages.add(prevImage);
+					prevPixRaster.invoke_pixels(prevImage);
+					referenceImages.add(prevPixRaster.copy());
 					outputWriter.bake_meta_data(prevImage, filesCount);
 					outputWriter.bake_start_frame(prevImage);
 					continue;
 				}
 				
 				currentImage = ImageIO.read(frame);
+				curPixRaster.invoke_pixels(currentImage);
 				f.setPreviews(prevImage, currentImage);
 				
 				if (prevImgBlocks == null) {
-					prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(prevImage);
+					prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(prevPixRaster);
 				}
 				
-				ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
+				ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(curPixRaster);
 				curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
-				ArrayList<MakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage, f.get_vec_edge_tolerance());
+				ArrayList<MakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, curPixRaster, f.get_vec_edge_tolerance());
 				f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 //				outputWriter.build_Frame(prevImage, differences, null, output, 1);
 				ArrayList<YCbCrMakroBlock> curImgYCbCrBlocks = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(differences);
@@ -199,10 +206,12 @@ public class app {
 				outputWriter.bake_vectors(movementVectors, frameFile);
 				outputWriter.build_Frame(prevImage, differences, movementVectors, output, 3);
 				
-				referenceImages.add(currentImage);
+				referenceImages.add(curPixRaster.copy());
 				release_old_reference_images(referenceImages);
 				prevImage = currentImage;
+				prevPixRaster.invoke_pixels(currentImage);
 				prevImgBlocks = curImgBlocks;
+				
 				double per = (((double)(i + 1) / (double)input.listFiles().length) * 100);
 				f.setProgress((int)Math.round(per));
 			}
@@ -218,7 +227,7 @@ public class app {
 		System.out.println("Time: " + (timeEnd - timeStart) + "ms");
 	}
 	
-	private static void release_old_reference_images(ArrayList<BufferedImage> refList) {
+	private static void release_old_reference_images(ArrayList<PixelRaster> refList) {
 		if (refList.size() < MAX_REFERENCES) {
 			return;
 		}

@@ -25,6 +25,8 @@ public class OutputWriter {
 	private File COMPRESS_DIR = null;
 	private Dimension META_DIMENSION = null;
 	
+	private ArrayList<SequenceObject> WORK_SEQUENCE = new ArrayList<SequenceObject>();
+	
 	public OutputWriter(String path) {
 		try {
 			this.COMPRESS_DIR = new File(path + "/YAVC-COMP");
