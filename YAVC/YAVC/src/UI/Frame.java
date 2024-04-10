@@ -5,20 +5,11 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -36,70 +27,29 @@ public class Frame extends JFrame {
 	
 	private boolean WRITER_ACTIVE = true;
 	
-	private JLabel prevFrameHolder = new JLabel();
-	private JLabel curFrameHolder = new JLabel();
-	private JLabel diffsHolder = new JLabel();
-	private JLabel vectorDiffsHolder = new JLabel();
-	private JLabel frameProgress = new JLabel("NA/NA");
-	private JProgressBar progressBar = new JProgressBar();
+	private EncodePanel ENCODE_PANEL = new EncodePanel(this);
+	private DecodePanel DECODE_PANEL = new DecodePanel();
+	private Sidebar SIDEBAR = new Sidebar(this.ENCODE_PANEL, this.DECODE_PANEL, this);
+	private JPanel CURRENT_FOCUS = null;
 	
-	private JPanel interactivePanel = new JPanel();
-	
-	public Frame(Dimension dim) {
+	public Frame() {
 		this.setTitle("YAVC");
-		this.setSize(dim);
-		this.setPreferredSize(dim);
-		this.setMaximumSize(dim);
 		this.setLayout(new BorderLayout());
+	
+		WelcomePanel welcome = new WelcomePanel();
 		
-		JPanel propsPanel = set_up_props_panel();
-		this.add(propsPanel, BorderLayout.NORTH);
-		
-		JScrollPane prevPanel = set_up_preview_panel();
-		this.add(prevPanel, BorderLayout.CENTER);
-		
-		JPanel interPanel = set_up_interactive_panel();
-		this.add(interPanel, BorderLayout.SOUTH);
+		this.add(this.SIDEBAR, BorderLayout.WEST);
+		this.add(welcome, BorderLayout.CENTER);
+		this.CURRENT_FOCUS = welcome;
 	}
 	
-	/*
-	 * Purpose: Setup the preview for the compression progress
-	 * Return Type: JScrollPane => JScrollPane with the preview parts
-	 * Params: void
-	 */
-	private JScrollPane set_up_preview_panel() {
-		JScrollPane scroll = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+	public void move_focused_panel(JPanel newFocus) {
+		if (this.CURRENT_FOCUS != null) {
+			this.remove(this.CURRENT_FOCUS);
+		}
 		
-		JPanel panel = new JPanel();
-		panel.setBackground(new Color(40, 40, 40));
-		panel.setLayout(new GridBagLayout());
-		scroll.setViewportView(panel);
-		
-		this.prevFrameHolder.setBorder(BorderFactory.createTitledBorder("Previous Frame"));
-		this.curFrameHolder.setBorder(BorderFactory.createTitledBorder("Current Frame"));
-		this.diffsHolder.setBorder(BorderFactory.createTitledBorder("Differences to previous Frame"));
-		this.vectorDiffsHolder.setBorder(BorderFactory.createTitledBorder("Vectorized differences"));
-		this.progressBar.setStringPainted(true);
-		
-		GridBagConstraints cons = new GridBagConstraints();
-		cons.gridy++;
-		cons.gridwidth = 1;
-		panel.add(this.prevFrameHolder, cons);
-		cons.gridx = 1;
-		panel.add(this.curFrameHolder, cons);
-		cons.gridx = 0;
-		cons.gridy++;
-		panel.add(this.diffsHolder, cons);
-		cons.gridx = 1;
-		panel.add(this.vectorDiffsHolder, cons);
-		cons.gridx = 0;
-		cons.gridy++;
-		cons.gridwidth = 2;
-		panel.add(this.frameProgress, cons);
-		cons.gridy++;
-		panel.add(progressBar, cons);
-		
-		return scroll;
+		this.add(newFocus, BorderLayout.CENTER);
+		update();
 	}
 	
 	/*
@@ -185,44 +135,6 @@ public class Frame extends JFrame {
 	public void disposeWriterPermission() {
 		this.WRITER_ACTIVE = false;
 	}
-	
-	/*
-	 * Purpose: Setup the panel, that will provide the user controls like "Decode" and "Encode"
-	 * Return Type: JPanel => Setup JPanel
-	 * Params: void
-	 */
-	private JPanel set_up_interactive_panel() {
-		this.interactivePanel.setLayout(new GridBagLayout());
-		return this.interactivePanel;
-	}
-	
-	/*
-	 * Purpose: Adds the encode button to the interactive jpanel 
-	 * Return Type: void
-	 * Params: JButton btn => Encode button
-	 */
-	public void setEncodeBtn(JButton btn) {
-		GridBagConstraints cons = new GridBagConstraints();
-		cons.gridx = 0;
-		cons.gridy = 0;
-		cons.gridwidth = 1;
-		this.interactivePanel.add(btn, cons);
-		update();
-	}
-	
-	/*
-	 * Purpose: Adds the decode button to the interactive jpanel 
-	 * Return Type: void
-	 * Params: JButton btn => Decode button
-	 */
-	public void setDecodeBtn(JButton btn) {
-		GridBagConstraints cons = new GridBagConstraints();
-		cons.gridx = 1;
-		cons.gridy = 0;
-		cons.gridwidth = 1;
-		this.interactivePanel.add(btn, cons);
-		update();
-	}
 
 	public float get_damping_tolerance() {
 		return this.DAMING_TOLERANCE;
@@ -241,12 +153,8 @@ public class Frame extends JFrame {
 	}
 	
 	public void updateFrameCount(int currentFrame, int totalFrame) {
-		this.frameProgress.setText(currentFrame + "/" + totalFrame + "Frames");
+		this.ENCODE_PANEL.set_frame_stats(currentFrame, totalFrame);
 		update();
-	}
-	
-	public void setProgress(int progress) {
-		this.progressBar.setValue(progress);
 	}
 	
 	/*
@@ -257,10 +165,7 @@ public class Frame extends JFrame {
 	 */
 	public void setDifferenceImage(ArrayList<MakroBlock> differences, Dimension dim) {
 		BufferedImage render = render_image(differences, dim);
-		int width = this.prevFrameHolder.getIcon().getIconWidth();
-		int height = this.prevFrameHolder.getIcon().getIconHeight();
-		
-		this.diffsHolder.setIcon(new ImageIcon(render.getScaledInstance(width, height, Image.SCALE_FAST)));
+		this.ENCODE_PANEL.set_res_frame(render);
 		update();
 	}
 	
@@ -268,13 +173,9 @@ public class Frame extends JFrame {
 	 * Purpose: Sets the vectorized image in the encoding process for preview
 	 * Return Type: void
 	 * Params: BufferedImage img => Image with the vector paths
-	 * 			Dimension dim => Dimension of the vectorized image
 	 */
-	public void setVectorizedImage(BufferedImage img, Dimension dim) {
-		int width = this.prevFrameHolder.getIcon().getIconWidth();
-		int height = this.prevFrameHolder.getIcon().getIconHeight();
-		
-		this.vectorDiffsHolder.setIcon(new ImageIcon(img.getScaledInstance(width, height, Image.SCALE_FAST)));
+	public void setVectorizedImage(BufferedImage img) {
+		this.ENCODE_PANEL.set_vec_frame(img);
 		update();
 	}
 	
@@ -315,12 +216,8 @@ public class Frame extends JFrame {
 	 * 			BufferedImage img2 => current image
 	 */
 	public void setPreviews(BufferedImage img1, BufferedImage img2) {
-		float factor = (float)img1.getHeight() / (float)img1.getWidth();
-		float width = ((float)this.getWidth() / 2) - (float)this.getWidth() / 16 * 2;
-		float height = factor * width;
-		
-		this.prevFrameHolder.setIcon(new ImageIcon(img1.getScaledInstance((int)width, (int)height, Image.SCALE_FAST)));
-		this.curFrameHolder.setIcon(new ImageIcon(img2.getScaledInstance((int)width, (int)height, Image.SCALE_FAST)));
+		this.ENCODE_PANEL.set_prev_frame(img1);
+		this.ENCODE_PANEL.set_cur_frame(img2);
 		update();
 	}
 	
