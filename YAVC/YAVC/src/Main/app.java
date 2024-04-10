@@ -142,7 +142,7 @@ public class app {
 			MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 			MakroDifferenceEngine makroDifferenceEngine = new MakroDifferenceEngine();
 			VectorEngine vectorEngine = new VectorEngine();
-			OutputWriter outputWriter = new OutputWriter(output.getAbsolutePath());
+			OutputWriter outputWriter = new OutputWriter(output.getAbsolutePath(), f);
 			
 			int filesCount = input.listFiles().length;
 			
@@ -184,19 +184,25 @@ public class app {
 				
 				ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
 				curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
-				ArrayList<MakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage, f.get_vec_edge_tolerance());
-				f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
-//				outputWriter.build_Frame(prevImage, differences, null, output, 1);
-				ArrayList<YCbCrMakroBlock> curImgYCbCrBlocks = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(differences);
-				ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(referenceImages, curImgYCbCrBlocks, f.get_vec_mad_tolerance());
+				ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage, f.get_vec_edge_tolerance());
+				ArrayList<YCbCrMakroBlock> differences = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(rawDifferences);
+				f.setDifferenceImage(rawDifferences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
+
+				ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
 
 				Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
 				f.setVectorizedImage(vectorEngine.construct_vector_path(dim, movementVectors), dim);
 				
-//				outputWriter.build_Frame(prevImage, differences, movementVectors, output, 2);
-				File frameFile =  outputWriter.bake_frame(differences);
-				outputWriter.bake_vectors(movementVectors, frameFile);
-				outputWriter.build_Frame(prevImage, differences, movementVectors, output, 3);
+//				outputWriter.build_Frame(currentImage, differences, movementVectors, output, 1);
+				
+				try {
+					ImageIO.write(vectorEngine.construct_vector_path(dim, movementVectors), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+				outputWriter.build_Frame(currentImage, differences, movementVectors, output, 3);
+				outputWriter.add_obj_to_queue(differences, movementVectors);
 				
 				referenceImages.add(currentImage);
 				release_old_reference_images(referenceImages);
@@ -206,6 +212,8 @@ public class app {
 				double per = (((float)(i + 1) / (float)input.listFiles().length) * 100);
 				f.setProgress((int)Math.round(per));
 			}
+			
+			f.disposeWriterPermission();
 			
 			f.setProgress(90);
 			outputWriter.compress_result();

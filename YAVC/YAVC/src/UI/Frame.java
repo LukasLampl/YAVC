@@ -6,6 +6,8 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
@@ -30,7 +32,9 @@ public class Frame extends JFrame {
 	private float DAMING_TOLERANCE = 0.75F;
 	private int EDGE_TOLERANCE = 4;
 	private int VEC_EDGE_TOLERANCE = 50;
-	private int VEC_MAD_TOLERANCE = 32768;
+	private int VEC_SAD_TOLERANCE = 32768;
+	
+	private boolean WRITER_ACTIVE = true;
 	
 	private JLabel prevFrameHolder = new JLabel();
 	private JLabel curFrameHolder = new JLabel();
@@ -156,21 +160,30 @@ public class Frame extends JFrame {
 		panel.add(vecEdgeSlider, cons);
 		cons.gridy++;
 		
-		JSlider vecMADSlider = new JSlider();
-		vecMADSlider.setValue(this.VEC_MAD_TOLERANCE);
-		vecMADSlider.setMinimum(0);
-		vecMADSlider.setMaximum(1000000000);
-		vecMADSlider.setPaintLabels(true);
-		vecMADSlider.addChangeListener(new ChangeListener() {
+		JSlider vecSADSlider = new JSlider();
+		vecSADSlider.setMinimum(0);
+		vecSADSlider.setMaximum(255 * config.MBS_SQ * 2 + (int)Math.pow((255 * config.MBS_SQ), 2));
+		vecSADSlider.setValue(this.VEC_SAD_TOLERANCE);
+		vecSADSlider.setPaintLabels(true);
+		vecSADSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				VEC_MAD_TOLERANCE = vecMADSlider.getValue();
+				System.out.println(vecSADSlider.getValue());
+				VEC_SAD_TOLERANCE = vecSADSlider.getValue();
 			}
 		});
 		
-		panel.add(vecMADSlider, cons);
+		panel.add(vecSADSlider, cons);
 		
 		return panel;
+	}
+	
+	public boolean canWriterWrite() {
+		return this.WRITER_ACTIVE;
+	}
+	
+	public void disposeWriterPermission() {
+		this.WRITER_ACTIVE = false;
 	}
 	
 	/*
@@ -223,8 +236,8 @@ public class Frame extends JFrame {
 		return this.VEC_EDGE_TOLERANCE;
 	}
 	
-	public int get_vec_mad_tolerance() {
-		return this.VEC_MAD_TOLERANCE;
+	public int get_vec_sad_tolerance() {
+		return this.VEC_SAD_TOLERANCE;
 	}
 	
 	public void updateFrameCount(int currentFrame, int totalFrame) {

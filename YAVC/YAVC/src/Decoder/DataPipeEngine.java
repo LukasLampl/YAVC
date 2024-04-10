@@ -1,14 +1,12 @@
 package Decoder;
 
 import java.awt.AlphaComposite;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import Encoder.MakroBlock;
 import Encoder.MakroBlockEngine;
 import Encoder.Vector;
 
@@ -110,14 +108,15 @@ public class DataPipeEngine {
 			return null;
 		}
 		
-		String[] streamSet = data.split("\\[");
+		String[] streamSet = data.split("\\*");
 		
 		for (int i = 1; i < streamSet.length; i++) {
 			String s = streamSet[i];
 			String[] parts = s.substring(0, s.length() - 1).split("\\;");
+			String[] drawBackPart = parts[1].split("\\_");
 			
 			String[] startPos = parts[0].split("\\,");
-			String[] spanSize = parts[1].split("\\,");
+			String[] spanSize = drawBackPart[0].split("\\,");
 			
 			Vector vec = new Vector();
 			vec.setStartingPoint(new Point(Integer.parseInt(startPos[0]), Integer.parseInt(startPos[1])));

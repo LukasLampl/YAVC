@@ -22,7 +22,7 @@ public class VectorEngine {
 	 * 			(Vectors are applied to the differences);
 	 * 			int maxMADTolerance => Max MAD tolerance
 	 */
-	public ArrayList<Vector> calculate_movement_vectors(ArrayList<BufferedImage> refs, ArrayList<YCbCrMakroBlock> diff, int maxMADTolerance) {
+	public ArrayList<Vector> calculate_movement_vectors(ArrayList<BufferedImage> refs, ArrayList<YCbCrMakroBlock> diff, int maxSADTolerance) {
 		int threads = Runtime.getRuntime().availableProcessors();
 		final int maxGuesses = refs.size();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -40,8 +40,11 @@ public class VectorEngine {
 					YCbCrMakroBlock[] bestGuesses = new YCbCrMakroBlock[maxGuesses];
 					
 					for (int i = 0; i < maxGuesses; i++) {
-						bestGuesses[i] = get_most_equal_MakroBlock(block, refs.get(i), maxMADTolerance);
-						bestGuesses[i].setReferenceDrawback(maxGuesses - i);
+						bestGuesses[i] = get_most_equal_MakroBlock(block, refs.get(i), maxSADTolerance);
+						
+						if (bestGuesses[i] != null) {
+							bestGuesses[i].setReferenceDrawback(maxGuesses - i);
+						}
 					}
 					
 					YCbCrMakroBlock bestGuess = evaluate_best_guesses(bestGuesses);
@@ -86,11 +89,17 @@ public class VectorEngine {
 	}
 	
 	private YCbCrMakroBlock evaluate_best_guesses(YCbCrMakroBlock bestGuesses[]) {
-		YCbCrMakroBlock bestGuess = bestGuesses[0];
+		YCbCrMakroBlock bestGuess = null;
 		
-		for (YCbCrMakroBlock b : bestGuesses) {
-			if (b.getSAD() < bestGuess.getSAD()) {
-				bestGuess = b;
+		for (int i = 0; i < bestGuesses.length; i++) {
+			if (bestGuesses[i] == null) {
+				continue;
+			}
+			
+			if (bestGuess == null) {
+				bestGuess = bestGuesses[i];
+			} else if (bestGuesses[i].getSAD() < bestGuess.getSAD()) {
+				bestGuess = bestGuesses[i];
 			}
 		}
 		
@@ -104,7 +113,7 @@ public class VectorEngine {
 	 * 			BufferedImage prevFrame => Image of the previous frame;
 	 * 			int maxMADTolerance => Max tolerance of the MAD
 	 */
-	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, BufferedImage prevFrame, int maxMADTolerance) {
+	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, BufferedImage prevFrame, int maxSADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 		int searchWindow = 32;
@@ -167,6 +176,10 @@ public class VectorEngine {
 			}
 		}
 		
+		if (lowestSAD > maxSADTolerance) {
+			return null;
+		}
+		
 		return mostEqualBlock;
 	}
 	
@@ -197,15 +210,14 @@ public class VectorEngine {
 			for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
 				YCbCrColor prevCol = colors1[y][x];
 				YCbCrColor curCol = colors2[y][x];
-				double deltaY = (float)Math.abs(prevCol.getY() - curCol.getY());
-				
-				resY += deltaY * deltaY;
+
+				resY += Math.abs(prevCol.getY() - curCol.getY());
 				resCb += Math.abs(prevCol.getCb() - curCol.getCb());
 				resCr += Math.abs(prevCol.getCr() - curCol.getCr());
 			}
 		}
 		
-		return (resY + resCb + resCr) / (double)(config.MAKRO_BLOCK_SIZE * config.MAKRO_BLOCK_SIZE);
+		return (resY * resY * resY + resCb * resCb + resCr * resCr) / (double)(config.MAKRO_BLOCK_SIZE * config.MAKRO_BLOCK_SIZE);
 	}
 	
 	public BufferedImage construct_vector_path(Dimension dim, ArrayList<Vector> vecs) {

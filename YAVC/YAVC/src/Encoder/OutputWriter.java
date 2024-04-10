@@ -18,18 +18,34 @@ import java.util.zip.ZipOutputStream;
 import javax.imageio.ImageIO;
 
 import Main.config;
+import UI.Frame;
 
 public class OutputWriter {
 	private File COMPRESS_DIR = null;
 	private Dimension META_DIMENSION = null;
+	private Frame FRAME = null;
+	private ColorManager COLOR_MANAGER = new ColorManager();
+	private ArrayList<SequenceObject> QUEUE = new ArrayList<SequenceObject>(5);
 	
-	public OutputWriter(String path) {
+	public OutputWriter(String path, Frame f) {
+		this.FRAME = f;
+		
 		try {
 			this.COMPRESS_DIR = new File(path + "/YAVC-COMP");
 			this.COMPRESS_DIR.mkdir();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		start_baking_queue();
+	}
+	
+	public void add_obj_to_queue(ArrayList<YCbCrMakroBlock> diffs, ArrayList<Vector> vecs) {
+		SequenceObject obj = new SequenceObject();
+		obj.setDifferences(diffs);
+		obj.setVecs(vecs);
+		
+		this.QUEUE.add(obj);
 	}
 	
 	/*
@@ -92,10 +108,10 @@ public class OutputWriter {
 	 */
 	private int outputFrames = 0;
 	
-	public File bake_frame(ArrayList<MakroBlock> differences) {
+	private File bake_frame(ArrayList<YCbCrMakroBlock> differences) {
 		BufferedImage render = new BufferedImage(this.META_DIMENSION.width, this.META_DIMENSION.height, BufferedImage.TYPE_INT_ARGB);
 		
-		for (MakroBlock b : differences) {
+		for (YCbCrMakroBlock b : differences) {
 			for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
 				for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
 					if (b.getPosition().x + x >= render.getWidth()
@@ -103,12 +119,13 @@ public class OutputWriter {
 						continue;
 					}
 					
-					if (b.getColors()[y][x] == 89658667) { //ASCII for YAVC
+					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(b.getColors()[y][x]).getRGB();
+					
+					if (col == 89658667) { //ASCII for YAVC
 						continue;
 					}
 					
-					Color col = new Color(b.getColors()[y][x]);
-					render.setRGB(b.getPosition().x + x, b.getPosition().y + y, col.getRGB());
+					render.setRGB(b.getPosition().x + x, b.getPosition().y + y, col);
 				}
 			}
 		}
@@ -140,7 +157,7 @@ public class OutputWriter {
 	 * Params: ArrayList<Vector> movementVectors => Calculated vectors of the current frame
 	 * 			int frame => Frame number to which the vectors are applied
 	 */
-	public void bake_vectors(ArrayList<Vector> movementVectors, File frameFile) {
+	private void bake_vectors(ArrayList<Vector> movementVectors, File frameFile) {
 		if (movementVectors == null) {
 			return;
 		}
@@ -149,7 +166,7 @@ public class OutputWriter {
 			StringBuilder vecRes = new StringBuilder(movementVectors.size() * 2);
 			
 			for (Vector vec : movementVectors) {
-				vecRes.append("[" + vec.getStartingPoint().x + "," + vec.getStartingPoint().y + ";" + vec.getSpanX() + "," + vec.getSpanY() + "]");
+				vecRes.append("*" + vec.getStartingPoint().x + "," + vec.getStartingPoint().y + ";" + vec.getSpanX() + "," + vec.getSpanY() + "_" + vec.getReferenceDrawback());
 			}
 			
 			Files.write(Path.of(frameFile.getAbsolutePath()), ("$V$").getBytes(), StandardOpenOption.APPEND);
@@ -157,6 +174,31 @@ public class OutputWriter {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private void start_baking_queue() {
+		Thread writer = new Thread(() -> {
+			while (FRAME.canWriterWrite()) {
+				if (QUEUE.size() == 0) {
+					try {
+						Thread.sleep(300);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+					continue;
+				}
+				
+				SequenceObject obj = QUEUE.get(0);
+				File out = bake_frame(obj.getDifferences());
+				bake_vectors(obj.getVecs(), out);
+				
+				QUEUE.remove(0);
+			}
+		});
+		
+		writer.setName("FileWriter");
+		writer.start();
 	}
 	
 	/*
@@ -204,7 +246,7 @@ public class OutputWriter {
 	 */
 	public int output = 0;
 	
-	public void build_Frame(BufferedImage org, ArrayList<MakroBlock> diffs, ArrayList<Vector> vecs, File outputFile, int diff) {
+	public void build_Frame(BufferedImage org, ArrayList<YCbCrMakroBlock> diffs, ArrayList<Vector> vecs, File outputFile, int diff) {
 		BufferedImage img = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		BufferedImage img_v = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		
@@ -212,9 +254,7 @@ public class OutputWriter {
 		Graphics2D v_g2d = vectors.createGraphics();
 		v_g2d.setColor(Color.red);
 		
-		ColorManager colorManager = new ColorManager();
-		
-		for (MakroBlock block : diffs) {
+		for (YCbCrMakroBlock block : diffs) {
 			for (int y = 0; y < block.getColors().length; y++) {
 				for (int x = 0; x < block.getColors()[y].length; x++) {
 					if (block.getPosition().x + x >= img.getWidth()
@@ -222,12 +262,13 @@ public class OutputWriter {
 						continue;
 					}
 					
-					if (block.getColors()[y][x] == 89658667) { //ASCII for YAVC
+					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(block.getColors()[y][x]).getRGB();
+					
+					if (col == 89658667) { //ASCII for YAVC
 						continue;
 					}
 					
-					Color col = new Color(block.getColors()[y][x]);
-					img.setRGB(block.getPosition().x + x, block.getPosition().y + y, col.getRGB());
+					img.setRGB(block.getPosition().x + x, block.getPosition().y + y, col);
 				}
 			}
 		}
@@ -246,7 +287,7 @@ public class OutputWriter {
 							continue;
 						}
 						
-						int color = colorManager.convert_YCbCr_to_RGB(cols[y][x]).getRGB();
+						int color = this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB();
 						
 						if (color == 89658667) {
 							continue;
