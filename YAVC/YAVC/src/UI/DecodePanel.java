@@ -65,6 +65,8 @@ public class DecodePanel extends JPanel {
 		this.startBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				startBtn.setClicked(!startBtn.isClicked());
+				
 				if (startBtn.isClicked() == false) {
 					startBtn.setText("Stop");
 					startBtn.setBackground(ComponentColor.STO_COLOR);
@@ -73,13 +75,10 @@ public class DecodePanel extends JPanel {
 					if (succ == true) {
 						return;
 					}
-					
-					startBtn.setClicked(!startBtn.isClicked());
 				}
 				
 				reset_start_btn();
 				entryPoint.stop_decoding_process();
-				startBtn.setClicked(!startBtn.isClicked());
 			}
 		});
 		

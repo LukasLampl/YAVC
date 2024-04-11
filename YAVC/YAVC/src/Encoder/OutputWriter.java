@@ -164,12 +164,12 @@ public class OutputWriter {
 		
 		try {
 			StringBuilder vecRes = new StringBuilder(movementVectors.size() * 2);
+			vecRes.append("$V$");
 			
 			for (Vector vec : movementVectors) {
 				vecRes.append("*" + vec.getStartingPoint().x + "," + vec.getStartingPoint().y + ";" + vec.getSpanX() + "," + vec.getSpanY() + "_" + vec.getReferenceDrawback());
 			}
 			
-			Files.write(Path.of(frameFile.getAbsolutePath()), ("$V$").getBytes(), StandardOpenOption.APPEND);
 			Files.write(Path.of(frameFile.getAbsolutePath()), vecRes.toString().getBytes(), StandardOpenOption.APPEND);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -265,7 +265,6 @@ public class OutputWriter {
 					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(block.getColors()[y][x]).getRGB();
 					
 					if (col == 89658667) { //ASCII for YAVC
-						System.out.println("found! (" + x + "; " + y + ")");
 						continue;
 					}
 					

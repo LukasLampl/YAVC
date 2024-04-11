@@ -1,13 +1,11 @@
 package Decoder;
 
 import java.awt.AlphaComposite;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import Encoder.MakroBlock;
 import Encoder.MakroBlockEngine;
@@ -77,6 +75,12 @@ public class DataPipeEngine {
 		}
 		
 		int end = this.CURRENT_FRAME_DATA.indexOf("$V$");
+		
+		if (end == -1) {
+			System.err.println("Vector indicator missing, abort current frame! (" + frameNumber + ")");
+			return render;
+		}
+		
 		String[] set = this.CURRENT_FRAME_DATA.substring(0, end).split("\\.");
 		
 		int x = 0;
@@ -103,6 +107,12 @@ public class DataPipeEngine {
 	 */
 	public ArrayList<Vector> scrape_vectors(int frameNumber) {
 		ArrayList<Vector> vecs = new ArrayList<Vector>();
+		
+		if (this.CURRENT_FRAME_DATA == null) {
+			System.err.println("No more data! (abort)");
+			return null;
+		}
+		
 		int start = this.CURRENT_FRAME_DATA.indexOf("$V$");
 		String data = this.CURRENT_FRAME_DATA.substring(start, this.CURRENT_FRAME_DATA.length());
 		

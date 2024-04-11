@@ -109,9 +109,9 @@ public class EntryPoint {
 //							e.printStackTrace();
 //						}
 						
-						outputWriter.build_Frame(currentImage, differences, null, output, 1);
-						outputWriter.build_Frame(currentImage, differences, movementVectors, output, 2);
-						outputWriter.build_Frame(currentImage, differences, movementVectors, output, 3);
+//						outputWriter.build_Frame(currentImage, differences, null, output, 1);
+//						outputWriter.build_Frame(currentImage, differences, movementVectors, output, 2);
+//						outputWriter.build_Frame(currentImage, differences, movementVectors, output, 3);
 						outputWriter.add_obj_to_queue(differences, movementVectors);
 						
 						referenceImages.add(currentImage);
