@@ -12,8 +12,11 @@ import UI.Frame;
 
 public class EntryPoint {
 	private static int MAX_REFERENCES = 5;
+	private Status STATUS = Status.STOPPED;
 	
-	public EntryPoint(Frame f) {
+	public boolean start_encode(Frame f) {
+		this.STATUS = Status.RUNNING;
+		
 		try {
 			JFileChooser chooser = new JFileChooser("Choose a destination");
 			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -25,7 +28,7 @@ public class EntryPoint {
 			File output = chooser.getSelectedFile();
 			
 			if (input == null || output == null) {
-				return;
+				return false;
 			}
 			
 			Thread worker = new Thread(() -> {
@@ -45,8 +48,8 @@ public class EntryPoint {
 					
 					int filesCount = input.listFiles().length;
 					
-					for (int i = 0; i < filesCount; i++) {
-						f.updateFrameCount(i, filesCount);
+					for (int i = 0; i < filesCount && this.STATUS == Status.RUNNING; i++) {
+						f.updateFrameCount(i, filesCount, false);
 						String name = "";
 						
 						if (i < 10) {
@@ -83,7 +86,7 @@ public class EntryPoint {
 						
 						ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
 						curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
-						ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage, f.get_vec_edge_tolerance());
+						ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage);
 						ArrayList<YCbCrMakroBlock> differences = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(rawDifferences);
 						f.setDifferenceImage(rawDifferences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 		
@@ -91,8 +94,6 @@ public class EntryPoint {
 		
 						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
 						f.setVectorizedImage(vectorEngine.construct_vector_path(dim, movementVectors));
-						
-		//				outputWriter.build_Frame(currentImage, differences, movementVectors, output, 1);
 						
 						try {
 							ImageIO.write(vectorEngine.construct_vector_path(dim, movementVectors), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
@@ -112,6 +113,7 @@ public class EntryPoint {
 					f.disposeWriterPermission();
 					
 					outputWriter.compress_result();
+					f.updateFrameCount(filesCount + 10, filesCount, true);
 					
 					long timeEnd = System.currentTimeMillis();
 					System.out.println("Time: " + (timeEnd - timeStart) + "ms");
@@ -124,6 +126,12 @@ public class EntryPoint {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		return true;
+	}
+	
+	public void stop_process() {
+		this.STATUS = Status.STOPPED;
 	}
 	
 	private static void release_old_reference_images(ArrayList<BufferedImage> refList) {

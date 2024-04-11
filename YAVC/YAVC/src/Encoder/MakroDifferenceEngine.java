@@ -12,9 +12,8 @@ public class MakroDifferenceEngine {
 	 * Params: ArrayList<MakroBlock> list1 => List1 to be compared with list2;
 	 * 			ArrayList<MakroBlock> list2 => List2 to be compared with list1;
 	 * 			BufferedImage img => Image in which the current MakroBlocks are located in;
-	 * 			int EDGE_TOLERANCE => Tolerance with which edges are filtered
 	 */
-	public ArrayList<MakroBlock> get_MakroBlock_difference(ArrayList<MakroBlock> list1, ArrayList<MakroBlock> list2, BufferedImage img, int EDGE_TOLERANCE) {
+	public ArrayList<MakroBlock> get_MakroBlock_difference(ArrayList<MakroBlock> list1, ArrayList<MakroBlock> list2, BufferedImage img) {
 		ArrayList<MakroBlock> diffs = new ArrayList<MakroBlock>();
 		
 		if (list1.size() != list2.size()) {
@@ -29,7 +28,7 @@ public class MakroDifferenceEngine {
 			for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
 				for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
 					if (colors1[y][x] != colors2[y][x]) {
-						list2.get(i).setEdgeBlock(is_edge(list2.get(i), img, EDGE_TOLERANCE));
+						list2.get(i).setEdgeBlock(is_edge(list2.get(i), img, 50));
 						diffs.add(list2.get(i));
 						y = config.MAKRO_BLOCK_SIZE;
 						break;

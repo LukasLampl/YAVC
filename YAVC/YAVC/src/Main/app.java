@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.UIManager;
 
 import Decoder.DataGrabber;
 import Decoder.DataPipeEngine;
@@ -20,6 +21,12 @@ public class app {
 	public static Frame f = new Frame();
 	
 	public static void main(String [] args) {
+		try {
+			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+	    } catch (Exception e) {
+	    	e.printStackTrace();
+	    }
+		
 		JButton decodeBtn = new JButton("Decode");
 		decodeBtn.addActionListener(new ActionListener() {
 			@Override

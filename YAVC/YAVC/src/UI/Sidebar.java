@@ -43,6 +43,8 @@ public class Sidebar extends JPanel {
 		title.setBorder(BorderFactory.createEmptyBorder(7, 15, 25, 0));
 		
 		JButton encodeTabBtn = create_std_button("Encode");
+		JButton decodeTabBtn = create_std_button("Decode");
+		
 		encodeTabBtn.setFocusPainted(false);
 		encodeTabBtn.setOpaque(true);
 		
@@ -52,8 +54,12 @@ public class Sidebar extends JPanel {
 				encodeTabBtn.setBackground(ComponentColor.TONER_COLOR);
 				encodeTabBtn.setBorder(BorderFactory.createCompoundBorder(
 					BorderFactory.createEmptyBorder(10, 0, 10, 0),
-					BorderFactory.createMatteBorder(0, 5, 0, 0, ComponentColor.HILIGHT_SHADE_COLOR))
+					BorderFactory.createMatteBorder(0, 5, 0, 0, ComponentColor.HIGHLIGHT_SHADE_COLOR))
 				);
+				
+				decodeTabBtn.setBackground(ComponentColor.SHADE_COLOR);
+				decodeTabBtn.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 0));
+				
 				encodeTabBtn.repaint();
 				encodeTabBtn.revalidate();
 				
@@ -61,10 +67,35 @@ public class Sidebar extends JPanel {
 			}
 		});
 		
+		decodeTabBtn.setFocusPainted(false);
+		decodeTabBtn.setOpaque(true);
+		
+		decodeTabBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				decodeTabBtn.setBackground(ComponentColor.TONER_COLOR);
+				decodeTabBtn.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createEmptyBorder(10, 0, 10, 0),
+					BorderFactory.createMatteBorder(0, 5, 0, 0, ComponentColor.HIGHLIGHT_SHADE_COLOR))
+				);
+				
+				encodeTabBtn.setBackground(ComponentColor.SHADE_COLOR);
+				encodeTabBtn.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 0));
+				
+				decodeTabBtn.repaint();
+				decodeTabBtn.revalidate();
+				
+				FRAME.move_focused_panel(decodePanel);
+			}
+		});
+		
 		add(title, cons);
 		cons.gridy++;
-		cons.weighty = 1.0;
+		cons.weighty = 0;
 		add(encodeTabBtn, cons);
+		cons.gridy++;
+		cons.weighty = 1.0;
+		add(decodeTabBtn, cons);
 	}
 	
 	private JButton create_std_button(String text) {

@@ -1,7 +1,6 @@
 package UI;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -14,20 +13,26 @@ import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.util.Hashtable;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import Encoder.EntryPoint;
 
 public class EncodePanel extends JPanel {
 	private static final long serialVersionUID = 1L;
+	
+	private int EDGE_DAMPING_TOLERANCE = 4;
+	private double COLOR_DAMPING_TOLERANCE = 0.75;
+	private int SAD_TOLERANCE = 32768;
 	
 	private JLabel prevFrameLabel = null;
 	private JLabel curFrameLabel = null;
@@ -37,12 +42,113 @@ public class EncodePanel extends JPanel {
 	private JLabel frameCountLabel = new JLabel("0/0 Frames");
 	private JProgressBar bar = new JProgressBar();
 	
+	private ToggleButton startBtn = new ToggleButton("Start");
+	private EntryPoint entryPoint = new EntryPoint();
+	
 	public EncodePanel(Frame frame) {
 		setLayout(new BorderLayout());
 		setBackground(ComponentColor.DEFAULT_COLOR);
 		
+		add(get_input_panel(), BorderLayout.NORTH);
 		add(get_content_panel(), BorderLayout.CENTER);
 		add(get_control_panel(frame), BorderLayout.SOUTH);
+	}
+	
+	private JPanel get_input_panel() {
+		JPanel holder = new JPanel();
+		holder.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
+		holder.setLayout(new GridBagLayout());
+		holder.setBackground(ComponentColor.DEFAULT_COLOR);
+		
+		GridBagConstraints cons = new GridBagConstraints();
+		cons.gridx = 0;
+		cons.gridy = 0;
+		cons.fill = GridBagConstraints.BOTH;
+		cons.anchor = GridBagConstraints.NORTH;
+		cons.weightx = 1.0;
+		cons.insets = new Insets(0, 4, 0, 4);
+		
+		Hashtable<Integer, JLabel> edgeRecTable = new Hashtable<Integer, JLabel>();
+		edgeRecTable.put(0, create_label("Precise"));
+		edgeRecTable.put(50, create_label("Unprecise"));
+		edgeRecTable.put(100, create_label("Ignore"));
+		
+		CustomSlider edgeRecSlider = new CustomSlider(0, 100, this.EDGE_DAMPING_TOLERANCE);
+		JPanel edgeRecPanel = create_std_ctrl_panel("Edge detection", edgeRecTable, edgeRecSlider);
+		
+		edgeRecSlider.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				EDGE_DAMPING_TOLERANCE = edgeRecSlider.getValue();
+			}
+		});
+		
+		Hashtable<Integer, JLabel> colDampTable = new Hashtable<Integer, JLabel>();
+		colDampTable.put(0, create_label("0%"));
+		colDampTable.put(50, create_label("50%"));
+		colDampTable.put(100, create_label("100%"));
+		
+		CustomSlider colDampSlider = new CustomSlider(0, 100, (int)(this.COLOR_DAMPING_TOLERANCE * 100));
+		JPanel colDampPanel = create_std_ctrl_panel("Damping equality", colDampTable, colDampSlider);
+		
+		colDampSlider.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				COLOR_DAMPING_TOLERANCE = (double)colDampSlider.getValue() / 100;
+			}
+		});
+		
+		Hashtable<Integer, JLabel> maxSADTable = new Hashtable<Integer, JLabel>();
+		maxSADTable.put(0, create_label("Precise"));
+		maxSADTable.put(262144, create_label("Less precise"));
+		maxSADTable.put(524288, create_label("Unprecise"));
+		
+		CustomSlider maxSADSlider = new CustomSlider(0, 524288, this.SAD_TOLERANCE);
+		JPanel maxSADPanel = create_std_ctrl_panel("SAD tolerance", maxSADTable, maxSADSlider);
+		
+		maxSADSlider.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				COLOR_DAMPING_TOLERANCE = maxSADSlider.getValue();
+			}
+		});
+		
+		holder.add(edgeRecPanel, cons);
+		cons.gridx++;
+		holder.add(colDampPanel, cons);
+		cons.gridx++;
+		holder.add(maxSADPanel, cons);
+		
+		return holder;
+	}
+	
+	private JPanel create_std_ctrl_panel(String desc, Hashtable<Integer, JLabel> table, CustomSlider slider) {
+		JPanel holder = new JPanel();
+		holder.setLayout(new BoxLayout(holder, BoxLayout.Y_AXIS));
+		holder.setBackground(ComponentColor.DEFAULT_COLOR);
+		
+		JLabel descLabel = new JLabel(desc);
+		descLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+		descLabel.setForeground(ComponentColor.TEXT_COLOR);
+		descLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
+		descLabel.setHorizontalTextPosition(JLabel.CENTER);
+		
+		slider.setBorder(BorderFactory.createEmptyBorder(7, 0, 0, 0));
+		slider.setBackground(ComponentColor.DEFAULT_COLOR);
+		slider.setPaintLabels(true);
+		slider.setLabelTable(table);
+		
+		holder.add(descLabel);
+		holder.add(slider);
+		return holder;
+	}
+	
+	private JLabel create_label(String text) {
+		JLabel l = new JLabel(text);
+		l.setFont(new Font("Arial", Font.PLAIN, 12));
+		l.setForeground(ComponentColor.TEXT_COLOR);
+		l.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+		return l;
 	}
 	
 	private JPanel get_control_panel(Frame frame) {
@@ -65,48 +171,54 @@ public class EncodePanel extends JPanel {
 		this.bar.setStringPainted(true);
 		this.bar.setAlignmentX(JProgressBar.CENTER_ALIGNMENT);
 		this.bar.setBackground(ComponentColor.SHADE_COLOR);
-		this.bar.setForeground(ComponentColor.HILIGHT_SHADE_COLOR);
+		this.bar.setForeground(ComponentColor.HIGHLIGHT_SHADE_COLOR);
 		this.bar.setBorderPainted(false);
 		
 		box.add(this.frameCountLabel);
 		box.add(this.bar);
 		
-		JButton startBtn = new JButton("Start") {
-			private static final long serialVersionUID = 1L;
-			
-			@Override
-			public void paintComponent(Graphics g) {
-				Graphics2D g2D = (Graphics2D)g.create();
-				g2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				g2D.setColor(getBackground());
-				g2D.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
-				g2D.setColor(Color.WHITE);
-				g2D.drawString(getText(), 17, 20);
-				g2D.dispose();
-			}
-		};
+		this.startBtn.setContentAreaFilled(false);
+		this.startBtn.setFont(new Font("Arial", Font.PLAIN, 16));
+		this.startBtn.setBorderPainted(false);
+		this.startBtn.setBackground(ComponentColor.SUB_COLOR);
 		
-		startBtn.setContentAreaFilled(false);
-		startBtn.setFont(new Font("Arial", Font.PLAIN, 16));
-		startBtn.setBorderPainted(false);
-		startBtn.setBackground(ComponentColor.SUB_COLOR);
-		
-		startBtn.addActionListener(new ActionListener() {
+		this.startBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new EntryPoint(frame);
+				if (startBtn.isClicked() == false) {
+					startBtn.setText("Stop");
+					startBtn.setBackground(ComponentColor.STO_COLOR);
+					boolean succ = entryPoint.start_encode(frame);
+					
+					if (succ == true) {
+						return;
+					}
+					
+					startBtn.setClicked(!startBtn.isClicked());
+				}
+				
+				reset_start_btn();
+				entryPoint.stop_process();
+				startBtn.setClicked(!startBtn.isClicked());
 			}
 		});
 		
 		holder.add(box);
-		holder.add(startBtn);
+		holder.add(this.startBtn);
 		
 		return holder;
+	}
+	
+	public void reset_start_btn() {
+		this.startBtn.setBackground(ComponentColor.SUB_COLOR);
+		this.startBtn.setText("Start");
 	}
 	
 	private JScrollPane get_content_panel() {
 		JScrollPane scroll = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scroll.setBorder(BorderFactory.createEmptyBorder());
+		scroll.getVerticalScrollBar().setUnitIncrement(16);
+		scroll.getVerticalScrollBar().setUI(new CustomScrollBarUI());
 		
 		JPanel holder = new JPanel();
 		holder.setBackground(ComponentColor.DEFAULT_COLOR);
@@ -194,8 +306,10 @@ public class EncodePanel extends JPanel {
 		return l;
 	}
 	
-	public void set_frame_stats(int frame, int maxFrames) {
-		this.frameCountLabel.setText(frame + "/" + maxFrames + " Frames");
+	public void set_frame_stats(int frame, int maxFrames, boolean percentOnly) {
+		if (percentOnly == false) {
+			this.frameCountLabel.setText(frame + "/" + maxFrames + " Frames");
+		}
 		
 		double per = ((double)(frame + 1) / (double)maxFrames) * 100;
 		this.bar.setValue((int)Math.round(per));

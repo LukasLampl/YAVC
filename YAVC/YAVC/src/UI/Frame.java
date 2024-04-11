@@ -22,7 +22,6 @@ public class Frame extends JFrame {
 	
 	private float DAMING_TOLERANCE = 0.75F;
 	private int EDGE_TOLERANCE = 4;
-	private int VEC_EDGE_TOLERANCE = 50;
 	private int VEC_SAD_TOLERANCE = 32768;
 	
 	private boolean WRITER_ACTIVE = true;
@@ -48,6 +47,7 @@ public class Frame extends JFrame {
 			this.remove(this.CURRENT_FOCUS);
 		}
 		
+		this.CURRENT_FOCUS = newFocus;
 		this.add(newFocus, BorderLayout.CENTER);
 		update();
 	}
@@ -95,21 +95,6 @@ public class Frame extends JFrame {
 		panel.add(dampingSlider, cons);
 		cons.gridy++;
 		
-		JSlider vecEdgeSlider = new JSlider();
-		vecEdgeSlider.setValue(this.VEC_EDGE_TOLERANCE);
-		vecEdgeSlider.setMinimum(0);
-		vecEdgeSlider.setMaximum(1000);
-		vecEdgeSlider.setPaintLabels(true);
-		vecEdgeSlider.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				VEC_EDGE_TOLERANCE = vecEdgeSlider.getValue();
-			}
-		});
-		
-		panel.add(vecEdgeSlider, cons);
-		cons.gridy++;
-		
 		JSlider vecSADSlider = new JSlider();
 		vecSADSlider.setMinimum(0);
 		vecSADSlider.setMaximum(255 * config.MBS_SQ * 2 + (int)Math.pow((255 * config.MBS_SQ), 2));
@@ -144,16 +129,12 @@ public class Frame extends JFrame {
 		return this.EDGE_TOLERANCE;
 	}
 	
-	public int get_vec_edge_tolerance() {
-		return this.VEC_EDGE_TOLERANCE;
-	}
-	
 	public int get_vec_sad_tolerance() {
 		return this.VEC_SAD_TOLERANCE;
 	}
 	
-	public void updateFrameCount(int currentFrame, int totalFrame) {
-		this.ENCODE_PANEL.set_frame_stats(currentFrame, totalFrame);
+	public void updateFrameCount(int currentFrame, int totalFrame, boolean percentOnly) {
+		this.ENCODE_PANEL.set_frame_stats(currentFrame, totalFrame, percentOnly);
 		update();
 	}
 	
