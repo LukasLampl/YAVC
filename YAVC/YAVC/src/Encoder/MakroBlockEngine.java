@@ -117,9 +117,9 @@ public class MakroBlockEngine {
 	public ArrayList<YCbCrMakroBlock> convert_MakroBlocks_to_YCbCrMarkoBlocks(ArrayList<MakroBlock> blocks) {
 		ArrayList<YCbCrMakroBlock> convertedBlocks = new ArrayList<YCbCrMakroBlock>(blocks.size());
 		
-		blocks.parallelStream().forEach(block -> {
-			convertedBlocks.add(convert_single_MakroBlock_to_YCbCrMakroBlock(block));
-		});
+		for (MakroBlock b : blocks) {
+			convertedBlocks.add(convert_single_MakroBlock_to_YCbCrMakroBlock(b));
+		}
 		
 		return convertedBlocks;
 	}

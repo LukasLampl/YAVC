@@ -9,7 +9,7 @@ import javax.swing.JButton;
 
 public class ToggleButton extends JButton {
 	private static final long serialVersionUID = 1L;
-	private boolean isClicked = false;
+	private boolean isClicked = true;
 	
 	public ToggleButton(String text) {
 		super(text);

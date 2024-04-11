@@ -1,12 +1,15 @@
 package Decoder;
 
 import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 
+import Encoder.MakroBlock;
 import Encoder.MakroBlockEngine;
 import Encoder.Vector;
 
@@ -112,17 +115,17 @@ public class DataPipeEngine {
 		
 		for (int i = 1; i < streamSet.length; i++) {
 			String s = streamSet[i];
-			String[] parts = s.substring(0, s.length() - 1).split("\\;");
-			String[] drawBackPart = parts[1].split("\\_");
+			String[] drawBackPart = s.split("\\_");
+			String[] parts = drawBackPart[0].split("\\;");
 			
 			String[] startPos = parts[0].split("\\,");
-			String[] spanSize = drawBackPart[0].split("\\,");
-			
+			String[] spanSize = parts[1].split("\\,");
+
 			Vector vec = new Vector();
 			vec.setStartingPoint(new Point(Integer.parseInt(startPos[0]), Integer.parseInt(startPos[1])));
 			vec.setSpanX(Integer.parseInt(spanSize[0]));
 			vec.setSpanY(Integer.parseInt(spanSize[1]));
-			
+			vec.setReferenceDrawback(Integer.parseInt(drawBackPart[1]));
 			vecs.add(vec);
 		}
 		
@@ -136,7 +139,7 @@ public class DataPipeEngine {
 	 * 			BufferedImage prevImg => Previous frame;
 	 * 			BufferedImage currImg => Current frame (differences)
 	 */
-	public BufferedImage build_frame(ArrayList<Vector> vecs, BufferedImage prevImg, BufferedImage currImg) {
+	public BufferedImage build_frame(ArrayList<Vector> vecs, ArrayList<BufferedImage> referenceImages, BufferedImage prevImg, BufferedImage currImg) {
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 		BufferedImage render = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		BufferedImage vectors = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -145,28 +148,28 @@ public class DataPipeEngine {
 			return render;	
 		}
 		
-//		for (Vector vec : vecs) {
-//			Point p = new Point(vec.getStartingPoint().x, vec.getStartingPoint().y);
-//			MakroBlock block = makroBlockEngine.get_single_makro_block(p, prevImg);
-//			
-//			for (int y = 0; y < block.getColors().length; y++) {
-//				for (int x = 0; x < block.getColors()[y].length; x++) {
-//					if (p.x + vec.getSpanX() + x >= render.getWidth()
-//						|| p.y + vec.getSpanY() + y >= render.getHeight()
-//						|| p.x < 0 || p.y < 0) {
-//						System.err.println("Too small!");
-//						continue;
-//					}
-//					
-//					if (block.getColors()[y][x] == 89658667) { //ASCII for YAVC
-//						continue;
-//					}
-//					
-//					vectors.setRGB(p.x + vec.getSpanX() + x, p.y + vec.getSpanY() + y, Color.magenta.getRGB());//block.getColors()[y][x]);
-//				}
-//			}
-//		}
-//		
+		for (Vector vec : vecs) {
+			Point p = new Point(vec.getStartingPoint().x, vec.getStartingPoint().y);
+			MakroBlock block = makroBlockEngine.get_single_makro_block(p, referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()));
+			
+			for (int y = 0; y < block.getColors().length; y++) {
+				for (int x = 0; x < block.getColors()[y].length; x++) {
+					if (p.x + vec.getSpanX() + x >= render.getWidth()
+						|| p.y + vec.getSpanY() + y >= render.getHeight()
+						|| p.x < 0 || p.y < 0) {
+						System.err.println("Too small!");
+						continue;
+					}
+					
+					if (block.getColors()[y][x] == 89658667) { //ASCII for YAVC
+						continue;
+					}
+					
+					vectors.setRGB(p.x + vec.getSpanX() + x, p.y + vec.getSpanY() + y, block.getColors()[y][x]);
+				}
+			}
+		}
+		
 		Graphics2D g2d = render.createGraphics();
 		g2d.drawImage(prevImg, 0, 0, prevImg.getWidth(), prevImg.getHeight(), null, null);
 		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));

@@ -3,17 +3,15 @@ package UI;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
+import Encoder.EntryPoint;
 import Encoder.MakroBlock;
 import Main.config;
 
@@ -26,20 +24,31 @@ public class Frame extends JFrame {
 	
 	private boolean WRITER_ACTIVE = true;
 	
-	private EncodePanel ENCODE_PANEL = new EncodePanel(this);
-	private DecodePanel DECODE_PANEL = new DecodePanel();
+	private EntryPoint entryPoint = new EntryPoint();
+	private EncodePanel ENCODE_PANEL = new EncodePanel(this, entryPoint);
+	private DecodePanel DECODE_PANEL = new DecodePanel(this, entryPoint);
 	private Sidebar SIDEBAR = new Sidebar(this.ENCODE_PANEL, this.DECODE_PANEL, this);
 	private JPanel CURRENT_FOCUS = null;
 	
 	public Frame() {
 		this.setTitle("YAVC");
 		this.setLayout(new BorderLayout());
+		this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	
 		WelcomePanel welcome = new WelcomePanel();
 		
 		this.add(this.SIDEBAR, BorderLayout.WEST);
 		this.add(welcome, BorderLayout.CENTER);
 		this.CURRENT_FOCUS = welcome;
+		
+		this.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosed(WindowEvent e) {
+				entryPoint.stop_encoding_process();
+				WRITER_ACTIVE = false;
+				System.exit(0);
+			}
+		});
 	}
 	
 	public void move_focused_panel(JPanel newFocus) {
@@ -50,67 +59,6 @@ public class Frame extends JFrame {
 		this.CURRENT_FOCUS = newFocus;
 		this.add(newFocus, BorderLayout.CENTER);
 		update();
-	}
-	
-	/*
-	 * Purpose: Create the panel, that contains the adjustment sliders
-	 * Return Type: JPanel => JPanel with sliders
-	 * Params: void
-	 */
-	private JPanel set_up_props_panel() {
-		JPanel panel = new JPanel();
-		panel.setLayout(new GridBagLayout());
-		
-		GridBagConstraints cons = new GridBagConstraints();
-		cons.gridx = 0;
-		cons.gridy = 0;
-		
-		JSlider edgeSlider = new JSlider();
-		edgeSlider.setValue(this.EDGE_TOLERANCE);
-		edgeSlider.setMinimum(0);
-		edgeSlider.setMaximum(100);
-		edgeSlider.setPaintLabels(true);
-		edgeSlider.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				EDGE_TOLERANCE = edgeSlider.getValue();
-			}
-		});
-		
-		panel.add(edgeSlider, cons);
-		cons.gridy++;
-		
-		JSlider dampingSlider = new JSlider();
-		dampingSlider.setValue((int)(this.DAMING_TOLERANCE * 100));
-		dampingSlider.setMinimum(0);
-		dampingSlider.setMaximum(100);
-		dampingSlider.setPaintLabels(true);
-		dampingSlider.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				DAMING_TOLERANCE = ((float)dampingSlider.getValue() / (float)100);
-			}
-		});
-		
-		panel.add(dampingSlider, cons);
-		cons.gridy++;
-		
-		JSlider vecSADSlider = new JSlider();
-		vecSADSlider.setMinimum(0);
-		vecSADSlider.setMaximum(255 * config.MBS_SQ * 2 + (int)Math.pow((255 * config.MBS_SQ), 2));
-		vecSADSlider.setValue(this.VEC_SAD_TOLERANCE);
-		vecSADSlider.setPaintLabels(true);
-		vecSADSlider.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				System.out.println(vecSADSlider.getValue());
-				VEC_SAD_TOLERANCE = vecSADSlider.getValue();
-			}
-		});
-		
-		panel.add(vecSADSlider, cons);
-		
-		return panel;
 	}
 	
 	public boolean canWriterWrite() {

@@ -265,6 +265,7 @@ public class OutputWriter {
 					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(block.getColors()[y][x]).getRGB();
 					
 					if (col == 89658667) { //ASCII for YAVC
+						System.out.println("found! (" + x + "; " + y + ")");
 						continue;
 					}
 					
@@ -303,10 +304,10 @@ public class OutputWriter {
 		
 		try {
 			if (diff == 1) {
-				File out = new File(outputFile.getAbsolutePath() + "/" + output + ".png");
+				File out = new File(outputFile.getAbsolutePath() + "/D_" + output + ".png");
 				BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
 				Graphics2D g2d = render.createGraphics();
-				g2d.drawImage(org, 0, 0, img.getWidth(), img.getHeight(), null, null);
+//				g2d.drawImage(org, 0, 0, img.getWidth(), img.getHeight(), null, null);
 				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
 				g2d.drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null, null);
 				g2d.dispose();

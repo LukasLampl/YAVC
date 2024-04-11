@@ -43,9 +43,10 @@ public class EncodePanel extends JPanel {
 	private JProgressBar bar = new JProgressBar();
 	
 	private ToggleButton startBtn = new ToggleButton("Start");
-	private EntryPoint entryPoint = new EntryPoint();
+	private EntryPoint entryPoint = null;
 	
-	public EncodePanel(Frame frame) {
+	public EncodePanel(Frame frame, EntryPoint entryPoint) {
+		this.entryPoint = entryPoint;
 		setLayout(new BorderLayout());
 		setBackground(ComponentColor.DEFAULT_COLOR);
 		
@@ -185,6 +186,8 @@ public class EncodePanel extends JPanel {
 		this.startBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				startBtn.setClicked(!startBtn.isClicked());
+				
 				if (startBtn.isClicked() == false) {
 					startBtn.setText("Stop");
 					startBtn.setBackground(ComponentColor.STO_COLOR);
@@ -198,8 +201,7 @@ public class EncodePanel extends JPanel {
 				}
 				
 				reset_start_btn();
-				entryPoint.stop_process();
-				startBtn.setClicked(!startBtn.isClicked());
+				entryPoint.stop_encoding_process();
 			}
 		});
 		

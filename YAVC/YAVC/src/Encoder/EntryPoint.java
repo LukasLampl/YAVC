@@ -8,14 +8,18 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 
+import Decoder.DataGrabber;
+import Decoder.DataPipeEngine;
+import Decoder.DataPipeValveEngine;
 import UI.Frame;
 
 public class EntryPoint {
 	private static int MAX_REFERENCES = 5;
-	private Status STATUS = Status.STOPPED;
+	private Status EN_STATUS = Status.STOPPED;
+	private Status DE_STATUS = Status.STOPPED;
 	
 	public boolean start_encode(Frame f) {
-		this.STATUS = Status.RUNNING;
+		this.EN_STATUS = Status.RUNNING;
 		
 		try {
 			JFileChooser chooser = new JFileChooser("Choose a destination");
@@ -48,7 +52,11 @@ public class EntryPoint {
 					
 					int filesCount = input.listFiles().length;
 					
-					for (int i = 0; i < filesCount && this.STATUS == Status.RUNNING; i++) {
+					for (int i = 0; i < filesCount; i++) {
+						if (this.EN_STATUS == Status.STOPPED) {
+							output.delete();
+						}
+						
 						f.updateFrameCount(i, filesCount, false);
 						String name = "";
 						
@@ -89,18 +97,20 @@ public class EntryPoint {
 						ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage);
 						ArrayList<YCbCrMakroBlock> differences = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(rawDifferences);
 						f.setDifferenceImage(rawDifferences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
-		
+						
 						ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
 		
 						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
 						f.setVectorizedImage(vectorEngine.construct_vector_path(dim, movementVectors));
 						
-						try {
-							ImageIO.write(vectorEngine.construct_vector_path(dim, movementVectors), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
+//						try {
+//							ImageIO.write(vectorEngine.construct_vector_path(dim, movementVectors), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+//						} catch (Exception e) {
+//							e.printStackTrace();
+//						}
 						
+						outputWriter.build_Frame(currentImage, differences, null, output, 1);
+						outputWriter.build_Frame(currentImage, differences, movementVectors, output, 2);
 						outputWriter.build_Frame(currentImage, differences, movementVectors, output, 3);
 						outputWriter.add_obj_to_queue(differences, movementVectors);
 						
@@ -130,11 +140,69 @@ public class EntryPoint {
 		return true;
 	}
 	
-	public void stop_process() {
-		this.STATUS = Status.STOPPED;
+	public boolean start_decoding_process() {
+		this.DE_STATUS = Status.RUNNING;
+		
+		try {
+			JFileChooser chooser = new JFileChooser("Choose a \"yavc\" file");
+			chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			chooser.showOpenDialog(null);
+			
+			File file = chooser.getSelectedFile();
+			
+			if (file == null) {
+				return false;
+			}
+			
+			Thread worker = new Thread(() -> {
+				DataGrabber grabber = new DataGrabber();
+				grabber.slice(file);
+				
+				DataPipeEngine dataPipeEngine = new DataPipeEngine(grabber);
+				DataPipeValveEngine dataPipeValveEngine = new DataPipeValveEngine("C:\\Users\\Lukas Lampl\\Documents");
+				
+				ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(MAX_REFERENCES);
+				
+				int frameCounter = 0;
+				BufferedImage prevFrame = null;
+				BufferedImage currFrame = null;
+				
+				while (dataPipeEngine.hasNext(frameCounter) && this.DE_STATUS == Status.RUNNING) {
+					if (prevFrame == null) {
+						prevFrame = dataPipeEngine.scrape_main_image(grabber.get_start_frame());
+						referenceImages.add(prevFrame);
+						dataPipeValveEngine.release_image(prevFrame);
+						continue;
+					}
+					
+					currFrame = dataPipeEngine.scrape_next_frame(frameCounter);
+					
+					ArrayList<Vector> vecs = dataPipeEngine.scrape_vectors(frameCounter++);
+					BufferedImage result = dataPipeEngine.build_frame(vecs, referenceImages, prevFrame, currFrame);
+					dataPipeValveEngine.release_image(result);
+					prevFrame = result;
+					referenceImages.add(result);
+					release_old_reference_images(referenceImages);
+				}
+			});
+			
+			worker.start();
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		
+		return true;
 	}
 	
-	private static void release_old_reference_images(ArrayList<BufferedImage> refList) {
+	public void stop_encoding_process() {
+		this.EN_STATUS = Status.STOPPED;
+	}
+	
+	public void stop_decoding_process() {
+		this.DE_STATUS = Status.STOPPED;
+	}
+	
+	private void release_old_reference_images(ArrayList<BufferedImage> refList) {
 		if (refList.size() < MAX_REFERENCES) {
 			return;
 		}
