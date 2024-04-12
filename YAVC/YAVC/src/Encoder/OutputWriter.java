@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.imageio.ImageIO;
-
 import Main.config;
 import UI.Frame;
 
@@ -191,7 +189,10 @@ public class OutputWriter {
 				
 				SequenceObject obj = QUEUE.get(0);
 				File out = bake_frame(obj.getDifferences());
-				bake_vectors(obj.getVecs(), out);
+				
+				if (obj.getVecs() != null) {
+					bake_vectors(obj.getVecs(), out);
+				}
 				
 				QUEUE.remove(0);
 			}
@@ -246,7 +247,7 @@ public class OutputWriter {
 	 */
 	public int output = 0;
 	
-	public void build_Frame(BufferedImage org, ArrayList<YCbCrMakroBlock> diffs, ArrayList<Vector> vecs, File outputFile, int diff) {
+	public BufferedImage build_Frame(BufferedImage org, ArrayList<YCbCrMakroBlock> diffs, ArrayList<Vector> vecs, int diff) {
 		BufferedImage img = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		BufferedImage img_v = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		
@@ -301,34 +302,25 @@ public class OutputWriter {
 		
 		v_g2d.dispose();
 		
+		BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = render.createGraphics();
+		
 		try {
 			if (diff == 1) {
-				File out = new File(outputFile.getAbsolutePath() + "/D_" + output + ".png");
-				BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
-				Graphics2D g2d = render.createGraphics();
-//				g2d.drawImage(org, 0, 0, img.getWidth(), img.getHeight(), null, null);
-				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
 				g2d.drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null, null);
-				g2d.dispose();
-				
-				ImageIO.write(render, "png", out);
 			} else if (diff == 2) {
-				File out_v = new File(outputFile.getAbsolutePath() + "/V_" + output + ".png");
-				ImageIO.write(img_v, "png", out_v);
+				g2d.drawImage(img_v, 0, 0, img_v.getWidth(), img_v.getHeight(), null, null);
 			} else {
-				BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
-				Graphics2D g2d = render.createGraphics();
 				g2d.drawImage(org, 0, 0, img.getWidth(), img.getHeight(), null, null);
 				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
 				g2d.drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null, null);
 				g2d.drawImage(img_v, 0, 0, img_v.getWidth(), img_v.getHeight(), null, null);
-				g2d.dispose();
-				
-				File out_v = new File(outputFile.getAbsolutePath() + "/F_" + output++ + ".png");
-				ImageIO.write(render, "png", out_v);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		g2d.dispose();
+		return render;
 	}
 }

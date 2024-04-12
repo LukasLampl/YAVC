@@ -77,8 +77,7 @@ public class DataPipeEngine {
 		int end = this.CURRENT_FRAME_DATA.indexOf("$V$");
 		
 		if (end == -1) {
-			System.err.println("Vector indicator missing, abort current frame! (" + frameNumber + ")");
-			return render;
+			end = this.CURRENT_FRAME_DATA.length() - 1;
 		}
 		
 		String[] set = this.CURRENT_FRAME_DATA.substring(0, end).split("\\.");
@@ -114,8 +113,14 @@ public class DataPipeEngine {
 		}
 		
 		int start = this.CURRENT_FRAME_DATA.indexOf("$V$");
-		String data = this.CURRENT_FRAME_DATA.substring(start, this.CURRENT_FRAME_DATA.length());
 		
+		if (start == -1) {
+			System.err.println("No Vector indicies found! (" + frameNumber + ")");
+			return null;
+		}
+		
+		String data = this.CURRENT_FRAME_DATA.substring(start, this.CURRENT_FRAME_DATA.length());
+		System.out.println(frameNumber);
 		if (data == null) {
 			System.err.println("MISSING VECTOR FOUND!!! (F_" + frameNumber + ")");
 			return null;
@@ -154,28 +159,26 @@ public class DataPipeEngine {
 		BufferedImage render = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		BufferedImage vectors = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		
-		if (vecs == null) {
-			return render;	
-		}
-		
-		for (Vector vec : vecs) {
-			Point p = new Point(vec.getStartingPoint().x, vec.getStartingPoint().y);
-			MakroBlock block = makroBlockEngine.get_single_makro_block(p, referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()));
-			
-			for (int y = 0; y < block.getColors().length; y++) {
-				for (int x = 0; x < block.getColors()[y].length; x++) {
-					if (p.x + vec.getSpanX() + x >= render.getWidth()
-						|| p.y + vec.getSpanY() + y >= render.getHeight()
-						|| p.x < 0 || p.y < 0) {
-						System.err.println("Too small!");
-						continue;
+		if (vecs != null) {
+			for (Vector vec : vecs) {
+				Point p = new Point(vec.getStartingPoint().x, vec.getStartingPoint().y);
+				MakroBlock block = makroBlockEngine.get_single_makro_block(p, referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()));
+				
+				for (int y = 0; y < block.getColors().length; y++) {
+					for (int x = 0; x < block.getColors()[y].length; x++) {
+						if (p.x + vec.getSpanX() + x >= render.getWidth()
+							|| p.y + vec.getSpanY() + y >= render.getHeight()
+							|| p.x < 0 || p.y < 0) {
+	//						System.err.println("Too small!");
+							continue;
+						}
+						
+						if (block.getColors()[y][x] == 89658667) { //ASCII for YAVC
+							continue;
+						}
+						
+						vectors.setRGB(p.x + vec.getSpanX() + x, p.y + vec.getSpanY() + y, block.getColors()[y][x]);
 					}
-					
-					if (block.getColors()[y][x] == 89658667) { //ASCII for YAVC
-						continue;
-					}
-					
-					vectors.setRGB(p.x + vec.getSpanX() + x, p.y + vec.getSpanY() + y, block.getColors()[y][x]);
 				}
 			}
 		}

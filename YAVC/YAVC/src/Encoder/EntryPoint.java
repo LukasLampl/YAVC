@@ -44,6 +44,7 @@ public class EntryPoint {
 					
 					BufferedImage prevImage = null;
 					BufferedImage currentImage = null;
+					BufferedImage IFrameReconstImage = null;
 					
 					MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 					MakroDifferenceEngine makroDifferenceEngine = new MakroDifferenceEngine();
@@ -93,6 +94,16 @@ public class EntryPoint {
 						}
 						
 						ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
+						
+						if (i % 50 == 0) {
+							ArrayList<MakroBlock> IFrameBlocks = makroBlockEngine.get_makroblocks_from_image(IFrameReconstImage);
+							IFrameBlocks = makroDifferenceEngine.get_MakroBlock_difference(IFrameBlocks, curImgBlocks, null);
+							outputWriter.add_obj_to_queue(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks), null);
+							referenceImages.clear();
+							referenceImages.add(currentImage);
+							continue;
+						}
+						
 						curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
 						ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage);
 						ArrayList<YCbCrMakroBlock> differences = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(rawDifferences);
@@ -109,9 +120,13 @@ public class EntryPoint {
 //							e.printStackTrace();
 //						}
 						
-//						outputWriter.build_Frame(currentImage, differences, null, output, 1);
-//						outputWriter.build_Frame(currentImage, differences, movementVectors, output, 2);
-//						outputWriter.build_Frame(currentImage, differences, movementVectors, output, 3);
+						if ((i + 1) % 50 == 0) {
+							IFrameReconstImage = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
+						}
+						
+//						outputWriter.build_Frame(currentImage, differences, null, 1);
+//						outputWriter.build_Frame(currentImage, differences, movementVectors, 2);
+//						outputWriter.build_Frame(currentImage, differences, movementVectors, 3);
 						outputWriter.add_obj_to_queue(differences, movementVectors);
 						
 						referenceImages.add(currentImage);
@@ -124,6 +139,8 @@ public class EntryPoint {
 					
 					outputWriter.compress_result();
 					f.updateFrameCount(filesCount + 10, filesCount, true);
+					
+					referenceImages.clear();
 					
 					long timeEnd = System.currentTimeMillis();
 					System.out.println("Time: " + (timeEnd - timeStart) + "ms");

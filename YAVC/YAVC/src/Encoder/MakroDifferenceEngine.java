@@ -28,7 +28,10 @@ public class MakroDifferenceEngine {
 			for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
 				for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
 					if (colors1[y][x] != colors2[y][x]) {
-						list2.get(i).setEdgeBlock(is_edge(list2.get(i), img, 50));
+						if (img != null) {
+							list2.get(i).setEdgeBlock(is_edge(list2.get(i), img, 50));
+						}
+						
 						diffs.add(list2.get(i));
 						y = config.MAKRO_BLOCK_SIZE;
 						break;
