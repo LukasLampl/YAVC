@@ -104,8 +104,8 @@ public class MakroDifferenceEngine {
 	 * 			int x => Position x in the image;
 	 * 			int y => Position y int the image
 	 */
-	private static int[][] sobelX = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
-    private static int[][] sobelY = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
+	private static int[][] sobelX = {{1, 0, -1}, {2, 0, +2}, {1, 0, -1}};
+    private static int[][] sobelY = {{1, 2, 1}, {0, 0, 0}, {-1, -2, -1}};
 	
 	private int calculate_sobel_operator(BufferedImage img, int x, int y) {
 		int gx = 0, gy = 0;

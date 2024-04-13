@@ -47,6 +47,7 @@ public class EntryPoint {
 					BufferedImage currentImage = null;
 					BufferedImage IFrameReconstImage = null;
 					
+					Scene scene = new Scene();
 					MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 					MakroDifferenceEngine makroDifferenceEngine = new MakroDifferenceEngine();
 					VectorEngine vectorEngine = new VectorEngine();
@@ -91,18 +92,20 @@ public class EntryPoint {
 						currentImage = ImageIO.read(frame);
 						f.setPreviews(prevImage, currentImage);
 						
+						scene.scene_change_detected(prevImage, currentImage);
+						
 						ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
+						curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
 						
 						if (i % 50 == 0) {
-							ArrayList<MakroBlock> IFrameBlocks = makroBlockEngine.get_makroblocks_from_image(IFrameReconstImage);
-							IFrameBlocks = makroDifferenceEngine.get_MakroBlock_difference(IFrameBlocks, curImgBlocks, null);
+							prevImgBlocks = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, null);
 							outputWriter.add_obj_to_queue(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks), null);
 							referenceImages.clear();
 							referenceImages.add(currentImage);
+							prevImgBlocks = curImgBlocks;
 							continue;
 						}
 						
-						curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
 						ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage);
 						ArrayList<YCbCrMakroBlock> differences = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(rawDifferences);
 						f.setDifferenceImage(rawDifferences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
@@ -120,13 +123,13 @@ public class EntryPoint {
 						
 						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
 						
-//						BufferedImage img_d = outputWriter.build_Frame(currentImage, differences, null, 1);
-//						BufferedImage img_v = outputWriter.build_Frame(currentImage, differences, movementVectors, 2);
+						BufferedImage img_d = outputWriter.build_Frame(currentImage, differences, null, 1);
+						BufferedImage img_v = outputWriter.build_Frame(currentImage, differences, movementVectors, 2);
 						outputWriter.add_obj_to_queue(differences, movementVectors);
 						
 						try {
-//							ImageIO.write(img_d, "png", new File(output.getAbsolutePath() + "/D_" + i + ".png"));
-//							ImageIO.write(img_v, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+							ImageIO.write(img_d, "png", new File(output.getAbsolutePath() + "/D_" + i + ".png"));
+							ImageIO.write(img_v, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
 							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/Temp" + i + ".png"));
 						} catch (Exception e) {
 							e.printStackTrace();

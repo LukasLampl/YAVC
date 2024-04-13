@@ -6,12 +6,26 @@ import Main.config;
 
 public class MakroBlock {
 	private int[][] colors = new int[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
+	private boolean[][] colorIgnore = new boolean[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
 	private Point position = new Point(0, 0);
 	private boolean isEdgeBlock = false;
 	
-	public MakroBlock(int[][] colors, Point position) {
+	public MakroBlock(int[][] colors, Point position, boolean[][] colorIgnore) {
 		this.colors = colors;
 		this.position = position;
+		this.colorIgnore = colorIgnore;
+	}
+	
+	public void setColorIgnore(int x, int y, boolean bool) {
+		this.colorIgnore[x][y] = bool;
+	}
+	
+	public boolean[][] getColorIgnore() {
+		return this.colorIgnore;
+	}
+	
+	public void setColotIgnore(boolean[][] colorIgnore) {
+		this.colorIgnore = colorIgnore;
 	}
 	
 	public int[][] getColors() {

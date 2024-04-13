@@ -205,6 +205,7 @@ public class VectorEngine {
 		double resY = 0;
 		double resCb = 0;
 		double resCr = 0;
+		double resA = 0;
 		
 		for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
 			for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
@@ -214,10 +215,11 @@ public class VectorEngine {
 				resY += Math.abs(prevCol.getY() - curCol.getY());
 				resCb += Math.abs(prevCol.getCb() - curCol.getCb());
 				resCr += Math.abs(prevCol.getCr() - curCol.getCr());
+				resA += Math.abs(prevCol.getA() - curCol.getA());
 			}
 		}
 		
-		return (resY * resY * resY + resCb * resCb + resCr * resCr) / (double)(config.MAKRO_BLOCK_SIZE * config.MAKRO_BLOCK_SIZE);
+		return (Math.pow(resY, 3) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(config.MAKRO_BLOCK_SIZE * config.MAKRO_BLOCK_SIZE);
 	}
 	
 	public BufferedImage construct_vector_path(Dimension dim, ArrayList<Vector> vecs) {

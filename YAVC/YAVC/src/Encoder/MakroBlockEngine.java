@@ -139,6 +139,10 @@ public class MakroBlockEngine {
 		for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
 			for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
 				cols[y][x] = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(block.getColors()[y][x]));
+				
+				if (block.getColorIgnore()[y][x] == true) {
+					cols[y][x].setA(255);
+				}
 			}
 		}
 		
@@ -163,6 +167,7 @@ public class MakroBlockEngine {
 		 * +---+---+---+---+---+---+---+---+
 		 */
 		int[][] colors = new int[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
+		boolean[][] colorIgnore = new boolean[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
 		int currentColumn = 0;
 		int currentRow = 0;
 		
@@ -178,14 +183,16 @@ public class MakroBlockEngine {
 				
 				if (x >= maxX || y >= maxY
 					|| x < 0 || y < 0) {
-					colors[currentColumn][currentRow++] = 89658667; //ASCII for YAVC
+					colorIgnore[currentColumn][currentRow] = true;
+					colors[currentColumn][currentRow++] = Integer.MAX_VALUE; //ASCII for YAVC
 					continue;
 				}
-
+				
+				colorIgnore[currentColumn][currentRow] = false;
 				colors[currentColumn][currentRow++] = img.getRGB(x, y);
 			}
 		}
 		
-		return new MakroBlock(colors, position);
+		return new MakroBlock(colors, position, colorIgnore);
 	}
 }

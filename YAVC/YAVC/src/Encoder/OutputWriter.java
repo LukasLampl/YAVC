@@ -119,7 +119,7 @@ public class OutputWriter {
 					
 					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(b.getColors()[y][x]).getRGB();
 					
-					if (col == 89658667) { //ASCII for YAVC
+					if (b.getColors()[y][x].getA() == 1.0) {
 						continue;
 					}
 					
@@ -264,7 +264,7 @@ public class OutputWriter {
 					
 					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(block.getColors()[y][x]).getRGB();
 					
-					if (col == 89658667) { //ASCII for YAVC
+					if (block.getColors()[y][x].getA() == 1.0) {
 						continue;
 					}
 					
@@ -289,11 +289,11 @@ public class OutputWriter {
 							continue;
 						}
 						
-						int color = this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB();
-						
-						if (color == 89658667) {
+						if (cols[y][x].getA() == 1.0) {
 							continue;
 						}
+						
+						int color = this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB();
 						
 						img_v.setRGB(vecEndX + x, vecEndY + y, color);
 					}
