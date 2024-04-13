@@ -140,7 +140,6 @@ public class OutputWriter {
 		
 		try {
 			frameFile.createNewFile();
-			
 			Files.write(Path.of(frameFile.getAbsolutePath()), imgInChar.toString().getBytes(), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -284,7 +283,9 @@ public class OutputWriter {
 						int vecEndY = vec.getStartingPoint().y + vec.getSpanY();
 						
 						if (vecEndX + x >= img_v.getWidth()
-							|| vecEndY + y >= img_v.getHeight()) {
+							|| vecEndY + y >= img_v.getHeight()
+							|| vecEndX + x < 0
+							|| vecEndY + y < 0) {
 							continue;
 						}
 						

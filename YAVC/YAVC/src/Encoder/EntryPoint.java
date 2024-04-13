@@ -11,6 +11,7 @@ import javax.swing.JFileChooser;
 import Decoder.DataGrabber;
 import Decoder.DataPipeEngine;
 import Decoder.DataPipeValveEngine;
+import Decoder.Filter;
 import UI.Frame;
 
 public class EntryPoint {
@@ -81,6 +82,7 @@ public class EntryPoint {
 						if (prevImage == null) {
 							prevImage = ImageIO.read(frame);
 							referenceImages.add(prevImage);
+							prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(prevImage);
 							outputWriter.bake_meta_data(prevImage, filesCount);
 							outputWriter.bake_start_frame(prevImage);
 							continue;
@@ -88,10 +90,6 @@ public class EntryPoint {
 						
 						currentImage = ImageIO.read(frame);
 						f.setPreviews(prevImage, currentImage);
-						
-						if (prevImgBlocks == null) {
-							prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(prevImage);
-						}
 						
 						ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
 						
@@ -120,25 +118,30 @@ public class EntryPoint {
 //							e.printStackTrace();
 //						}
 						
-						if ((i + 1) % 50 == 0) {
-							IFrameReconstImage = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
-						}
+						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
 						
-//						outputWriter.build_Frame(currentImage, differences, null, 1);
-//						outputWriter.build_Frame(currentImage, differences, movementVectors, 2);
-//						outputWriter.build_Frame(currentImage, differences, movementVectors, 3);
+//						BufferedImage img_d = outputWriter.build_Frame(currentImage, differences, null, 1);
+//						BufferedImage img_v = outputWriter.build_Frame(currentImage, differences, movementVectors, 2);
 						outputWriter.add_obj_to_queue(differences, movementVectors);
 						
-						referenceImages.add(currentImage);
+						try {
+//							ImageIO.write(img_d, "png", new File(output.getAbsolutePath() + "/D_" + i + ".png"));
+//							ImageIO.write(img_v, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/Temp" + i + ".png"));
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						
+						referenceImages.add(result);
 						release_old_reference_images(referenceImages);
-						prevImage = currentImage;
-						prevImgBlocks = curImgBlocks;
+						prevImage = result;
+						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(result);
 					}
 					
 					f.disposeWriterPermission();
 					
 					outputWriter.compress_result();
-					f.updateFrameCount(filesCount + 10, filesCount, true);
+					f.updateFrameCount(filesCount + (filesCount / 10), filesCount, true);
 					
 					referenceImages.clear();
 					
@@ -175,6 +178,7 @@ public class EntryPoint {
 				DataGrabber grabber = new DataGrabber();
 				grabber.slice(file);
 				
+				Filter filter = new Filter();
 				DataPipeEngine dataPipeEngine = new DataPipeEngine(grabber);
 				DataPipeValveEngine dataPipeValveEngine = new DataPipeValveEngine("C:\\Users\\Lukas Lampl\\Documents");
 				
@@ -196,7 +200,9 @@ public class EntryPoint {
 					
 					ArrayList<Vector> vecs = dataPipeEngine.scrape_vectors(frameCounter++);
 					BufferedImage result = dataPipeEngine.build_frame(vecs, referenceImages, prevFrame, currFrame);
-					dataPipeValveEngine.release_image(result);
+					BufferedImage outputImg = filter.apply_gaussian_blur(result, 1);
+					
+					dataPipeValveEngine.release_image(outputImg);
 					prevFrame = result;
 					referenceImages.add(result);
 					release_old_reference_images(referenceImages);

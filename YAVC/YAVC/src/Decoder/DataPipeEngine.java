@@ -5,7 +5,10 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
+
+import javax.imageio.ImageIO;
 
 import Encoder.MakroBlock;
 import Encoder.MakroBlockEngine;
@@ -14,7 +17,6 @@ import Encoder.Vector;
 public class DataPipeEngine {
 	private DataGrabber grabber = null;
 	private Dimension DIMENSION = null;
-	private boolean hasNext = true;
 	
 	private int MAX_FRAMES = 0;
 	private String CURRENT_FRAME_DATA = "";
@@ -161,15 +163,17 @@ public class DataPipeEngine {
 		
 		if (vecs != null) {
 			for (Vector vec : vecs) {
-				Point p = new Point(vec.getStartingPoint().x, vec.getStartingPoint().y);
-				MakroBlock block = makroBlockEngine.get_single_makro_block(p, referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()));
+				MakroBlock block = makroBlockEngine.get_single_makro_block(vec.getStartingPoint(), referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()));
 				
 				for (int y = 0; y < block.getColors().length; y++) {
 					for (int x = 0; x < block.getColors()[y].length; x++) {
-						if (p.x + vec.getSpanX() + x >= render.getWidth()
-							|| p.y + vec.getSpanY() + y >= render.getHeight()
-							|| p.x < 0 || p.y < 0) {
-	//						System.err.println("Too small!");
+						int vecEndX = vec.getStartingPoint().x + vec.getSpanX();
+						int vecEndY = vec.getStartingPoint().y + vec.getSpanY();
+						
+						if (vecEndX + x >= render.getWidth()
+							|| vecEndY + y >= render.getHeight()
+							|| vecEndX + x < 0 || vecEndY + y < 0) {
+//							System.err.println("Out of boundaries!");
 							continue;
 						}
 						
@@ -177,7 +181,7 @@ public class DataPipeEngine {
 							continue;
 						}
 						
-						vectors.setRGB(p.x + vec.getSpanX() + x, p.y + vec.getSpanY() + y, block.getColors()[y][x]);
+						vectors.setRGB(vecEndX + x, vecEndY + y, block.getColors()[y][x]);
 					}
 				}
 			}

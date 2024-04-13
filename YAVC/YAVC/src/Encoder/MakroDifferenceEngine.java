@@ -2,6 +2,10 @@ package Encoder;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import Main.config;
 
@@ -15,29 +19,60 @@ public class MakroDifferenceEngine {
 	 */
 	public ArrayList<MakroBlock> get_MakroBlock_difference(ArrayList<MakroBlock> list1, ArrayList<MakroBlock> list2, BufferedImage img) {
 		ArrayList<MakroBlock> diffs = new ArrayList<MakroBlock>();
+		ArrayList<Future<MakroBlock>> fmbs = new ArrayList<Future<MakroBlock>>();
 		
 		if (list1.size() != list2.size()) {
 			System.err.println("List size not equal!");
 			return null;
 		}
 		
-		for (int i = 0; i < list1.size(); i++) {
-			int colors1[][] = list1.get(i).getColors();
-			int colors2[][] = list2.get(i).getColors();
-			
-			for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
-				for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
-					if (colors1[y][x] != colors2[y][x]) {
-						if (img != null) {
-							list2.get(i).setEdgeBlock(is_edge(list2.get(i), img, 50));
+		int threads = Runtime.getRuntime().availableProcessors();
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		
+		try {
+			for (int i = 0; i < list1.size(); i++) {
+				final int index = i;
+				
+				Callable<MakroBlock> task = () -> {
+					int colors1[][] = list1.get(index).getColors();
+					int colors2[][] = list2.get(index).getColors();
+					
+					for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
+						for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
+							if (colors1[y][x] != colors2[y][x]) {
+								if (img != null) {
+									list2.get(index).setEdgeBlock(is_edge(list2.get(index), img, 50));
+								}
+								
+								return list2.get(index);
+							}
 						}
-						
-						diffs.add(list2.get(i));
-						y = config.MAKRO_BLOCK_SIZE;
-						break;
 					}
+					
+					return null;
+				};
+				
+				fmbs.add(executor.submit(task));
+			}
+			
+			for (Future<MakroBlock> f : fmbs) {
+				try {
+					MakroBlock mb = f.get();
+					
+					if (mb != null) {
+						diffs.add(mb);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
+			
+			executor.shutdown();
+			
+			executor.shutdown();
+		} catch (Exception e) {
+			executor.shutdown();
+			e.printStackTrace();
 		}
 		
 		return diffs;
