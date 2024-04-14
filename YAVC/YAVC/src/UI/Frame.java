@@ -51,6 +51,11 @@ public class Frame extends JFrame {
 		});
 	}
 	
+	/*
+	 * Purpose: Set the desired panel into focus of the frame
+	 * Return Type: void
+	 * Params: JPanel newFocus => Panel that should be the new focus
+	 */
 	public void move_focused_panel(JPanel newFocus) {
 		if (this.CURRENT_FOCUS != null) {
 			this.remove(this.CURRENT_FOCUS);

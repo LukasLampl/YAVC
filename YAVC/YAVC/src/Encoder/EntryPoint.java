@@ -54,8 +54,9 @@ public class EntryPoint {
 					OutputWriter outputWriter = new OutputWriter(output.getAbsolutePath(), f);
 					
 					int filesCount = input.listFiles().length;
+					int changeDetectDistance = 0;
 					
-					for (int i = 0; i < filesCount; i++) {
+					for (int i = 0; i < filesCount; i++, changeDetectDistance++) {
 						if (this.EN_STATUS == Status.STOPPED) {
 							output.delete();
 						}
@@ -92,19 +93,22 @@ public class EntryPoint {
 						currentImage = ImageIO.read(frame);
 						f.setPreviews(prevImage, currentImage);
 						
-						scene.scene_change_detected(prevImage, currentImage);
-						
 						ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
-						curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
 						
-						if (i % 50 == 0) {
+						//This only adds an I-Frame if 'i' is a 50th frame and a change
+						//detection lied 20 frames ahead or a change detection has triggered.
+						if ((i % 50 == 0 && changeDetectDistance > 20) || scene.scene_change_detected(prevImage, currentImage)) {
 							prevImgBlocks = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, null);
 							outputWriter.add_obj_to_queue(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks), null);
 							referenceImages.clear();
 							referenceImages.add(currentImage);
+							prevImage = currentImage;
 							prevImgBlocks = curImgBlocks;
+							changeDetectDistance = 0;
 							continue;
 						}
+						
+						curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
 						
 						ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage);
 						ArrayList<YCbCrMakroBlock> differences = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(rawDifferences);

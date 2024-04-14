@@ -38,6 +38,12 @@ public class OutputWriter {
 		start_baking_queue();
 	}
 	
+	/*
+	 * Purpose: Adds an object to the writing queue
+	 * Return Type: void
+	 * Params: ArrayList<YCbCrMakroBlock> diffs => Differences between prev and cur frame;
+	 * 			ArrayList<Vector> vecs => Movement vectors of the the frame
+	 */
 	public void add_obj_to_queue(ArrayList<YCbCrMakroBlock> diffs, ArrayList<Vector> vecs) {
 		SequenceObject obj = new SequenceObject();
 		obj.setDifferences(diffs);
@@ -102,7 +108,7 @@ public class OutputWriter {
 	/*
 	 * Purpose: Prepare and write a frame into the YAVC file without the "FIRST FRAME" importance
 	 * Return Type: void
-	 * Params: ArrayList<MakroBlock> differences => The differences between the previous and current frame
+	 * Params: ArrayList<YCbCrMakroBlock> differences => The differences between the previous and current frame
 	 */
 	private int outputFrames = 0;
 	
@@ -152,7 +158,7 @@ public class OutputWriter {
 	 * Purpose: Write calcuated vectors into the YAVC file
 	 * Return Type: void
 	 * Params: ArrayList<Vector> movementVectors => Calculated vectors of the current frame
-	 * 			int frame => Frame number to which the vectors are applied
+	 * 			File frameFile => File to which the vectors correspond to
 	 */
 	private void bake_vectors(ArrayList<Vector> movementVectors, File frameFile) {
 		if (movementVectors == null) {
@@ -173,12 +179,17 @@ public class OutputWriter {
 		}
 	}
 	
+	/*
+	 * Purpose: Starts a Thread for writing all files (pauses if queue is clear)
+	 * Return Type: void
+	 * Params: void
+	 */
 	private void start_baking_queue() {
 		Thread writer = new Thread(() -> {
 			while (FRAME.canWriterWrite()) {
 				if (QUEUE.size() == 0) {
 					try {
-						Thread.sleep(300);
+						Thread.sleep(500);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}

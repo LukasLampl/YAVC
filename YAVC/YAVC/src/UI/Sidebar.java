@@ -17,9 +17,15 @@ public class Sidebar extends JPanel {
 	
 	private Frame FRAME = null;
 	
+	/*
+	 * Purpose: Set up the sidebar of the frame
+	 * Return Type: void
+	 * Params: EncodePanel encodePanel => Used EncodePanel;
+	 * 			DecodePanel decodePanel => Used DecodePanel;
+	 * 			Frame frame => Frame in which the component is active
+	 */
 	public Sidebar(EncodePanel encodePanel, DecodePanel decodePanel, Frame frame) {
 		this.FRAME = frame;
-		
 		setBackground(ComponentColor.SHADE_COLOR);
 		setLayout(new GridBagLayout());
 		setSize(new Dimension(180, Integer.MAX_VALUE));
@@ -98,6 +104,11 @@ public class Sidebar extends JPanel {
 		add(decodeTabBtn, cons);
 	}
 	
+	/*
+	 * Purpose: Create a button, that can be used multiple times
+	 * Return Type: JButton => STD Button
+	 * Params: String text => Text of the button
+	 */
 	private JButton create_std_button(String text) {
 		JButton btn = new JButton(text);
 		btn.setForeground(ComponentColor.TEXT_COLOR);

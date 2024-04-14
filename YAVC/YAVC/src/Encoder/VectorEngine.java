@@ -108,10 +108,10 @@ public class VectorEngine {
 	
 	/*
 	 * Purpose: Search the most equal MakroBlock from the previous frame using Three-Step-Search
-	 * Return Type: MakroBlock => Most similar MakroBlock
-	 * Params: MakroBlock blockToBeSearched => MakroBlock to be matched in the previous frame;
+	 * Return Type: YCbCrMakroBlock => Most similar MakroBlock
+	 * Params: YCbCrMakroBlock blockToBeSearched => MakroBlock to be matched in the previous frame;
 	 * 			BufferedImage prevFrame => Image of the previous frame;
-	 * 			int maxMADTolerance => Max tolerance of the MAD
+	 * 			int maxSADTolerance => Max tolerance of the SAD
 	 */
 	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, BufferedImage prevFrame, int maxSADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
@@ -183,6 +183,12 @@ public class VectorEngine {
 		return mostEqualBlock;
 	}
 	
+	/*
+	 * Purpose: Get all search points for hexagon search
+	 * Return Type: Point[] => Point array with all positions
+	 * Params: int radius => Radius of hexagon;
+	 * 			Point center => Center of the hexagon
+	 */
 	private Point[] get_hexagon_points(int radius, Point center) {
 		Point[] points = new Point[7];
 		points[6] = center;
@@ -222,6 +228,13 @@ public class VectorEngine {
 		return (Math.pow(resY, 3) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(config.MAKRO_BLOCK_SIZE * config.MAKRO_BLOCK_SIZE);
 	}
 	
+	/*
+	 * Purpose: Creates a BufferedImage with all the vector paths visualized
+	 * Return Type: BufferedImage => Image with all vectors on it
+	 * Params: Dimension dim => Dimension of the image;
+	 * 			ArrayList<Vector> vecs => Vectors to be drawn
+	 * Note: THIS FUNCTION IS NOT A CRUCIAL PART OF THE PROGRAM
+	 */
 	public BufferedImage construct_vector_path(Dimension dim, ArrayList<Vector> vecs) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2d = render.createGraphics();

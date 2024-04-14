@@ -237,7 +237,7 @@ public class EncodePanel extends JPanel {
 		
 		JPanel prevFramePanel = create_std_panel();
 		prevFrameLabel = create_std_label(null);
-		prevFramePanel.add(create_std_label("Prev frame"));
+		prevFramePanel.add(create_std_label("Prev frame (P-Frame)"));
 		prevFramePanel.add(prevFrameLabel);
 		
 		holder.add(prevFramePanel, cons);
@@ -246,7 +246,7 @@ public class EncodePanel extends JPanel {
 		
 		JPanel curFramePanel = create_std_panel();
 		curFrameLabel = create_std_label(null);
-		curFramePanel.add(create_std_label("Current frame"));
+		curFramePanel.add(create_std_label("Current frame (I-Frame)"));
 		curFramePanel.add(curFrameLabel);
 		
 		holder.add(curFramePanel, cons);
