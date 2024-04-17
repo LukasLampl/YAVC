@@ -138,7 +138,7 @@ public class VectorEngine {
 				}
 				
 				MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame);
-				YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_MakroBlock_to_YCbCrMarkoBlock(blockAtPosP);
+				YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_single_MakroBlock_to_YCbCrMakroBlock(blockAtPosP);
 				double sad = get_SAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
 				
 				if (sad < lowestSAD) {
@@ -166,7 +166,7 @@ public class VectorEngine {
 		
 		for (Point p : searchPositions) {
 			MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame);
-			YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_MakroBlock_to_YCbCrMarkoBlock(blockAtPosP);
+			YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_single_MakroBlock_to_YCbCrMakroBlock(blockAtPosP);
 			double sad = get_SAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
 			
 			if (sad < lowestSAD) {

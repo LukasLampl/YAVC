@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import Main.config;
 
@@ -124,29 +125,72 @@ public class MakroBlockEngine {
 		return convertedBlocks;
 	}
 	
-	public YCbCrMakroBlock convert_MakroBlock_to_YCbCrMarkoBlock(MakroBlock block) {
-		return convert_single_MakroBlock_to_YCbCrMakroBlock(block);
-	}
-	
 	/*
 	 * Purpose: Converts a single MakroBlock to an YUVMakroBlock
 	 * Return Type: YUVMakroBlock => Converted MakroBlock
 	 * Params: MakroBlock block => MakroBlock to be converted
 	 */
-	private YCbCrMakroBlock convert_single_MakroBlock_to_YCbCrMakroBlock(MakroBlock block) {
+	public YCbCrMakroBlock convert_single_MakroBlock_to_YCbCrMakroBlock(MakroBlock block) {
 		YCbCrColor[][] cols = new YCbCrColor[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
+		boolean[][] colorIgnores = block.getColorIgnore();
+		int[][] colors = block.getColors();
 		
 		for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
 			for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
-				cols[y][x] = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(block.getColors()[y][x]));
+				cols[y][x] = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(colors[y][x]));
 				
-				if (block.getColorIgnore()[y][x] == true) {
+				if (colorIgnores[y][x] == true) {
 					cols[y][x].setA(255);
 				}
 			}
 		}
 		
 		return new YCbCrMakroBlock(cols, block.getPosition());
+	}
+	
+	public void apply_DCT(YCbCrMakroBlock block) {
+		YCbCrColor[][] col = block.getColors();
+		double[][][] dct = new double[2][col.length][col[0].length];
+		double cj, ci;
+		int m = col.length, n = col[0].length;
+		
+		for (int index = 0; index < 2; index++) {
+			for (int i = 0; i < m; i++) {
+				for (int j = 0; j < n; j++) {
+					if (i == 0) {
+						ci = 1 / Math.sqrt(m);
+					} else {
+						ci = Math.sqrt(2) / Math.sqrt(m);
+					}
+					
+					if (j == 0) {
+						cj = 1 / Math.sqrt(n);
+					} else {
+						cj = Math.sqrt(2) / Math.sqrt(n);
+					}
+					
+					double sum = 0.0;
+					
+					for (int x = 0; x < m; x++) {
+						for (int y = 0; y < n; y++) {
+							double co_1d = Math.cos((2 * x + 1) * i * Math.PI / (2 * m));
+							double co_2d = Math.cos((2 * y + 1) * j * Math.PI / (2 * n));
+							double value = index == 0 ? col[x][y].getCb() : col[x][y].getCr();
+							
+							sum += co_1d * co_2d * value;
+						}
+					}
+					
+					dct[index][i][j] = ci * cj * sum;
+				}
+			}
+		}
+			
+		for (double[][] arr : dct) {
+			for (double[] d : arr) {
+				System.out.println(Arrays.toString(d));
+			}
+		}
 	}
 	
 	/*
@@ -173,16 +217,21 @@ public class MakroBlockEngine {
 		
 		int maxX = img.getWidth();
 		int maxY = img.getHeight();
+		int maxMBY = position.y + config.MAKRO_BLOCK_SIZE;
+		int maxMBX = position.x + config.MAKRO_BLOCK_SIZE;
 		
-		for (int y = position.y; y < position.y + config.MAKRO_BLOCK_SIZE; y++) {
-			for (int x = position.x; x < position.x + config.MAKRO_BLOCK_SIZE; x++) {
+		for (int y = position.y; y < maxMBY; y++) {
+			if (y >= maxY || y < 0) {
+				break;
+			}
+			
+			for (int x = position.x; x < maxMBX; x++) {
 				if (currentRow == config.MAKRO_BLOCK_SIZE) {
 					currentColumn++;
 					currentRow = 0;
 				}
 				
-				if (x >= maxX || y >= maxY
-					|| x < 0 || y < 0) {
+				if (x >= maxX || x < 0) {
 					colorIgnore[currentColumn][currentRow] = true;
 					colors[currentColumn][currentRow++] = Integer.MAX_VALUE; //ASCII for YAVC
 					continue;

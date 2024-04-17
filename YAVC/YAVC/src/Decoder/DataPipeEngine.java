@@ -5,10 +5,7 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.ArrayList;
-
-import javax.imageio.ImageIO;
 
 import Encoder.MakroBlock;
 import Encoder.MakroBlockEngine;
@@ -36,19 +33,36 @@ public class DataPipeEngine {
 	public BufferedImage scrape_main_image(String startFrameContent) {
 		BufferedImage render = new BufferedImage(this.DIMENSION.width, this.DIMENSION.height, BufferedImage.TYPE_INT_ARGB);
 		String[] stepInfos = startFrameContent.split("\\.");
-		
+
 		int x = 0;
 		int y = 0;
 		
 		for (String s : stepInfos) {
-			if (x >= render.getWidth()) {
-				y++;	
-				x = 0;
-			} else if (y + 1 >= render.getHeight()) {
-				break;
+			String[] rle_dec = s.split("\\~");
+			
+			int value = 0;
+			int count = 0;
+			
+			if (rle_dec.length > 1) {
+				value = Integer.parseInt(rle_dec[0]);
+				count = Integer.parseInt(rle_dec[1]);
+			} else {
+				value = Integer.parseInt(s);
 			}
-
-			render.setRGB(x++, y, Integer.parseInt(s));
+				
+			for (int i = 0; i < count; i++) {
+				if (x >= render.getWidth()) {
+					y++;
+					x = 0;
+				}
+				
+				if (y + 1 >= render.getHeight()) {
+					break;
+				}
+				
+//				System.out.println("Setting px: " + value + "; at: " + x + ", " + y + "; i:" + i + "/" + count);
+				render.setRGB(x++, y, value);
+			}
 		}
 		
 		return render;
@@ -94,8 +108,25 @@ public class DataPipeEngine {
 			} else if (y >= render.getHeight()) {
 				break;
 			}
-
-			render.setRGB(x++, y, Integer.parseInt(s));
+			
+			String[] rle_dec = s.split("\\~");
+			
+			if (rle_dec.length > 1) {
+				int count = Integer.parseInt(rle_dec[1]) + 1;
+				
+				for (int i = 0; i < count; i++) {
+					if (x >= render.getWidth()) {
+						y++;	
+						x = 0;
+					} else if (y + 1 >= render.getHeight()) {
+						break;
+					}
+					
+					render.setRGB(x++, y, Integer.parseInt(rle_dec[0]));
+				}
+			} else {
+				render.setRGB(x++, y, Integer.parseInt(rle_dec[0]));
+			}
 		}
 		
 		return render;

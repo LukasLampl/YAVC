@@ -97,14 +97,20 @@ public class EntryPoint {
 						
 						//This only adds an I-Frame if 'i' is a 50th frame and a change
 						//detection lied 20 frames ahead or a change detection has triggered.
-						if ((i % 50 == 0 && changeDetectDistance > 20) || scene.scene_change_detected(prevImage, currentImage)) {
+						boolean sceneChanged = scene.scene_change_detected(prevImage, currentImage);
+						
+						if (sceneChanged == true) {
+							System.out.println("Shot change dectedted at frame " + i);
+						}
+						
+						if ((i % 50 == 0 && changeDetectDistance > 10) || sceneChanged) {
 							prevImgBlocks = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, null);
 							outputWriter.add_obj_to_queue(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks), null);
 							referenceImages.clear();
 							referenceImages.add(currentImage);
 							prevImage = currentImage;
 							prevImgBlocks = curImgBlocks;
-							changeDetectDistance = 0;
+							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
 							continue;
 						}
 						
@@ -126,6 +132,8 @@ public class EntryPoint {
 //						}
 						
 						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
+						
+//						makroBlockEngine.apply_DCT(differences.get(0));
 						
 						BufferedImage img_d = outputWriter.build_Frame(currentImage, differences, null, 1);
 						BufferedImage img_v = outputWriter.build_Frame(currentImage, differences, movementVectors, 2);

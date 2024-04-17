@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -87,19 +88,22 @@ public class OutputWriter {
 	 * Params: BufferedImage img => First frame
 	 */
 	public void bake_start_frame(BufferedImage img) {
-		StringBuilder imgInChar = new StringBuilder(img.getHeight() * img.getWidth() + 2);
+		int[] temp = new int[img.getWidth() * img.getHeight()];
+		int counter = 0;
 		
 		for (int y = 0; y < img.getHeight(); y++) {
 			for (int x = 0; x < img.getWidth(); x++) {
-				imgInChar.append(img.getRGB(x, y) + ".");
+				temp[counter++] = img.getRGB(x, y);
 			}
 		}
+		
+		String imgInChars = run_length_encode_pixels(temp);
 		
 		try {
 			File startFrameFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/SF.YAVCF");
 			startFrameFile.createNewFile();
 			
-			Files.write(Path.of(startFrameFile.getAbsolutePath()), imgInChar.toString().getBytes(), StandardOpenOption.WRITE);
+			Files.write(Path.of(startFrameFile.getAbsolutePath()), imgInChars.getBytes(), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -113,40 +117,29 @@ public class OutputWriter {
 	private int outputFrames = 0;
 	
 	private File bake_frame(ArrayList<YCbCrMakroBlock> differences) {
-		BufferedImage render = new BufferedImage(this.META_DIMENSION.width, this.META_DIMENSION.height, BufferedImage.TYPE_INT_ARGB);
+		int[] temp = new int[differences.size() * config.MBS_SQ];
+		int index = 0;
 		
 		for (YCbCrMakroBlock b : differences) {
 			for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
 				for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
-					if (b.getPosition().x + x >= render.getWidth()
-						|| b.getPosition().y + y >= render.getHeight()) {
-						continue;
-					}
-					
 					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(b.getColors()[y][x]).getRGB();
 					
 					if (b.getColors()[y][x].getA() == 1.0) {
 						continue;
 					}
 					
-					render.setRGB(b.getPosition().x + x, b.getPosition().y + y, col);
+					temp[index++] = col;
 				}
 			}
 		}
 		
-		StringBuilder imgInChar = new StringBuilder(render.getHeight() * render.getWidth() + 2);
-		
-		for (int y = 0; y < render.getHeight(); y++) {
-			for (int x = 0; x < render.getWidth(); x++) {
-				imgInChar.append(render.getRGB(x, y) + ".");
-			}
-		}
-		
+		String imgInChars = run_length_encode_pixels(temp);
 		File frameFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/F_" + outputFrames++ + ".YAVCF");
 		
 		try {
 			frameFile.createNewFile();
-			Files.write(Path.of(frameFile.getAbsolutePath()), imgInChar.toString().getBytes(), StandardOpenOption.WRITE);
+			Files.write(Path.of(frameFile.getAbsolutePath()), imgInChars.getBytes(), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -177,6 +170,33 @@ public class OutputWriter {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private String run_length_encode_pixels(int[] pixels) {
+		StringBuilder pixelsInChar = new StringBuilder();
+		
+		for (int i = 0; i < pixels.length; i++) {
+			int counter = 0;
+			
+			if (i + 1 < pixels.length) {
+				while (pixels[i] == pixels[i + 1]) {
+					counter++;
+					i++;
+					
+					if (i + 1 >= pixels.length) {
+						break;
+					}
+				}
+			}
+			
+			if (counter > 1) {
+				pixelsInChar.append(pixels[i] + "~" + counter + ".");
+			} else {
+				pixelsInChar.append(pixels[i] + ".");
+			}
+		}
+		
+		return pixelsInChar.toString();
 	}
 	
 	/*

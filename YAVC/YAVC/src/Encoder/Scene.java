@@ -20,8 +20,6 @@ public class Scene {
 		//normalize the values
 		double normalDiff = difference / (double)((img1.getWidth() * img1.getHeight() * 2));
 		
-		System.out.println(normalDiff);
-		
 		//If the normalized values are above 1.0 the scene might have changed
 		if (normalDiff > 1.0) {
 			return true;
