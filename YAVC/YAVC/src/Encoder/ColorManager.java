@@ -19,6 +19,6 @@ public class ColorManager {
 		int red = (int)(color.getY() + 1.402 * (color.getCr() - 128));
 		int green = (int)(color.getY() - 0.344136 * (color.getCb() - 128) - 0.714136 * (color.getCr() - 128));
 		int blue = (int)(color.getY() + 1.772 * (color.getCb() - 128));
-		return new Color(red, green, blue);
+		return new Color(Math.min(Math.max(red, 0), 255), Math.min(Math.max(green, 0), 255), Math.min(Math.max(blue, 0), 255));
 	}
 }

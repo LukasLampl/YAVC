@@ -40,7 +40,7 @@ public class YCbCrColor {
 		return Cr;
 	}
 
-	public void setV(double Cr) {
+	public void setCr(double Cr) {
 		this.Cr = Cr;
 	}
 }

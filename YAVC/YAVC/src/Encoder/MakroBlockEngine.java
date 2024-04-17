@@ -148,6 +148,47 @@ public class MakroBlockEngine {
 		return new YCbCrMakroBlock(cols, block.getPosition());
 	}
 	
+	/*
+	 * Purpose: Subsample a whole YCbCrMakroBlock array
+	 * Return Type: void
+	 * Params: ArrayList<YCbCrMakroBlock> blocks => Blocks to subsample
+	 */
+	public void sub_sample_YCbCrMakroBlocks(ArrayList<YCbCrMakroBlock> blocks) {
+		for (YCbCrMakroBlock b : blocks) {
+			sub_sample_YCbCrMakroBlock(b);
+		}
+	}
+	
+	/*
+	 * Purpose: Subsample a YCbCrMakroBlock down to 4:2:0
+	 * Return Type: void
+	 * Params: YCbCrMakroBlock block => Block to subsample
+	 */
+	public void sub_sample_YCbCrMakroBlock(YCbCrMakroBlock block) {
+		YCbCrColor[][] cols = block.getColors();
+		
+		for (int y = 0; y < cols.length; y += 2) {
+			if (y < 0 || y + 1 >= cols.length) {
+				continue;
+			}
+			
+			for (int x = 0; x < cols[y].length; x += 2) {
+				if (x < 0 || x >= cols[y].length) {
+					continue;
+				}
+				
+				double CbVal = cols[x][y].getCb();
+				double CrVal = cols[x][y].getCr();
+				cols[x + 1][y].setCb(CbVal);
+				cols[x + 1][y + 1].setCb(CbVal);
+				cols[x][y + 1].setCb(CbVal);
+				cols[x + 1][y].setCr(CrVal);
+				cols[x + 1][y + 1].setCr(CrVal);
+				cols[x][y + 1].setCr(CrVal);
+			}
+		}
+	}
+	
 	public void apply_DCT(YCbCrMakroBlock block) {
 		YCbCrColor[][] col = block.getColors();
 		double[][][] dct = new double[2][col.length][col[0].length];
