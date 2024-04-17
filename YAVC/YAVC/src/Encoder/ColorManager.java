@@ -2,6 +2,8 @@ package Encoder;
 
 import java.awt.Color;
 
+import Main.config;
+
 public class ColorManager {
 	/*
 	 * Purpose: Convert a RGB color to an YUV color
@@ -20,5 +22,29 @@ public class ColorManager {
 		int green = (int)(color.getY() - 0.344136 * (color.getCb() - 128) - 0.714136 * (color.getCr() - 128));
 		int blue = (int)(color.getY() + 1.772 * (color.getCb() - 128));
 		return new Color(Math.min(Math.max(red, 0), 255), Math.min(Math.max(green, 0), 255), Math.min(Math.max(blue, 0), 255));
+	}
+	
+	public double[][] get_YCbCr_comp_sub_sample(YCbCrColor[][] color, YCbCrComp comp) {
+		double[][] sub = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
+		
+		int subY = 0;
+		int subX = 0;
+		
+		for (int y = 0; y < color.length; y += 2) {
+			for (int x = 0; x < color[y].length; x += 2) {
+				if (subX >= sub.length) {
+					subY++;
+					subX = 0;
+				}
+				
+				if (comp == YCbCrComp.CB) {
+					sub[subY][subX++] = color[y][x].getCb();
+				} else if (comp == YCbCrComp.CR) {
+					sub[subY][subX++] = color[y][x].getCr();
+				}
+			}
+		}
+		
+		return sub;
 	}
 }

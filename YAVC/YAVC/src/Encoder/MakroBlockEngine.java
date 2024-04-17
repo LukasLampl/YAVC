@@ -160,11 +160,11 @@ public class MakroBlockEngine {
 	}
 	
 	/*
-	 * Purpose: Subsample a YCbCrMakroBlock down to 4:2:0
+	 * Purpose: Subsample a YCbCrMakroBlock down to 4:2:2
 	 * Return Type: void
 	 * Params: YCbCrMakroBlock block => Block to subsample
 	 */
-	public void sub_sample_YCbCrMakroBlock(YCbCrMakroBlock block) {
+	private void sub_sample_YCbCrMakroBlock(YCbCrMakroBlock block) {
 		YCbCrColor[][] cols = block.getColors();
 		
 		for (int y = 0; y < cols.length; y += 2) {
@@ -189,11 +189,32 @@ public class MakroBlockEngine {
 		}
 	}
 	
-	public void apply_DCT(YCbCrMakroBlock block) {
-		YCbCrColor[][] col = block.getColors();
-		double[][][] dct = new double[2][col.length][col[0].length];
+	/*
+	 * Purpose: Run the DCT-II for a list of YCbCrMakroBlocks
+	 * Return Type: ArrayList<DCTObject> => List with all DCT coefficients
+	 * Params: ArrayList<YCbCrMakroBlock> blocks => Blocks to convert
+	 */
+	public ArrayList<DCTObject> apply_DCT_on_blocks(ArrayList<YCbCrMakroBlock> blocks) {
+		ArrayList<DCTObject> obj = new ArrayList<DCTObject>(blocks.size());
+		
+		for (YCbCrMakroBlock b : blocks) {
+			obj.add(apply_DCT(b));
+		}
+		
+		return obj;
+	}
+	
+	/*
+	 * Purpose: Apply the DCT-II on a YCbCrMakroBlock with 4:2:2 Chroma subsampling
+	 * Return Type: DCTObject => Object with all DCT Information
+	 * Params: YCbCrMakroBlock block => Block to whicht the DCT-II should be apllied to
+	 */
+	private DCTObject apply_DCT(YCbCrMakroBlock block) {
+		double[][] CbCol = this.COLOR_MANAGER.get_YCbCr_comp_sub_sample(block.getColors(), YCbCrComp.CB);
+		double[][] CrCol = this.COLOR_MANAGER.get_YCbCr_comp_sub_sample(block.getColors(), YCbCrComp.CR);
+		DCTObject obj = new DCTObject();
 		double cj, ci;
-		int m = col.length, n = col[0].length;
+		int m = CbCol.length, n = CbCol[0].length;
 		
 		for (int index = 0; index < 2; index++) {
 			for (int i = 0; i < m; i++) {
@@ -216,22 +237,27 @@ public class MakroBlockEngine {
 						for (int y = 0; y < n; y++) {
 							double co_1d = Math.cos((2 * x + 1) * i * Math.PI / (2 * m));
 							double co_2d = Math.cos((2 * y + 1) * j * Math.PI / (2 * n));
-							double value = index == 0 ? col[x][y].getCb() : col[x][y].getCr();
+							double value = index == 0 ? CbCol[x][y] : CrCol[y][x];
 							
 							sum += co_1d * co_2d * value;
 						}
 					}
 					
-					dct[index][i][j] = ci * cj * sum;
+					if (index == 0) {
+						obj.getCbDCT()[i][j] = ci * cj * sum;
+					} else if (index == 1) {
+						obj.getCrDCT()[i][j] = ci * cj * sum;
+					}
 				}
 			}
 		}
 			
-		for (double[][] arr : dct) {
-			for (double[] d : arr) {
-				System.out.println(Arrays.toString(d));
-			}
+		for (double[] arr : obj.getCbDCT()) {
+			System.out.println(Arrays.toString(arr));
 		}
+		
+		System.out.println("END OF MATRIX");
+		return obj;
 	}
 	
 	/*

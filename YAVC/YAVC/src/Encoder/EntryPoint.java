@@ -118,8 +118,6 @@ public class EntryPoint {
 						
 						ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage);
 						ArrayList<YCbCrMakroBlock> differences = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(rawDifferences);
-						makroBlockEngine.sub_sample_YCbCrMakroBlocks(differences);
-						
 						f.setDifferenceImage(rawDifferences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
 						ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
@@ -134,8 +132,7 @@ public class EntryPoint {
 //						}
 						
 						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
-						
-//						makroBlockEngine.apply_DCT(differences.get(0));
+						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(differences);
 						
 						BufferedImage img_d = outputWriter.build_Frame(currentImage, differences, null, 1);
 						BufferedImage img_v = outputWriter.build_Frame(currentImage, differences, movementVectors, 2);
