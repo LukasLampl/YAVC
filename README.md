@@ -51,7 +51,7 @@ It is relatively simple and the only major issues may occur at the different sli
 
 # 3. How it works #
 Since I want to keep everything simple, I do not go into theoretical and high detail.
-First of all the program takes two images from the input folder and loads them into memory. Now both images are converted into 8x8 MakroBlocks, if a MakroBlock is bigger than the image, the unused memory is set to a specific number for later recognition. Followed by the MakroBlock conversion is the color-damping part, in which the
+First of all the program takes two images from the input folder and loads them into memory. Now both images are converted into 5x5 MakroBlocks, if a MakroBlock is bigger than the image, the unused memory is set to a specific number for later recognition. Followed by the MakroBlock conversion is the color-damping part, in which the
 MakroBlocks of the same position are compared to each other and damped if necessary to create as much redundancy as possible. No the differences between those MakroBlocks are calculated, meaning if the frames have a static background, the difference is a moving object for instance. After the differences are computed, the
 differences are tried to match up with MakroBlock from the previous frame, to save space (Since the block just has to be defined once). Now the vectorized MakroBlocks are written to a file. The process repeats for all frames. If all frames have been processed the final file is deflated
 using ZIP.
