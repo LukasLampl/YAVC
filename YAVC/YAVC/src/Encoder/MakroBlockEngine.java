@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import Main.config;
 
@@ -160,7 +159,7 @@ public class MakroBlockEngine {
 	}
 	
 	/*
-	 * Purpose: Subsample a YCbCrMakroBlock down to 4:2:2
+	 * Purpose: Subsample a YCbCrMakroBlock down to 4:2:0
 	 * Return Type: void
 	 * Params: YCbCrMakroBlock block => Block to subsample
 	 */
@@ -206,14 +205,46 @@ public class MakroBlockEngine {
 		
 		return obj;
 	}
+
+	/*
+	 * Purpose: Determines the factor for DCT-II
+	 * Return Type: double => Pre factor
+	 * Params: int x => k, n, u or v of DCT-II
+	 */
+	private double step(int x) {
+		return x == 0 ? 1 / Math.sqrt(2) : 1;
+	}
 	
 	/*
-	 * Purpose: Apply the DCT-II on a YCbCrMakroBlock with 4:2:2 Chroma subsampling
-	 * Return Type: DCTObject => Object with all DCT Information
-	 * Params: YCbCrMakroBlock block => Block to whicht the DCT-II should be apllied to
+	 * Purpose: Reverse the subsampling of colors from a 2x2 to 4x4 matrix
+	 * Return Type: void
+	 * Params: YCbCrColor[][] target => Target to write results into;
+	 * 			double[][] coCb => Cb coefficients;
+	 * 			double[][] coCr => Cr coefficients
 	 */
-	private double normalizationTable[][] = {{1, 1}, {1, 1}};
+	private void reverse_subsample(YCbCrColor[][] target, double[][] coCb, double[][] coCr) {
+		for (int x = 0; x < target.length; x += 2) {
+			for (int y = 0; y < target[x].length; y += 2) {
+				double cb = coCb[x / 2][y / 2];
+				double cr = coCr[x / 2][y / 2];
+				
+				target[x][y].setCb(cb);
+				target[x + 1][y].setCb(cb);
+				target[x][y + 1].setCb(cb);
+				target[x + 1][y + 1].setCb(cb);
+				target[x][y].setCr(cr);
+				target[x + 1][y].setCr(cr);
+				target[x][y + 1].setCr(cr);
+				target[x + 1][y + 1].setCr(cr);
+			}
+		}
+	}
 	
+	/*
+	 * Purpose: Apply the DCT-II to a single YCbCrMakroBlock with subsampling of 2x2 chroma
+	 * Return Type: DCTObject => Object with all coefficients
+	 * Params: YCbCrMakroBlock block => Block to process
+	 */
 	private DCTObject apply_DCT(YCbCrMakroBlock block) {
 		double[][] CbCol = this.COLOR_MANAGER.get_YCbCr_comp_sub_sample(block.getColors(), YCbCrComp.CB);
 		double[][] CrCol = this.COLOR_MANAGER.get_YCbCr_comp_sub_sample(block.getColors(), YCbCrComp.CR);
@@ -228,48 +259,38 @@ public class MakroBlockEngine {
 		}
 		
 		obj.setY(YCol);
+		obj.setPosition(block.getPosition());
 		
-		double cj, ci;
 		int m = CbCol.length, n = CbCol[0].length;
 		
-		for (int i = 0; i < m; i++) {
-			for (int j = 0; j < n; j++) {
-				ci = i == 0 ? 1 / Math.sqrt(m) : 1;
-				cj = j == 0 ? 1 / Math.sqrt(n) : 1;
-				
-				double sumCb = 0.0;
-				double sumCr = 0.0;
-				
-				for (int x = 0; x < m; x++) {
-					for (int y = 0; y < n; y++) {
-						double co_1d = Math.cos(((2 * x + 1) * i * Math.PI) / 16);
-						double co_2d = Math.cos(((2 * y + 1) * j * Math.PI) / 16);
-						
-						sumCb += co_1d * co_2d * (CbCol[x][y] - 128);
-						sumCr += co_1d * co_2d * (CrCol[x][y] - 128);
-					}
-				}
-				
-				obj.getCbDCT()[i][j] = 0.25 * ci * cj * sumCb / this.normalizationTable[i][j];
-				obj.getCrDCT()[i][j] = 0.25 * ci * cj * sumCr / this.normalizationTable[i][j];
-			}
-		}
-			
-		for (double[] arr : obj.getCbDCT()) {
-			System.out.println(Arrays.toString(arr));
-		}
-		
-		for (YCbCrColor[] arr : block.getColors()) {
-			for (YCbCrColor yuv : arr) {
-				System.out.println(this.COLOR_MANAGER.convert_YCbCr_to_RGB(yuv));
-			}
-		}
-		
-		System.out.println("END OF MATRIX");
+		for (int v = 0; v < m; v++) {
+            for (int u = 0; u < n; u++) {
+            	double CbSum = 0;
+            	double CrSum = 0;
+            	
+                for (int x = 0; x < m; x++) {
+                    for (int y = 0; y < n; y++) {
+                        double cos1 = Math.cos((double)(2 * x + 1) * (double)u * Math.PI / (double)(2 * n));
+                        double cos2 = Math.cos((double)(2 * y + 1) * (double)v * Math.PI / (double)(2 * m)); 
+                        CbSum += CbCol[y][x] * cos1 * cos2;
+                        CrSum += CrCol[y][x] * cos1 * cos2;
+                    }
+                }
+                
+                obj.getCbDCT()[v][u] = step(v) * step(u) * CbSum;
+                obj.getCrDCT()[v][u] = step(v) * step(u) * CrSum;
+            }
+        }
+
 		return obj;
 	}
 	
-	private YCbCrMakroBlock apply_IDCT(DCTObject obj) {
+	/*
+	 * Purpose: Apply the IDCT-II to a single YCbCrMakroBlock with subsampling of 2x2 chroma
+	 * Return Type: YCbCrMakroBlock => YCbCrMakroBlock with all DCTObject information
+	 * Params: DCTObject obj => Object to apply IDCT-II to
+	 */
+	public YCbCrMakroBlock apply_IDCT(DCTObject obj) {
 		YCbCrColor[][] col = new YCbCrColor[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
 		
 		for (int i = 0; i < col.length; i++) {
@@ -279,55 +300,32 @@ public class MakroBlockEngine {
 			}
 		}
 		
-		double cj, ci;
+		double[][] coCb = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
+		double[][] coCr = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
 		int m = obj.getCbDCT().length, n = obj.getCbDCT()[0].length;
-		
-		for (int i = 0; i < m; i++) {
-			for (int j = 0; j < n; j++) {
-				double iCb = obj.getCbDCT()[i][j] * this.normalizationTable[i][j];
-				double iCr = obj.getCrDCT()[i][j] * this.normalizationTable[i][j];
+
+		for (int x = 0; x < m; x++) {
+			for (int y = 0; y < n; y++) {
+				double CbSum = 0;
+				double CrSum = 0;
 				
-				double sumCb = 0.0;
-				double sumCr = 0.0;
-				
-				for (int x = 0; x < m; x++) {
-					for (int y = 0; y < n; y++) {
-						double co_1d = Math.cos(((2 * i + 1) * x * Math.PI) / 16);
-						double co_2d = Math.cos(((2 * j + 1) * y * Math.PI) / 16);
-						
-						ci = x == 0 ? 1 / Math.sqrt(m) : 1;
-						cj = y == 0 ? 1 / Math.sqrt(n) : 1;
-						
-						sumCb += cj * ci * co_1d * co_2d * iCb;
-						sumCr += ci * cj * co_1d * co_2d * iCr;
+				for (int u = 0; u < m; u++) {
+					for (int v = 0; v < n; v++) {
+						double cos1 = Math.cos((double)(2 * x + 1) * (double)u * Math.PI / (double)(2 * n));
+                        double cos2 = Math.cos((double)(2 * y + 1) * (double)v * Math.PI / (double)(2 * m)); 
+                        CbSum += obj.getCbDCT()[u][v] * step(u) * step(v) * cos1 * cos2;
+                        CrSum += obj.getCrDCT()[u][v] * step(u) * step(v) * cos1 * cos2;
 					}
 				}
 				
-				double CbVal = 0.25 * sumCb + 128;
-				double CrVal = 0.25 * sumCr + 128;
-				
-				col[i][j].setCb(CbVal);
-				col[i + 1][j].setCb(CbVal);
-				col[i][j + 1].setCb(CbVal);
-				col[i + 1][j + 1].setCb(CbVal);
-				col[i][j].setCr(CrVal);
-				col[i + 1][j].setCr(CrVal);
-				col[i][j + 1].setCr(CrVal);
-				col[i + 1][j + 1].setCr(CrVal);
+				coCb[x][y] = CbSum;
+				coCr[x][y] = CrSum;
 			}
 		}
 		
-		System.out.println("REVERSE:");
+		reverse_subsample(col, coCb, coCr);
 		
-		for (YCbCrColor[] arr : col) {
-			for (YCbCrColor yuv : arr) {
-				System.out.println(this.COLOR_MANAGER.convert_YCbCr_to_RGB(yuv));
-			}
-		}
-		
-		System.out.println("END");
-		
-		return new YCbCrMakroBlock(col, null);
+		return new YCbCrMakroBlock(col, obj.getPosition());
 	}
 	
 	/*

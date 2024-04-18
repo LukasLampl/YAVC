@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -24,6 +23,7 @@ public class OutputWriter {
 	private Dimension META_DIMENSION = null;
 	private Frame FRAME = null;
 	private ColorManager COLOR_MANAGER = new ColorManager();
+	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
 	private ArrayList<SequenceObject> QUEUE = new ArrayList<SequenceObject>(5);
 	
 	public OutputWriter(String path, Frame f) {
@@ -264,6 +264,33 @@ public class OutputWriter {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public BufferedImage reconstruct_DCT_image(ArrayList<DCTObject> objs, BufferedImage img) {
+		BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		
+		for (DCTObject obj : objs) {
+			YCbCrMakroBlock block = this.MAKRO_BLOCK_ENGINE.apply_IDCT(obj);
+			
+			for (int y = 0; y < block.getColors().length; y++) {
+				for (int x = 0; x < block.getColors()[y].length; x++) {
+					if (block.getPosition().x + x >= img.getWidth()
+						|| block.getPosition().y + y >= img.getHeight()) {
+						continue;
+					}
+					
+					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(block.getColors()[y][x]).getRGB();
+					
+					if (block.getColors()[y][x].getA() == 1.0) {
+						continue;
+					}
+					
+					render.setRGB(block.getPosition().x + x, block.getPosition().y + y, col);
+				}
+			}
+		}
+		
+		return render;
 	}
 	
 	/*
