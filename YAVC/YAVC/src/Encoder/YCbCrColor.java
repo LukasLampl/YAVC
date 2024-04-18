@@ -12,6 +12,8 @@ public class YCbCrColor {
 		this.Cr = Cr;
 	}
 	
+	public YCbCrColor() {};
+	
 	public int getA() {
 		return A;
 	}
