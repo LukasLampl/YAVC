@@ -176,8 +176,8 @@ public class MakroBlockEngine {
 					continue;
 				}
 				
-				double CbVal = cols[x][y].getCb();
-				double CrVal = cols[x][y].getCr();
+				double CbVal = (cols[x][y].getCb() + cols[x + 1][y].getCb() + cols[x][y + 1].getCb() + cols[x + 1][y + 1].getCb()) / 4;
+				double CrVal = (cols[x][y].getCr() + cols[x + 1][y].getCr() + cols[x][y + 1].getCr() + cols[x + 1][y + 1].getCr()) / 4;
 				cols[x + 1][y].setCb(CbVal);
 				cols[x + 1][y + 1].setCb(CbVal);
 				cols[x][y + 1].setCb(CbVal);
@@ -277,8 +277,8 @@ public class MakroBlockEngine {
                     }
                 }
                 
-                obj.getCbDCT()[v][u] = step(v) * step(u) * CbSum;
-                obj.getCrDCT()[v][u] = step(v) * step(u) * CrSum;
+                obj.getCbDCT()[v][u] = Math.round(step(v) * step(u) * CbSum);
+                obj.getCrDCT()[v][u] = Math.round(step(v) * step(u) * CrSum);
             }
         }
 

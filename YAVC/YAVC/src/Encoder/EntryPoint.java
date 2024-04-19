@@ -133,12 +133,6 @@ public class EntryPoint {
 						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
 						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(result);
 						
-						try {
-							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/R_" + i + ".png"));
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-						
 						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks));
 						result = outputWriter.reconstruct_DCT_image(dcts, result);
 						outputWriter.add_obj_to_queue(differences, movementVectors);
