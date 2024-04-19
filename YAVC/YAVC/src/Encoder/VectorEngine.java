@@ -116,7 +116,7 @@ public class VectorEngine {
 	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, BufferedImage prevFrame, int maxSADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
-		int searchWindow = 32;
+		int searchWindow = 48;
 		
 		Point blockCenter = new Point(blockToBeSearched.getPosition().x + config.MAKRO_BLOCK_SIZE / 2, blockToBeSearched.getPosition().y + config.MAKRO_BLOCK_SIZE / 2);
 		Point minPos = new Point(blockCenter.x - searchWindow, blockCenter.y - searchWindow);
