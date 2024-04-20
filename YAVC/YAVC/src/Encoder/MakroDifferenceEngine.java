@@ -11,6 +11,8 @@ import java.util.concurrent.Future;
 import Main.config;
 
 public class MakroDifferenceEngine {
+	private ColorManager COLOR_MANAGER = new ColorManager();
+	
 	/*
 	 * Purpose: Get the differences between the MakroBlocks of two lists
 	 * Return Type: ArrayList<MakroBlocks> => List of differences
@@ -40,14 +42,14 @@ public class MakroDifferenceEngine {
 					
 					for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
 						for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
-							Color col1 = new Color(colors1[y][x]);
-							Color col2 = new Color(colors2[y][x]);
+							YCbCrColor col1 = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(colors1[y][x]));
+							YCbCrColor col2 = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(colors2[y][x]));
 							
-							int deltaRed = Math.abs(col1.getRed() - col2.getRed());
-							int deltaGreen = Math.abs(col1.getGreen() - col2.getGreen());
-							int deltaBlue = Math.abs(col1.getBlue() - col2.getBlue());
+							double deltaY = Math.abs(col1.getY() - col2.getY());
+							double deltaCb = Math.abs(col1.getCb() - col2.getCb());
+							double deltaCr = Math.abs(col1.getCr() - col2.getCr());
 							
-							if (deltaRed > 8 || deltaGreen > 8 || deltaBlue > 8) {
+							if (deltaY > 3 || deltaCb > 8 || deltaCr > 8) {
 								if (img != null) {
 									list2.get(index).setEdgeBlock(is_edge(list2.get(index), img, 50));
 								}

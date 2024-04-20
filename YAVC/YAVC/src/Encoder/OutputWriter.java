@@ -84,22 +84,19 @@ public class OutputWriter {
 	 * Params: BufferedImage img => First frame
 	 */
 	public void bake_start_frame(BufferedImage img) {
-		int[] temp = new int[img.getWidth() * img.getHeight()];
-		int counter = 0;
-		
+		StringBuilder imgInChars = new StringBuilder();
+
 		for (int y = 0; y < img.getHeight(); y++) {
 			for (int x = 0; x < img.getWidth(); x++) {
-				temp[counter++] = img.getRGB(x, y);
+				imgInChars.append(img.getRGB(x, y) + ".");
 			}
 		}
-		
-		String imgInChars = run_length_encode_pixels(temp);
 		
 		try {
 			File startFrameFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/SF.YAVCF");
 			startFrameFile.createNewFile();
 			
-			Files.write(Path.of(startFrameFile.getAbsolutePath()), imgInChars.getBytes(), StandardOpenOption.WRITE);
+			Files.write(Path.of(startFrameFile.getAbsolutePath()), imgInChars.toString().getBytes(), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -206,33 +203,6 @@ public class OutputWriter {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-	
-	private String run_length_encode_pixels(int[] pixels) {
-		StringBuilder pixelsInChar = new StringBuilder();
-		
-		for (int i = 0; i < pixels.length; i++) {
-			int counter = 0;
-			
-			if (i + 1 < pixels.length) {
-				while (pixels[i] == pixels[i + 1]) {
-					counter++;
-					i++;
-					
-					if (i + 1 >= pixels.length) {
-						break;
-					}
-				}
-			}
-			
-			if (counter > 1) {
-				pixelsInChar.append(pixels[i] + "~" + counter + ".");
-			} else {
-				pixelsInChar.append(pixels[i] + ".");
-			}
-		}
-		
-		return pixelsInChar.toString();
 	}
 	
 	/*

@@ -55,7 +55,7 @@ public class EntryPoint {
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
-					for (int i = 175; i < filesCount; i++, changeDetectDistance++) {
+					for (int i = 0; i < filesCount; i++, changeDetectDistance++) {
 						if (this.EN_STATUS == Status.STOPPED) {
 							output.delete();
 						}
@@ -198,7 +198,7 @@ public class EntryPoint {
 				
 				ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(MAX_REFERENCES);
 				
-				int frameCounter = 1;
+				int frameCounter = 0;
 				BufferedImage prevFrame = null;
 				BufferedImage currFrame = null;
 				

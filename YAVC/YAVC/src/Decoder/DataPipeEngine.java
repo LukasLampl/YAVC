@@ -45,31 +45,16 @@ public class DataPipeEngine {
 		int y = 0;
 		
 		for (String s : stepInfos) {
-			String[] rle_dec = s.split("\\~");
-			
-			int value = 0;
-			int count = 0;
-			
-			if (rle_dec.length > 1) {
-				value = Integer.parseInt(rle_dec[0]);
-				count = Integer.parseInt(rle_dec[1]);
-			} else {
-				value = Integer.parseInt(s);
+			if (x >= this.DIMENSION.width) {
+				x = 0;
+				y++;
 			}
-				
-			for (int i = 0; i < count; i++) {
-				if (x >= render.getWidth()) {
-					y++;
-					x = 0;
-				}
-				
-				if (y + 1 >= render.getHeight()) {
-					break;
-				}
-				
-//				System.out.println("Setting px: " + value + "; at: " + x + ", " + y + "; i:" + i + "/" + count);
-				render.setRGB(x++, y, value);
+			
+			if (y >= this.DIMENSION.height) {
+				break;
 			}
+			
+			render.setRGB(x++, y, Integer.parseInt(s));
 		}
 		
 		return render;
@@ -118,6 +103,11 @@ public class DataPipeEngine {
 		String[] YBlocks = YComp.split(":");
 		String[] CbBlocks = CbComp.split(":");
 		String[] CrBlocks = CrComp.split(":");
+
+		//No data in file
+		if (Pos.length == 1 || YBlocks.length == 1 || CbBlocks.length == 1 || CrBlocks.length == 1) {
+			return render;
+		}
 		
 		YCbCrMakroBlock[] blocks = new YCbCrMakroBlock[YBlocks.length];
 		
