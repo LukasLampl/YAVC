@@ -47,7 +47,7 @@ public class DecodePanel extends JPanel {
 		
 		this.bar.setMinimum(0);
 		this.bar.setValue(0);
-		this.bar.setMaximum(110);
+		this.bar.setMaximum(100);
 		this.bar.setStringPainted(true);
 		this.bar.setAlignmentX(JProgressBar.CENTER_ALIGNMENT);
 		this.bar.setBackground(ComponentColor.SHADE_COLOR);
@@ -70,7 +70,7 @@ public class DecodePanel extends JPanel {
 				if (startBtn.isClicked() == false) {
 					startBtn.setText("Stop");
 					startBtn.setBackground(ComponentColor.STO_COLOR);
-					boolean succ = entryPoint.start_decoding_process();
+					boolean succ = entryPoint.start_decoding_process(frame);
 					
 					if (succ == true) {
 						return;
@@ -91,5 +91,14 @@ public class DecodePanel extends JPanel {
 	public void reset_start_btn() {
 		this.startBtn.setBackground(ComponentColor.SUB_COLOR);
 		this.startBtn.setText("Start");
+	}
+	
+	public void set_frame_stats(int frame, int maxFrames, boolean percentOnly) {
+		if (percentOnly == false) {
+			this.frameCountLabel.setText(frame + "/" + maxFrames + " Frames");
+		}
+		
+		double per = ((double)(frame + 1) / (double)maxFrames) * 100;
+		this.bar.setValue((int)Math.round(per));
 	}
 }

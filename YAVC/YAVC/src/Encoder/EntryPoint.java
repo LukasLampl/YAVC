@@ -60,7 +60,7 @@ public class EntryPoint {
 							output.delete();
 						}
 						
-						f.updateFrameCount(i, filesCount, false);
+						f.update_encoder_frame_count(i, filesCount, false);
 						String name = "";
 						
 						if (i < 10) {
@@ -126,13 +126,7 @@ public class EntryPoint {
 		
 						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
 						f.setVectorizedImage(vectorEngine.construct_vector_path(dim, movementVectors));
-						
-//						try {
-//							ImageIO.write(vectorEngine.construct_vector_path(dim, movementVectors), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
-//						} catch (Exception e) {
-//							e.printStackTrace();
-//						}
-						
+
 						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
 						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(result);
 						
@@ -140,12 +134,6 @@ public class EntryPoint {
 						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks));
 						result = outputWriter.reconstruct_DCT_image(dcts, result);
 						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
-						
-						try {
-							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
 						
 						referenceImages.add(result);
 						release_old_reference_images(referenceImages);
@@ -155,7 +143,7 @@ public class EntryPoint {
 					f.disposeWriterPermission();
 					
 					outputWriter.compress_result();
-					f.updateFrameCount(filesCount + (filesCount / 10), filesCount, true);
+					f.update_encoder_frame_count(filesCount + (filesCount / 10), filesCount, true);
 					
 					referenceImages.clear();
 					
@@ -174,7 +162,7 @@ public class EntryPoint {
 		return true;
 	}
 	
-	public boolean start_decoding_process() {
+	public boolean start_decoding_process(Frame frame) {
 		this.DE_STATUS = Status.RUNNING;
 		
 		try {
@@ -199,6 +187,7 @@ public class EntryPoint {
 				ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(MAX_REFERENCES);
 				
 				int frameCounter = 0;
+				int maxFrames = dataPipeEngine.get_max_frame_number();
 				BufferedImage prevFrame = null;
 				BufferedImage currFrame = null;
 				
@@ -220,6 +209,7 @@ public class EntryPoint {
 					prevFrame = result;
 					referenceImages.add(result);
 					release_old_reference_images(referenceImages);
+					frame.update_decoder_frame_count(frameCounter, maxFrames, false);
 				}
 			});
 			

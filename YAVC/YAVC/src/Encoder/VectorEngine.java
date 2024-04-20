@@ -225,7 +225,7 @@ public class VectorEngine {
 			}
 		}
 		
-		return (Math.pow(resY, 3) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(config.MAKRO_BLOCK_SIZE * config.MAKRO_BLOCK_SIZE);
+		return (Math.pow(resY, 6) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(config.MAKRO_BLOCK_SIZE * config.MAKRO_BLOCK_SIZE);
 	}
 	
 	/*

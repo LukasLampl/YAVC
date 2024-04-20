@@ -86,8 +86,13 @@ public class Frame extends JFrame {
 		return this.VEC_SAD_TOLERANCE;
 	}
 	
-	public void updateFrameCount(int currentFrame, int totalFrame, boolean percentOnly) {
+	public void update_encoder_frame_count(int currentFrame, int totalFrame, boolean percentOnly) {
 		this.ENCODE_PANEL.set_frame_stats(currentFrame, totalFrame, percentOnly);
+		update();
+	}
+	
+	public void update_decoder_frame_count(int currentFrame, int totalFrame, boolean percentOnly) {
+		this.DECODE_PANEL.set_frame_stats(currentFrame, totalFrame, percentOnly);
 		update();
 	}
 	

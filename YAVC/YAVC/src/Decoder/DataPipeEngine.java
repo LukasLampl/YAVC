@@ -289,8 +289,8 @@ public class DataPipeEngine {
 			rawFC.append(metaFileContent.charAt(i));
 		}
 		
-		start = metaFileContent.indexOf("]MBS[");
 		this.MAX_FRAMES = Integer.parseInt(rawFC.toString());
+		start = metaFileContent.indexOf("]MBS[");
 		
 		StringBuilder rawMBS = new StringBuilder(16);
 		
@@ -298,10 +298,14 @@ public class DataPipeEngine {
 			if (metaFileContent.charAt(i) == ']') {
 				break;
 			}
-			
-			rawFC.append(metaFileContent.charAt(i));
+
+			rawMBS.append(metaFileContent.charAt(i));
 		}
 		
 		this.MBS = Integer.parseInt(rawMBS.toString());
+	}
+	
+	public int get_max_frame_number() {
+		return this.MAX_FRAMES;
 	}
 }
