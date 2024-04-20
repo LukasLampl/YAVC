@@ -14,13 +14,13 @@ import Encoder.MakroBlockEngine;
 import Encoder.Vector;
 import Encoder.YCbCrColor;
 import Encoder.YCbCrMakroBlock;
-import Main.config;
 
 public class DataPipeEngine {
 	private DataGrabber GRABBER = null;
 	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	private Dimension DIMENSION = null;
+	private int MBS = 4;
 	
 	private int MAX_FRAMES = 0;
 	private String CURRENT_FRAME_DATA = "";
@@ -66,7 +66,7 @@ public class DataPipeEngine {
 	 * Params: int frameNumber => Currently read frame
 	 */
 	public boolean hasNext(int frameNumber) {
-		return frameNumber + 1 >= this.MAX_FRAMES ? false : true;
+		return frameNumber + 2 >= this.MAX_FRAMES ? false : true;
 	}
 	
 	/*
@@ -116,9 +116,9 @@ public class DataPipeEngine {
 			String CbCols[] = CbBlocks[i].split("&");
 			String CrCols[] = CrBlocks[i].split("&");
 			
-			double[][] YCo = new double[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
-			double[][] CbCo = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
-			double[][] CrCo = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
+			double[][] YCo = new double[this.MBS][this.MBS];
+			double[][] CbCo = new double[this.MBS / 2][this.MBS / 2];
+			double[][] CrCo = new double[this.MBS / 2][this.MBS / 2];
 			
 			for (int y = 0; y < CbCols.length; y++) {
 				String[] CbRows = CbCols[y].split("\\.");
@@ -289,6 +289,19 @@ public class DataPipeEngine {
 			rawFC.append(metaFileContent.charAt(i));
 		}
 		
+		start = metaFileContent.indexOf("]MBS[");
 		this.MAX_FRAMES = Integer.parseInt(rawFC.toString());
+		
+		StringBuilder rawMBS = new StringBuilder(16);
+		
+		for (int i = start + 5; i < metaFileContent.length(); i++) {
+			if (metaFileContent.charAt(i) == ']') {
+				break;
+			}
+			
+			rawFC.append(metaFileContent.charAt(i));
+		}
+		
+		this.MBS = Integer.parseInt(rawMBS.toString());
 	}
 }
