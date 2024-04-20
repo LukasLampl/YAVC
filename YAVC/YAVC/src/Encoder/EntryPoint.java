@@ -198,7 +198,7 @@ public class EntryPoint {
 				
 				ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(MAX_REFERENCES);
 				
-				int frameCounter = 2;
+				int frameCounter = 1;
 				BufferedImage prevFrame = null;
 				BufferedImage currFrame = null;
 				

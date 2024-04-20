@@ -99,18 +99,22 @@ public class DataPipeEngine {
 		
 		String[] splitVecs = this.CURRENT_FRAME_DATA.split("$V$");
 		
+		String POSREGEX = "$DCT_P$";
 		String YREGEX = "$DCT_Y$";
 		String CbREGEX = "$DCT_CB$";
 		String CrREGEX = "$DCT_CR$";
-
+		
+		int PosStart = splitVecs[0].indexOf(POSREGEX);
 		int YStart = splitVecs[0].indexOf(YREGEX);
 		int CbStart = splitVecs[0].indexOf(CbREGEX);
 		int CrStart = splitVecs[0].indexOf(CrREGEX);
 		
+		String PosComp = splitVecs[0].substring(PosStart + POSREGEX.length(), YStart);
 		String YComp = splitVecs[0].substring(YStart + YREGEX.length(), CbStart);
 		String CbComp = splitVecs[0].substring(CbStart + CbREGEX.length(), CrStart);
 		String CrComp = splitVecs[0].substring(CrStart + CrREGEX.length(), splitVecs[0].length());
 		
+		String[] Pos = PosComp.split(":");
 		String[] YBlocks = YComp.split(":");
 		String[] CbBlocks = CbComp.split(":");
 		String[] CrBlocks = CrComp.split(":");
@@ -144,31 +148,27 @@ public class DataPipeEngine {
 				}
 			}
 			
-			blocks[i] = this.MAKRO_BLOCK_ENGINE.apply_IDCT(new DCTObject(YCo, CbCo, CrCo));
+			String pos = Pos[i];
+			String[] cords = pos.split("\\.");
+			Point p = new Point(Integer.parseInt(cords[0]), Integer.parseInt(cords[1]));
+			blocks[i] = this.MAKRO_BLOCK_ENGINE.apply_IDCT(new DCTObject(YCo, CbCo, CrCo, p));
 		}
 		
-		int index = 0;
-		
-		for (int y = 0; y + 1 < this.DIMENSION.height; y += config.MAKRO_BLOCK_SIZE) {
-			for (int x = 0; x + 1 < this.DIMENSION.width; x += config.MAKRO_BLOCK_SIZE) {
-				if (index >= blocks.length) {
+		for (YCbCrMakroBlock b : blocks) {
+			Point p = b.getPosition();
+			YCbCrColor[][] cols = b.getColors();
+			
+			for (int y = 0; y < cols.length; y++) {
+				if (p.y + y >= this.DIMENSION.height) {
 					continue;
 				}
 				
-				YCbCrColor[][] cols = blocks[index++].getColors();
-				
-				for (int j = 0; j < cols.length; j++) {
-					if (y + j + 1 >= this.DIMENSION.height) {
+				for (int x = 0; x < cols[y].length; x++) {
+					if (p.x + x >= this.DIMENSION.width) {
 						continue;
 					}
 					
-					for (int k = 0; k < cols[j].length; k++) {
-						if (x + k + 1 >= this.DIMENSION.width) {
-							continue;
-						}
-
-						render.setRGB(x + k, y + j, this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[j][k]).getRGB());
-					}
+					render.setRGB(p.x + x, p.y + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB());
 				}
 			}
 		}

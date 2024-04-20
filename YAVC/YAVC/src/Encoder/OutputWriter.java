@@ -2,7 +2,6 @@ package Encoder;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -20,7 +19,6 @@ import UI.Frame;
 
 public class OutputWriter {
 	private File COMPRESS_DIR = null;
-	private Dimension META_DIMENSION = null;
 	private Frame FRAME = null;
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
@@ -63,8 +61,6 @@ public class OutputWriter {
 		if (originalImage == null) {
 			return;
 		}
-		
-		this.META_DIMENSION = new Dimension(originalImage.getWidth(), originalImage.getHeight());
 		
 		try {
 			String meta = "META["
@@ -122,6 +118,7 @@ public class OutputWriter {
 			return null;
 		}
 		
+		StringBuilder DCTPos = new StringBuilder();
 		StringBuilder CbCoStr = new StringBuilder();
 		StringBuilder CrCoStr = new StringBuilder();
 		StringBuilder YCoStr = new StringBuilder();
@@ -158,14 +155,17 @@ public class OutputWriter {
 				}
 			}
 			
+			DCTPos.append(dct.getPosition().x + "." + dct.getPosition().y + ":");
 			CbCoStr.append(":");
 			CrCoStr.append(":");
 			YCoStr.append(":");
 		}
 		
-//		String imgInChars = run_length_encode_pixels(temp);
 		File frameFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/F_" + outputFrames++ + ".YAVCF");
 		StringBuilder imgInChars = new StringBuilder();
+		
+		imgInChars.append("$DCT_P$");
+		imgInChars.append(DCTPos);
 		imgInChars.append("$DCT_Y$");
 		imgInChars.append(YCoStr);
 		imgInChars.append("$DCT_CB$");
@@ -255,7 +255,7 @@ public class OutputWriter {
 				
 				SequenceObject obj = QUEUE.get(0);
 				File out = bake_frame(obj.getDCT());
-				
+
 				if (obj.getVecs() != null) {
 					bake_vectors(obj.getVecs(), out);
 				}

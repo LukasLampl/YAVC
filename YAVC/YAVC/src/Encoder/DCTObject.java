@@ -12,6 +12,13 @@ public class DCTObject {
 	
 	public DCTObject() {}
 	
+	public DCTObject(double[][] YDCT, double[][] CbDCT, double[][] CrDCT, Point pos) {
+		this.Y = YDCT;
+		this.CbDCT = CbDCT;
+		this.CrDCT = CrDCT;
+		this.Position = pos;
+	}
+	
 	public DCTObject(double[][] YDCT, double[][] CbDCT, double[][] CrDCT) {
 		this.Y = YDCT;
 		this.CbDCT = CbDCT;
