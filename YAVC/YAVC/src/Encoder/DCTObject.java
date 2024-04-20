@@ -5,10 +5,18 @@ import java.awt.Point;
 import Main.config;
 
 public class DCTObject {
-	double[][] Y = new double[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
-	double[][] CbDCT = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
-	double[][] CrDCT = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
-	Point Position = new Point(0, 0);
+	private double[][] Y = new double[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
+	private double[][] CbDCT = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
+	private double[][] CrDCT = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
+	private Point Position = new Point(0, 0);
+	
+	public DCTObject() {}
+	
+	public DCTObject(double[][] YDCT, double[][] CbDCT, double[][] CrDCT) {
+		this.Y = YDCT;
+		this.CbDCT = CbDCT;
+		this.CrDCT = CrDCT;
+	}
 	
 	public double[][] getY() {
 		return Y;

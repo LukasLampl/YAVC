@@ -104,7 +104,10 @@ public class EntryPoint {
 						
 						if ((i % 80 == 0 && changeDetectDistance > 10) || sceneChanged) {
 							prevImgBlocks = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, null);
-							outputWriter.add_obj_to_queue(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks), null);
+							ArrayList<YCbCrMakroBlock> blocks = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks);
+							ArrayList<DCTObject> dct = makroBlockEngine.apply_DCT_on_blocks(blocks);
+							
+							outputWriter.add_obj_to_queue(dct, null);
 							referenceImages.clear();
 							referenceImages.add(currentImage);
 							prevImage = currentImage;
@@ -133,9 +136,10 @@ public class EntryPoint {
 						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
 						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(result);
 						
+						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
 						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks));
 						result = outputWriter.reconstruct_DCT_image(dcts, result);
-						outputWriter.add_obj_to_queue(differences, movementVectors);
+						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
 						
 						try {
 							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
@@ -194,7 +198,7 @@ public class EntryPoint {
 				
 				ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(MAX_REFERENCES);
 				
-				int frameCounter = 0;
+				int frameCounter = 2;
 				BufferedImage prevFrame = null;
 				BufferedImage currFrame = null;
 				

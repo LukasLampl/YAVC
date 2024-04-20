@@ -45,9 +45,9 @@ public class OutputWriter {
 	 * Params: ArrayList<YCbCrMakroBlock> diffs => Differences between prev and cur frame;
 	 * 			ArrayList<Vector> vecs => Movement vectors of the the frame
 	 */
-	public void add_obj_to_queue(ArrayList<YCbCrMakroBlock> diffs, ArrayList<Vector> vecs) {
+	public void add_obj_to_queue(ArrayList<DCTObject> dct, ArrayList<Vector> vecs) {
 		SequenceObject obj = new SequenceObject();
-		obj.setDifferences(diffs);
+		obj.setDifferences(dct);
 		obj.setVecs(vecs);
 		
 		this.QUEUE.add(obj);
@@ -116,30 +116,66 @@ public class OutputWriter {
 	 */
 	private int outputFrames = 0;
 	
-	private File bake_frame(ArrayList<YCbCrMakroBlock> differences) {
-		int[] temp = new int[differences.size() * config.MBS_SQ];
-		int index = 0;
-		
-		for (YCbCrMakroBlock b : differences) {
-			for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
-				for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
-					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(b.getColors()[y][x]).getRGB();
-					
-					if (b.getColors()[y][x].getA() == 1.0) {
-						continue;
-					}
-					
-					temp[index++] = col;
-				}
-			}
+	private File bake_frame(ArrayList<DCTObject> DCTList) {
+		if (DCTList == null) {
+			System.err.println("No DCT!");
+			return null;
 		}
 		
-		String imgInChars = run_length_encode_pixels(temp);
+		StringBuilder CbCoStr = new StringBuilder();
+		StringBuilder CrCoStr = new StringBuilder();
+		StringBuilder YCoStr = new StringBuilder();
+
+		for (DCTObject dct : DCTList) {
+			for (int y = 0; y < dct.getCbDCT().length; y++) {
+				for (int x = 0; x < dct.getCbDCT()[y].length; x++) {
+					CbCoStr.append((int)dct.getCbDCT()[y][x]);
+					CrCoStr.append((int)dct.getCrDCT()[y][x]);
+					
+					if (x + 1 < dct.getCbDCT()[y].length) {
+						CbCoStr.append(".");
+						CrCoStr.append(".");
+					}
+				}
+				
+				if (y + 1 < dct.getCbDCT().length) {
+					CbCoStr.append("&");
+					CrCoStr.append("&");
+				}
+			}
+			
+			for (int y = 0; y < dct.getY().length; y++) {
+				for (int x = 0; x < dct.getY()[y].length; x++) {
+					YCoStr.append((int)dct.getY()[y][x]);
+					
+					if (x + 1 < dct.getY()[y].length) {
+						YCoStr.append(".");
+					}
+				}
+				
+				if (y + 1 < dct.getY().length) {
+					YCoStr.append("&");
+				}
+			}
+			
+			CbCoStr.append(":");
+			CrCoStr.append(":");
+			YCoStr.append(":");
+		}
+		
+//		String imgInChars = run_length_encode_pixels(temp);
 		File frameFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/F_" + outputFrames++ + ".YAVCF");
+		StringBuilder imgInChars = new StringBuilder();
+		imgInChars.append("$DCT_Y$");
+		imgInChars.append(YCoStr);
+		imgInChars.append("$DCT_CB$");
+		imgInChars.append(CbCoStr);
+		imgInChars.append("$DCT_CR$");
+		imgInChars.append(CrCoStr);
 		
 		try {
 			frameFile.createNewFile();
-			Files.write(Path.of(frameFile.getAbsolutePath()), imgInChars.getBytes(), StandardOpenOption.WRITE);
+			Files.write(Path.of(frameFile.getAbsolutePath()), imgInChars.toString().getBytes(), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -218,7 +254,7 @@ public class OutputWriter {
 				}
 				
 				SequenceObject obj = QUEUE.get(0);
-				File out = bake_frame(obj.getDifferences());
+				File out = bake_frame(obj.getDCT());
 				
 				if (obj.getVecs() != null) {
 					bake_vectors(obj.getVecs(), out);

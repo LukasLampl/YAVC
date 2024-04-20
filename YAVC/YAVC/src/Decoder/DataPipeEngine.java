@@ -7,19 +7,26 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
+import Encoder.ColorManager;
+import Encoder.DCTObject;
 import Encoder.MakroBlock;
 import Encoder.MakroBlockEngine;
 import Encoder.Vector;
+import Encoder.YCbCrColor;
+import Encoder.YCbCrMakroBlock;
+import Main.config;
 
 public class DataPipeEngine {
-	private DataGrabber grabber = null;
+	private DataGrabber GRABBER = null;
+	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
+	private ColorManager COLOR_MANAGER = new ColorManager();
 	private Dimension DIMENSION = null;
 	
 	private int MAX_FRAMES = 0;
 	private String CURRENT_FRAME_DATA = "";
 	
 	public DataPipeEngine(DataGrabber grabber) {
-		this.grabber = grabber;
+		this.GRABBER = grabber;
 		scrape_meta_data(grabber.get_metadata());
 		
 		System.out.println("META: " + DIMENSION + ", " + MAX_FRAMES);
@@ -84,48 +91,85 @@ public class DataPipeEngine {
 	 */
 	public BufferedImage scrape_next_frame(int frameNumber) {
 		BufferedImage render = new BufferedImage(this.DIMENSION.width, this.DIMENSION.height, BufferedImage.TYPE_INT_ARGB);
-		this.CURRENT_FRAME_DATA = this.grabber.get_frame(frameNumber);
-		
+		this.CURRENT_FRAME_DATA = this.GRABBER.get_frame(frameNumber);
+
 		if (this.CURRENT_FRAME_DATA == null) {
 			return null;
 		}
 		
-		int end = this.CURRENT_FRAME_DATA.indexOf("$V$");
+		String[] splitVecs = this.CURRENT_FRAME_DATA.split("$V$");
 		
-		if (end == -1) {
-			end = this.CURRENT_FRAME_DATA.length() - 1;
-		}
+		String YREGEX = "$DCT_Y$";
+		String CbREGEX = "$DCT_CB$";
+		String CrREGEX = "$DCT_CR$";
+
+		int YStart = splitVecs[0].indexOf(YREGEX);
+		int CbStart = splitVecs[0].indexOf(CbREGEX);
+		int CrStart = splitVecs[0].indexOf(CrREGEX);
 		
-		String[] set = this.CURRENT_FRAME_DATA.substring(0, end).split("\\.");
+		String YComp = splitVecs[0].substring(YStart + YREGEX.length(), CbStart);
+		String CbComp = splitVecs[0].substring(CbStart + CbREGEX.length(), CrStart);
+		String CrComp = splitVecs[0].substring(CrStart + CrREGEX.length(), splitVecs[0].length());
 		
-		int x = 0;
-		int y = 0;
+		String[] YBlocks = YComp.split(":");
+		String[] CbBlocks = CbComp.split(":");
+		String[] CrBlocks = CrComp.split(":");
 		
-		for (String s : set) {
-			if (x >= render.getWidth()) {
-				y++;
-				x = 0;
-			} else if (y >= render.getHeight()) {
-				break;
+		YCbCrMakroBlock[] blocks = new YCbCrMakroBlock[YBlocks.length];
+		
+		for (int i = 0; i < YBlocks.length; i++) {
+			String Ycols[] = YBlocks[i].split("&");
+			String CbCols[] = CbBlocks[i].split("&");
+			String CrCols[] = CrBlocks[i].split("&");
+			
+			double[][] YCo = new double[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
+			double[][] CbCo = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
+			double[][] CrCo = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
+			
+			for (int y = 0; y < CbCols.length; y++) {
+				String[] CbRows = CbCols[y].split("\\.");
+				String[] CrRows = CrCols[y].split("\\.");
+				
+				for (int x = 0; x < CbRows.length; x++) {
+					CbCo[y][x] = Integer.parseInt(CbRows[x]);
+					CrCo[y][x] = Integer.parseInt(CrRows[x]);
+				}
 			}
 			
-			String[] rle_dec = s.split("\\~");
-			
-			if (rle_dec.length > 1) {
-				int count = Integer.parseInt(rle_dec[1]) + 1;
+			for (int y = 0; y < Ycols.length; y++) {
+				String[] rows = Ycols[y].split("\\.");
 				
-				for (int i = 0; i < count; i++) {
-					if (x >= render.getWidth()) {
-						y++;	
-						x = 0;
-					} else if (y + 1 >= render.getHeight()) {
-						break;
+				for (int x = 0; x < rows.length; x++) {
+					YCo[y][x] = Integer.parseInt(rows[x]);
+				}
+			}
+			
+			blocks[i] = this.MAKRO_BLOCK_ENGINE.apply_IDCT(new DCTObject(YCo, CbCo, CrCo));
+		}
+		
+		int index = 0;
+		
+		for (int y = 0; y + 1 < this.DIMENSION.height; y += config.MAKRO_BLOCK_SIZE) {
+			for (int x = 0; x + 1 < this.DIMENSION.width; x += config.MAKRO_BLOCK_SIZE) {
+				if (index >= blocks.length) {
+					continue;
+				}
+				
+				YCbCrColor[][] cols = blocks[index++].getColors();
+				
+				for (int j = 0; j < cols.length; j++) {
+					if (y + j + 1 >= this.DIMENSION.height) {
+						continue;
 					}
 					
-					render.setRGB(x++, y, Integer.parseInt(rle_dec[0]));
+					for (int k = 0; k < cols[j].length; k++) {
+						if (x + k + 1 >= this.DIMENSION.width) {
+							continue;
+						}
+
+						render.setRGB(x + k, y + j, this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[j][k]).getRGB());
+					}
 				}
-			} else {
-				render.setRGB(x++, y, Integer.parseInt(rle_dec[0]));
 			}
 		}
 		

@@ -16,6 +16,8 @@ public class YCbCrMakroBlock {
 		this.position = position;
 	}
 	
+	public YCbCrMakroBlock() {}
+	
 	public YCbCrColor[][] getColors() {
 		return colors;
 	}

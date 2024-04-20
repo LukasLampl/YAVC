@@ -3,14 +3,14 @@ package Encoder;
 import java.util.ArrayList;
 
 public class SequenceObject {
-	private ArrayList<YCbCrMakroBlock> differences = null;
+	private ArrayList<DCTObject> dct = null;
 	private ArrayList<Vector> vecs = null;
 	
-	public ArrayList<YCbCrMakroBlock> getDifferences() {
-		return differences;
+	public ArrayList<DCTObject> getDCT() {
+		return dct;
 	}
-	public void setDifferences(ArrayList<YCbCrMakroBlock> differences) {
-		this.differences = differences;
+	public void setDifferences(ArrayList<DCTObject> dct) {
+		this.dct = dct;
 	}
 	public ArrayList<Vector> getVecs() {
 		return vecs;
