@@ -11,10 +11,14 @@ public class ColorManager {
 	 * Params: Color color => Color to be converted
 	 */
 	public YCbCrColor convert_RGB_to_YCbCr(Color color) {
-		double Y = 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue();;
+		double Y = 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue();
 		double Cb = 128 - 0.168736 * color.getRed() - 0.331264 * color.getGreen() + 0.5 * color.getBlue();
 		double Cr = 128 + 0.5 * color.getRed() - 0.418688 * color.getGreen() - 0.081312 * color.getBlue();
 		return new YCbCrColor(Y, Cb, Cr);
+	}
+	
+	public YCbCrColor convert_RGB_to_YCbCr(int color) {
+		return convert_RGB_to_YCbCr(new Color(color));
 	}
 	
 	public Color convert_YCbCr_to_RGB(YCbCrColor color) {
@@ -40,6 +44,10 @@ public class ColorManager {
 				if (subX >= sub.length) {
 					subY++;
 					subX = 0;
+				}
+				
+				if (color[y][x] == null) {
+					continue;
 				}
 				
 				if (comp == YCbCrComp.CB) {

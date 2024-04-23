@@ -17,9 +17,7 @@ import Encoder.OutputWriter;
 import Encoder.Scene;
 import Encoder.VectorEngine;
 import UI.Frame;
-import Utils.DCTObject;
 import Utils.Filter;
-import Utils.MakroBlock;
 import Utils.Status;
 import Utils.Vector;
 import Utils.YCbCrMakroBlock;
@@ -51,7 +49,7 @@ public class EntryPoint {
 					long timeStart = System.currentTimeMillis();
 					
 					ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(MAX_REFERENCES);
-					ArrayList<MakroBlock> prevImgBlocks = null;
+					ArrayList<YCbCrMakroBlock> prevImgBlocks = null;
 					
 					BufferedImage prevImage = null;
 					BufferedImage currentImage = null;
@@ -104,7 +102,7 @@ public class EntryPoint {
 						filter.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
 						f.setPreviews(prevImage, currentImage);
 						
-						ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
+						ArrayList<YCbCrMakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
 						
 						//This only adds an I-Frame if 'i' is a 50th frame and a change
 						//detection lied 20 frames ahead or a change detection has triggered.
@@ -131,14 +129,13 @@ public class EntryPoint {
 						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
 						
 						try {
-							ImageIO.write(outputWriter.draw_MB_outlines(dim, makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(curImgBlocks)), "png", new File(output.getAbsolutePath() + "/B_" + i + ".png"));
+							ImageIO.write(outputWriter.draw_MB_outlines(dim, curImgBlocks), "png", new File(output.getAbsolutePath() + "/B_" + i + ".png"));
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
 						
-						ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
-						ArrayList<YCbCrMakroBlock> differences = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(rawDifferences);
-						f.setDifferenceImage(rawDifferences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
+						ArrayList<YCbCrMakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
+						f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
 						ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
 						System.out.println("Vecs: " + movementVectors.size() + " : " + differences.size());
@@ -156,7 +153,7 @@ public class EntryPoint {
 	
 						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(result);
 						
-						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
+//						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
 						
 //						try {
 //							ImageIO.write(outputWriter.reconstruct_DCT_image(diffDCT, prevImage), "png", new File(output.getAbsolutePath() + "/D_R_" + i + ".png"));
@@ -168,7 +165,7 @@ public class EntryPoint {
 //						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks));
 //						result = outputWriter.reconstruct_DCT_image(dcts, result);
 						
-						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
+//						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
 						
 						referenceImages.add(result);
 						release_old_reference_images(referenceImages);

@@ -12,6 +12,13 @@ public class YCbCrColor {
 		this.Cr = Cr;
 	}
 	
+	public YCbCrColor(double Y, double Cb, double Cr, int A) {
+		this.Y = Y;
+		this.Cb = Cb;
+		this.Cr = Cr;
+		this.A = A;
+	}
+	
 	public YCbCrColor() {};
 	
 	public int getA() {

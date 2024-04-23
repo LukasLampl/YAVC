@@ -11,7 +11,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import Utils.MakroBlock;
 import Utils.Vector;
 import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
@@ -137,17 +136,18 @@ public class VectorEngine {
 			
 			for (Point p : searchPositions) {
 				if (p.x < minPos.x || p.y < minPos.y
-					|| p.x > maxPos.x || p.y > maxPos.y) {
+					|| p.x > maxPos.x || p.y > maxPos.y
+					|| p.x < 0 || p.x >= prevFrame.getWidth()
+					|| p.y < 0 || p.y >= prevFrame.getHeight()) {
 					continue;
 				}
 				
-				MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame, blockSize);
-				YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_single_MakroBlock_to_YCbCrMakroBlock(blockAtPosP);
-				double sad = get_SAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
+				YCbCrMakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame, blockSize);
+				double sad = get_SAD_of_colors(blockAtPosP.getColors(), blockToBeSearched.getColors());
 				
 				if (sad < lowestSAD) {
 					lowestSAD = sad;
-					mostEqualBlock = YCbCrBlockAtPosP;
+					mostEqualBlock = blockAtPosP;
 					mostEqualBlock.setSAD(sad);
 					initPos = p;
 				}
@@ -169,13 +169,19 @@ public class VectorEngine {
 		searchPositions[4] = new Point(blockCenter.x, blockCenter.y - step);
 		
 		for (Point p : searchPositions) {
-			MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame, blockSize);
-			YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_single_MakroBlock_to_YCbCrMakroBlock(blockAtPosP);
-			double sad = get_SAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
+			if (p.x < minPos.x || p.y < minPos.y
+				|| p.x > maxPos.x || p.y > maxPos.y
+				|| p.x < 0 || p.x >= prevFrame.getWidth()
+				|| p.y < 0 || p.y >= prevFrame.getHeight()) {
+				continue;
+			}
+			
+			YCbCrMakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame, blockSize);
+			double sad = get_SAD_of_colors(blockAtPosP.getColors(), blockToBeSearched.getColors());
 			
 			if (sad < lowestSAD) {
 				lowestSAD = sad;
-				mostEqualBlock = YCbCrBlockAtPosP;
+				mostEqualBlock = blockAtPosP;
 				mostEqualBlock.setSAD(sad);
 			}
 		}

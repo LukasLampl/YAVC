@@ -1,7 +1,6 @@
 package UI;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -12,7 +11,9 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import Main.EntryPoint;
-import Utils.MakroBlock;
+import Utils.ColorManager;
+import Utils.YCbCrColor;
+import Utils.YCbCrMakroBlock;
 
 public class Frame extends JFrame {
 	private static final long serialVersionUID = 1L;
@@ -23,6 +24,7 @@ public class Frame extends JFrame {
 	
 	private boolean WRITER_ACTIVE = true;
 	
+	private ColorManager COLOR_MANAGER = new ColorManager();
 	private EntryPoint entryPoint = new EntryPoint();
 	private EncodePanel ENCODE_PANEL = new EncodePanel(this, entryPoint);
 	private DecodePanel DECODE_PANEL = new DecodePanel(this, entryPoint);
@@ -101,7 +103,7 @@ public class Frame extends JFrame {
 	 * Params: ArrayList<MakroBlock> differences => Found differences between two frames (Without vectors);
 	 * 			Dimension dim => Dimension of the difference image
 	 */
-	public void setDifferenceImage(ArrayList<MakroBlock> differences, Dimension dim) {
+	public void setDifferenceImage(ArrayList<YCbCrMakroBlock> differences, Dimension dim) {
 		BufferedImage render = render_image(differences, dim);
 		this.ENCODE_PANEL.set_res_frame(render);
 		update();
@@ -123,11 +125,12 @@ public class Frame extends JFrame {
 	 * Params: ArrayList<MakroBlock> differences => Differences between two frames;
 	 * 			Dimension dim => Dimension of the image
 	 */
-	private BufferedImage render_image(ArrayList<MakroBlock> differences, Dimension dim) {
+	private BufferedImage render_image(ArrayList<YCbCrMakroBlock> differences, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		
-		for (MakroBlock block : differences) {
+		for (YCbCrMakroBlock block : differences) {
 			int size = block.getSize();
+			YCbCrColor[][] cols = block.getColors();
 			
 			for (int y = 0; y < size; y++) {
 				for (int x = 0; x < size; x++) {
@@ -136,12 +139,11 @@ public class Frame extends JFrame {
 						continue;
 					}
 					
-					if (block.getColors()[y][x] == 89658667) { //ASCII for YAVC
+					if (cols[y][x].getA() == 255) { //ASCII for YAVC
 						continue;
 					}
 					
-					Color col = new Color(block.getColors()[y][x]);
-					render.setRGB(block.getPosition().x + x, block.getPosition().y + y, col.getRGB());
+					render.setRGB(block.getPosition().x + x, block.getPosition().y + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB());
 				}
 			}
 		}

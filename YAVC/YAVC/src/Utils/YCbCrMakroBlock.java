@@ -9,7 +9,7 @@ public class YCbCrMakroBlock {
 	private int referenceDrawback = 0;
 	private int size = 0;
 	private boolean edgeBlock = false;
-	
+
 	public YCbCrMakroBlock(YCbCrColor[][] colors, Point position, int size) {
 		this.colors = colors;
 		this.position = position;
@@ -18,19 +18,6 @@ public class YCbCrMakroBlock {
 	
 	public YCbCrColor[][] getColors() {
 		return colors;
-	}
-	
-	public void setColor(YCbCrColor color, int x, int y) {
-		if (this.colors == null) {
-			System.err.println("No colors in object!");
-			return;
-		}
-		
-		this.colors[y][x] = color;
-	}
-	
-	public void setColors(YCbCrColor[][] colors) {
-		this.colors = colors;
 	}
 	
 	public Point getPosition() {
@@ -71,5 +58,42 @@ public class YCbCrMakroBlock {
 	
 	public void setSize(int size) {
 		this.size = size;
+	}
+	
+	public YCbCrMakroBlock[] splitToSmaller(int size) {
+		if (this.colors == null) {
+			System.err.println("Can't execute split!");
+			System.err.println("Colors is NULL, nothing to split!");
+			System.exit(0);
+		}
+		
+		YCbCrMakroBlock[] b = new YCbCrMakroBlock[colors.length / size * colors[0].length / size];
+		int index = 0;
+		
+		for (int y = 0; y < this.colors.length; y += size) {
+			for (int x = 0; x < this.colors[y].length; x += size) {
+				b[index++] = getSubBlock(size, x, y, index);
+			}
+		}
+		
+		return b;
+	}
+	
+	private YCbCrMakroBlock getSubBlock(int size, int px, int py, int index) {
+		YCbCrColor[][] cols = new YCbCrColor[size][size];
+		
+		for (int y = 0; y < size; y++) {
+			for (int x = 0; x < size; x++) {
+				if (py + y >= this.colors.length
+					|| px + x >= this.colors[0].length) {
+					cols[y][x] = new YCbCrColor(0, 0, 0, 255);
+					continue;
+				}
+				
+				cols[y][x] = this.colors[y + py][x + px];
+			}
+		}
+		
+		return new YCbCrMakroBlock(cols, new Point(this.position.x + px, this.position.y + py), size);
 	}
 }

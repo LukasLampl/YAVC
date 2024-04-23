@@ -22,16 +22,16 @@ public class MakroBlockEngine {
 	 * Return Type: ArrayList<MakroBlock> => MakroBlocks of the image
 	 * Params: BufferedImage img => Image from which the MakroBlocks should be ripped off
 	 */
-	public ArrayList<MakroBlock> get_makroblocks_from_image(BufferedImage img) {
+	public ArrayList<YCbCrMakroBlock> get_makroblocks_from_image(BufferedImage img) {
 		int[][] edges = this.FILTER.get_sobel_values(img);
-		ArrayList<MakroBlock> blocks = new ArrayList<MakroBlock>();
+		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
 		
 		int width = img.getWidth();
 		int height = img.getHeight();
 		
 		for (int y = 0; y < height; y += config.SUPER_BLOCK) {
 			for (int x = 0; x < width; x += config.SUPER_BLOCK) {
-				MakroBlock originBlock = get_single_makro_block(new Point(x, y), img, config.SUPER_BLOCK);
+				YCbCrMakroBlock originBlock = get_single_makro_block(new Point(x, y), img, config.SUPER_BLOCK);
 				blocks.addAll(divide_down_MakroBlock(originBlock, edges, config.SUPER_BLOCK));
 			}
 		}
@@ -39,8 +39,8 @@ public class MakroBlockEngine {
 		return blocks;
 	}
 	
-	private ArrayList<MakroBlock> divide_down_MakroBlock(MakroBlock block, int[][] edges, int size) {
-		ArrayList<MakroBlock> blocks = new ArrayList<MakroBlock>();
+	private ArrayList<YCbCrMakroBlock> divide_down_MakroBlock(YCbCrMakroBlock block, int[][] edges, int size) {
+		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
 		
 		if (size <= 4) {
 			blocks.add(block);
@@ -64,8 +64,8 @@ public class MakroBlockEngine {
 			break;
 		}
 		
-		if (passed) {
-			MakroBlock[] parts = block.splitToSmaller(size / 2);
+		if (passed == true) {
+			YCbCrMakroBlock[] parts = block.splitToSmaller(size / 2);
 			
 			for (int i = 0; i < parts.length; i++) {
 				 blocks.addAll(divide_down_MakroBlock(parts[i], edges, size / 2));
@@ -324,7 +324,7 @@ public class MakroBlockEngine {
 	 * Params: Point position => Position from where to grab the MakroBlock;
 	 * 			img => Image from which the MakroBlock should be grabbed
 	 */
-	public MakroBlock get_single_makro_block(Point position, BufferedImage img, int size) {
+	public YCbCrMakroBlock get_single_makro_block(Point position, BufferedImage img, int size) {
 		/*
 		 * Imagine the colors as a table:
 		 * +---+---+---+---+---+---+---+---+
@@ -335,8 +335,8 @@ public class MakroBlockEngine {
 		 * | d | d | d | d | d | d | d | d |
 		 * +---+---+---+---+---+---+---+---+
 		 */
-		int[][] colors = new int[size][size];
-		boolean[][] colorIgnore = new boolean[size][size];
+		YCbCrColor[][] colors = new YCbCrColor[size][size];
+		
 		int currentColumn = 0;
 		int currentRow = 0;
 		
@@ -347,26 +347,25 @@ public class MakroBlockEngine {
 		
 		for (int y = position.y; y < maxMBY; y++) {
 			if (y >= maxY || y < 0) {
-				break;
+				colors[currentColumn++][0] = new YCbCrColor(0, 0, 0, 255);
+				continue;
 			}
 			
 			for (int x = position.x; x < maxMBX; x++) {
-				if (currentRow == size) {
+				if (currentRow >= size) {
 					currentColumn++;
 					currentRow = 0;
 				}
 				
 				if (x >= maxX || x < 0) {
-					colorIgnore[currentColumn][currentRow] = true;
-					colors[currentColumn][currentRow++] = Integer.MAX_VALUE;
+					colors[currentColumn][currentRow++] = new YCbCrColor(0, 0, 0, 255);
 					continue;
 				}
 				
-				colorIgnore[currentColumn][currentRow] = false;
-				colors[currentColumn][currentRow++] = img.getRGB(x, y);
+				colors[currentColumn][currentRow++] = this.COLOR_MANAGER.convert_RGB_to_YCbCr(img.getRGB(x, y));
 			}
 		}
 		
-		return new MakroBlock(colors, position, colorIgnore, size);
+		return new YCbCrMakroBlock(colors, position, size);
 	}
 }
