@@ -1,28 +1,31 @@
-package Encoder;
+package Utils;
 
 import java.awt.Point;
 
-import Main.config;
-
 public class YCbCrMakroBlock {
-	private YCbCrColor[][] colors = new YCbCrColor[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
+	private YCbCrColor[][] colors = null;
 	private Point position = new Point(0, 0);
 	private double SAD = Float.MAX_VALUE;
 	private int referenceDrawback = 0;
+	private int size = 0;
 	private boolean edgeBlock = false;
 	
-	public YCbCrMakroBlock(YCbCrColor[][] colors, Point position) {
+	public YCbCrMakroBlock(YCbCrColor[][] colors, Point position, int size) {
 		this.colors = colors;
 		this.position = position;
+		this.size = size;
 	}
-	
-	public YCbCrMakroBlock() {}
 	
 	public YCbCrColor[][] getColors() {
 		return colors;
 	}
 	
 	public void setColor(YCbCrColor color, int x, int y) {
+		if (this.colors == null) {
+			System.err.println("No colors in object!");
+			return;
+		}
+		
 		this.colors[y][x] = color;
 	}
 	
@@ -60,5 +63,13 @@ public class YCbCrMakroBlock {
 
 	public void setReferenceDrawback(int referenceDrawback) {
 		this.referenceDrawback = referenceDrawback;
+	}
+	
+	public int getSize() {
+		return this.size;
+	}
+	
+	public void setSize(int size) {
+		this.size = size;
 	}
 }

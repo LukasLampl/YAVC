@@ -1,8 +1,8 @@
-package Encoder;
+package Utils;
 
 import java.awt.Color;
 
-import Main.config;
+import Encoder.YCbCrComp;
 
 public class ColorManager {
 	/*
@@ -24,14 +24,19 @@ public class ColorManager {
 		return new Color(Math.min(Math.max(red, 0), 255), Math.min(Math.max(green, 0), 255), Math.min(Math.max(blue, 0), 255));
 	}
 	
-	public double[][] get_YCbCr_comp_sub_sample(YCbCrColor[][] color, YCbCrComp comp) {
-		double[][] sub = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
+	public int convert_RGB_to_GRAYSCALE(int rgb) {
+		Color col = new Color(rgb);
+		return (int)Math.round(col.getRed() * 0.299 + col.getGreen() * 0.587 + col.getBlue() * 0.114);
+	}
+	
+	public double[][] get_YCbCr_comp_sub_sample(YCbCrColor[][] color, YCbCrComp comp, int size) {
+		double[][] sub = new double[size / 2][size / 2];
 		
 		int subY = 0;
 		int subX = 0;
 		
-		for (int y = 0; y < color.length; y += 2) {
-			for (int x = 0; x < color[y].length; x += 2) {
+		for (int y = 0; y < size; y += 2) {
+			for (int x = 0; x < size; x += 2) {
 				if (subX >= sub.length) {
 					subY++;
 					subX = 0;

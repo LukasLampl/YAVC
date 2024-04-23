@@ -1,4 +1,4 @@
-package Encoder;
+package Utils;
 
 import java.awt.Point;
 

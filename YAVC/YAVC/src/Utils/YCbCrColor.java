@@ -1,4 +1,4 @@
-package Encoder;
+package Utils;
 
 public class YCbCrColor {
 	private double Y = 0.0D;

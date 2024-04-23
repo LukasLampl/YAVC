@@ -1,6 +1,7 @@
 package Encoder;
 
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
@@ -8,10 +9,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import Main.config;
+import Utils.ColorManager;
+import Utils.MakroBlock;
+import Utils.YCbCrColor;
 
 public class MakroDifferenceEngine {
 	private ColorManager COLOR_MANAGER = new ColorManager();
+	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
 	
 	/*
 	 * Purpose: Get the differences between the MakroBlocks of two lists
@@ -20,28 +24,25 @@ public class MakroDifferenceEngine {
 	 * 			ArrayList<MakroBlock> list2 => List2 to be compared with list1;
 	 * 			BufferedImage img => Image in which the current MakroBlocks are located in;
 	 */
-	public ArrayList<MakroBlock> get_MakroBlock_difference(ArrayList<MakroBlock> list1, ArrayList<MakroBlock> list2, BufferedImage img) {
+	public ArrayList<MakroBlock> get_MakroBlock_difference(ArrayList<MakroBlock> list, BufferedImage prevImg, BufferedImage curImg) {
 		ArrayList<MakroBlock> diffs = new ArrayList<MakroBlock>();
 		ArrayList<Future<MakroBlock>> fmbs = new ArrayList<Future<MakroBlock>>();
-		
-		if (list1.size() != list2.size()) {
-			System.err.println("List size not equal!");
-			return null;
-		}
-		
+
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
 		try {
-			for (int i = 0; i < list1.size(); i++) {
+			for (int i = 0; i < list.size(); i++) {
 				final int index = i;
+				final int size = list.get(i).getSize();
+				final Point pos = list.get(i).getPosition();
 				
 				Callable<MakroBlock> task = () -> {
-					int colors1[][] = list1.get(index).getColors();
-					int colors2[][] = list2.get(index).getColors();
+					int colors1[][] = list.get(index).getColors();
+					int colors2[][] = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(pos, prevImg, size).getColors();
 					
-					for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
-						for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
+					for (int y = 0; y < size; y++) {
+						for (int x = 0; x < size; x++) {
 							YCbCrColor col1 = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(colors1[y][x]));
 							YCbCrColor col2 = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(colors2[y][x]));
 							
@@ -50,11 +51,11 @@ public class MakroDifferenceEngine {
 							double deltaCr = Math.abs(col1.getCr() - col2.getCr());
 							
 							if (deltaY > 3 || deltaCb > 8 || deltaCr > 8) {
-								if (img != null) {
-									list2.get(index).setEdgeBlock(is_edge(list2.get(index), img, 50));
+								if (curImg != null) {
+									list.get(index).setEdgeBlock(is_edge(list.get(index), curImg, 50));
 								}
 								
-								return list2.get(index);
+								return list.get(index);
 							}
 						}
 					}
@@ -78,8 +79,6 @@ public class MakroDifferenceEngine {
 			}
 			
 			executor.shutdown();
-			
-			executor.shutdown();
 		} catch (Exception e) {
 			executor.shutdown();
 			e.printStackTrace();
@@ -98,13 +97,13 @@ public class MakroDifferenceEngine {
 	private boolean is_edge(MakroBlock block, BufferedImage img, int EDGE_TOLERANCE) {
 		int strength = 0;
 		
-		for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
-			for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
+		for (int y = 0; y < block.getSize(); y++) {
+			for (int x = 0; x < block.getSize(); x++) {
 				strength += calculate_sobel_operator(img, x + block.getPosition().x, y + block.getPosition().y);
 			}
 		}
 		
-		return strength > ((config.MBS_SQ * 64) / EDGE_TOLERANCE) ? true : false;
+		return strength > ((block.getSize() * 64) / EDGE_TOLERANCE) ? true : false;
 	}
 	
 	/*

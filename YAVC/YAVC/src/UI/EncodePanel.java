@@ -25,7 +25,7 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import Encoder.EntryPoint;
+import Main.EntryPoint;
 
 public class EncodePanel extends JPanel {
 	private static final long serialVersionUID = 1L;
@@ -101,10 +101,10 @@ public class EncodePanel extends JPanel {
 		
 		Hashtable<Integer, JLabel> maxSADTable = new Hashtable<Integer, JLabel>();
 		maxSADTable.put(0, create_label("Precise"));
-		maxSADTable.put(262144, create_label("Less precise"));
-		maxSADTable.put(524288, create_label("Unprecise"));
+		maxSADTable.put(524288, create_label("Less precise"));
+		maxSADTable.put(1048576, create_label("Unprecise"));
 		
-		CustomSlider maxSADSlider = new CustomSlider(0, 524288, this.SAD_TOLERANCE);
+		CustomSlider maxSADSlider = new CustomSlider(0, 1048576, this.SAD_TOLERANCE);
 		JPanel maxSADPanel = create_std_ctrl_panel("SAD tolerance", maxSADTable, maxSADSlider);
 		
 		maxSADSlider.addChangeListener(new ChangeListener() {

@@ -11,7 +11,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import Main.config;
+import Utils.MakroBlock;
+import Utils.Vector;
+import Utils.YCbCrColor;
+import Utils.YCbCrMakroBlock;
 
 public class VectorEngine {
 	/*
@@ -117,8 +120,9 @@ public class VectorEngine {
 		YCbCrMakroBlock mostEqualBlock = null;
 		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 		int searchWindow = 48;
+		int blockSize = blockToBeSearched.getSize();
 		
-		Point blockCenter = new Point(blockToBeSearched.getPosition().x + config.MAKRO_BLOCK_SIZE / 2, blockToBeSearched.getPosition().y + config.MAKRO_BLOCK_SIZE / 2);
+		Point blockCenter = new Point(blockToBeSearched.getPosition().x + blockSize / 2, blockToBeSearched.getPosition().y + blockSize / 2);
 		Point minPos = new Point(blockCenter.x - searchWindow, blockCenter.y - searchWindow);
 		Point maxPos = new Point(blockCenter.x + searchWindow, blockCenter.y + searchWindow);
 		
@@ -137,7 +141,7 @@ public class VectorEngine {
 					continue;
 				}
 				
-				MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame);
+				MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame, blockSize);
 				YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_single_MakroBlock_to_YCbCrMakroBlock(blockAtPosP);
 				double sad = get_SAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
 				
@@ -165,7 +169,7 @@ public class VectorEngine {
 		searchPositions[4] = new Point(blockCenter.x, blockCenter.y - step);
 		
 		for (Point p : searchPositions) {
-			MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame);
+			MakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame, blockSize);
 			YCbCrMakroBlock YCbCrBlockAtPosP = makroBlockEngine.convert_single_MakroBlock_to_YCbCrMakroBlock(blockAtPosP);
 			double sad = get_SAD_of_colors(YCbCrBlockAtPosP.getColors(), blockToBeSearched.getColors());
 			
@@ -176,7 +180,24 @@ public class VectorEngine {
 			}
 		}
 		
-		if (lowestSAD > maxSADTolerance) {
+		switch (blockSize) {
+		case 32:
+			//Low filtering (Reduce distortion)
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * blockSize) ? null : mostEqualBlock;
+			break;
+		case 16:
+			//Moderate filtering (Reduce distortion; Get details)
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 5.0) ? null : mostEqualBlock;
+			break;
+		case 8:
+			//High filtering (Reduce distortion; Get details; Get Edges)
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 3.0) ? null : mostEqualBlock;
+			break;
+		case 4:
+			//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 2.0) ? null : mostEqualBlock;
+			break;
+		default:
 			return null;
 		}
 		
@@ -213,8 +234,8 @@ public class VectorEngine {
 		double resCr = 0;
 		double resA = 0;
 		
-		for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
-			for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
+		for (int y = 0; y < colors1.length; y++) {
+			for (int x = 0; x < colors1[y].length; x++) {
 				YCbCrColor prevCol = colors1[y][x];
 				YCbCrColor curCol = colors2[y][x];
 
@@ -225,7 +246,7 @@ public class VectorEngine {
 			}
 		}
 		
-		return (Math.pow(resY, 6) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(config.MAKRO_BLOCK_SIZE * config.MAKRO_BLOCK_SIZE);
+		return (Math.pow(resY, 4) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(colors1.length * colors1.length);
 	}
 	
 	/*

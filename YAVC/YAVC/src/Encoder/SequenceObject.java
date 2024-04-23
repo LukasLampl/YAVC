@@ -2,6 +2,9 @@ package Encoder;
 
 import java.util.ArrayList;
 
+import Utils.DCTObject;
+import Utils.Vector;
+
 public class SequenceObject {
 	private ArrayList<DCTObject> dct = null;
 	private ArrayList<Vector> vecs = null;

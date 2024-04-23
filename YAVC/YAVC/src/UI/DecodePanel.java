@@ -12,7 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
-import Encoder.EntryPoint;
+import Main.EntryPoint;
 
 public class DecodePanel extends JPanel {
 	private static final long serialVersionUID = 1L;

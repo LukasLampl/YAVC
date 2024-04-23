@@ -2,6 +2,7 @@ package Encoder;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -14,8 +15,12 @@ import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import Main.config;
 import UI.Frame;
+import Utils.ColorManager;
+import Utils.DCTObject;
+import Utils.Vector;
+import Utils.YCbCrColor;
+import Utils.YCbCrMakroBlock;
 
 public class OutputWriter {
 	private File COMPRESS_DIR = null;
@@ -66,7 +71,7 @@ public class OutputWriter {
 			String meta = "META["
 					+ "D[" + originalImage.getWidth() + "," + originalImage.getHeight() + "]"
 					+ "FC[" + frameNum + "]"
-					+ "MBS[" + config.MAKRO_BLOCK_SIZE + "]"
+					+ "MBS[" + 0 + "]"
 					+ "]";
 			
 			File metaFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/META.DESC");
@@ -196,7 +201,7 @@ public class OutputWriter {
 			vecRes.append("$V$");
 			
 			for (Vector vec : movementVectors) {
-				vecRes.append("*" + vec.getStartingPoint().x + "," + vec.getStartingPoint().y + ";" + vec.getSpanX() + "," + vec.getSpanY() + "_" + vec.getReferenceDrawback());
+				vecRes.append("*" + vec.getStartingPoint().x + "," + vec.getStartingPoint().y + ";" + vec.getSpanX() + "," + vec.getSpanY() + "_" + vec.getReferenceDrawback() + "~" + vec.getAppendedBlock().getSize());
 			}
 			
 			Files.write(Path.of(frameFile.getAbsolutePath()), vecRes.toString().getBytes(), StandardOpenOption.APPEND);
@@ -319,8 +324,8 @@ public class OutputWriter {
 		v_g2d.setColor(Color.red);
 		
 		for (YCbCrMakroBlock block : diffs) {
-			for (int y = 0; y < block.getColors().length; y++) {
-				for (int x = 0; x < block.getColors()[y].length; x++) {
+			for (int y = 0; y < block.getSize(); y++) {
+				for (int x = 0; x < block.getSize(); x++) {
 					if (block.getPosition().x + x >= img.getWidth()
 						|| block.getPosition().y + y >= img.getHeight()) {
 						continue;
@@ -340,9 +345,10 @@ public class OutputWriter {
 		if (vecs != null) {
 			for (Vector vec : vecs) {
 				YCbCrColor[][] cols = vec.getMostEqualBlock().getColors();
+				int size = vec.getMostEqualBlock().getSize();
 				
-				for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
-					for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
+				for (int y = 0; y < size; y++) {
+					for (int x = 0; x < size; x++) {
 						int vecEndX = vec.getStartingPoint().x + vec.getSpanX();
 						int vecEndY = vec.getStartingPoint().y + vec.getSpanY();
 						
@@ -386,6 +392,21 @@ public class OutputWriter {
 		}
 		
 		g2d.dispose();
+		return render;
+	}
+	
+	public BufferedImage draw_MB_outlines(Dimension dim, ArrayList<YCbCrMakroBlock> diffs) {
+		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)render.createGraphics();
+		g2d.setColor(Color.RED);
+		
+		for (YCbCrMakroBlock b : diffs) {
+			g2d.drawLine(b.getPosition().x, b.getPosition().y, b.getPosition().x + b.getSize(), b.getPosition().y + b.getSize());
+			g2d.drawRect(b.getPosition().x, b.getPosition().y, b.getSize(), b.getSize());
+		}
+		
+		g2d.dispose();
+		
 		return render;
 	}
 }

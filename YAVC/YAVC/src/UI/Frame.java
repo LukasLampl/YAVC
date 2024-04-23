@@ -11,9 +11,8 @@ import java.util.ArrayList;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import Encoder.EntryPoint;
-import Encoder.MakroBlock;
-import Main.config;
+import Main.EntryPoint;
+import Utils.MakroBlock;
 
 public class Frame extends JFrame {
 	private static final long serialVersionUID = 1L;
@@ -128,8 +127,10 @@ public class Frame extends JFrame {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		
 		for (MakroBlock block : differences) {
-			for (int y = 0; y < config.MAKRO_BLOCK_SIZE; y++) {
-				for (int x = 0; x < config.MAKRO_BLOCK_SIZE; x++) {
+			int size = block.getSize();
+			
+			for (int y = 0; y < size; y++) {
+				for (int x = 0; x < size; x++) {
 					if (block.getPosition().x + x >= render.getWidth()
 						|| block.getPosition().y + y >= render.getHeight()) {
 						continue;

@@ -7,13 +7,13 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import Encoder.ColorManager;
-import Encoder.DCTObject;
-import Encoder.MakroBlock;
 import Encoder.MakroBlockEngine;
-import Encoder.Vector;
-import Encoder.YCbCrColor;
-import Encoder.YCbCrMakroBlock;
+import Utils.ColorManager;
+import Utils.DCTObject;
+import Utils.MakroBlock;
+import Utils.Vector;
+import Utils.YCbCrColor;
+import Utils.YCbCrMakroBlock;
 
 public class DataPipeEngine {
 	private DataGrabber GRABBER = null;
@@ -228,7 +228,7 @@ public class DataPipeEngine {
 		
 		if (vecs != null) {
 			for (Vector vec : vecs) {
-				MakroBlock block = makroBlockEngine.get_single_makro_block(vec.getStartingPoint(), referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()));
+				MakroBlock block = makroBlockEngine.get_single_makro_block(vec.getStartingPoint(), referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()), 8);
 				
 				for (int y = 0; y < block.getColors().length; y++) {
 					for (int x = 0; x < block.getColors()[y].length; x++) {

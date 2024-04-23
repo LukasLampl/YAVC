@@ -1,4 +1,4 @@
-package Encoder;
+package Utils;
 
 public enum Status {
 	RUNNING,

@@ -1,4 +1,4 @@
-package Encoder;
+package Main;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -11,8 +11,18 @@ import javax.swing.JFileChooser;
 import Decoder.DataGrabber;
 import Decoder.DataPipeEngine;
 import Decoder.DataPipeValveEngine;
-import Decoder.Filter;
+import Encoder.MakroBlockEngine;
+import Encoder.MakroDifferenceEngine;
+import Encoder.OutputWriter;
+import Encoder.Scene;
+import Encoder.VectorEngine;
 import UI.Frame;
+import Utils.DCTObject;
+import Utils.Filter;
+import Utils.MakroBlock;
+import Utils.Status;
+import Utils.Vector;
+import Utils.YCbCrMakroBlock;
 
 public class EntryPoint {
 	private static int MAX_REFERENCES = 5;
@@ -46,6 +56,7 @@ public class EntryPoint {
 					BufferedImage prevImage = null;
 					BufferedImage currentImage = null;
 					
+					Filter filter = new Filter();
 					Scene scene = new Scene();
 					MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 					MakroDifferenceEngine makroDifferenceEngine = new MakroDifferenceEngine();
@@ -55,7 +66,7 @@ public class EntryPoint {
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
-					for (int i = 0; i < filesCount; i++, changeDetectDistance++) {
+					for (int i = 210; i < filesCount; i++, changeDetectDistance++) {
 						if (this.EN_STATUS == Status.STOPPED) {
 							output.delete();
 						}
@@ -90,49 +101,73 @@ public class EntryPoint {
 						}
 						
 						currentImage = ImageIO.read(frame);
+						filter.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
 						f.setPreviews(prevImage, currentImage);
 						
 						ArrayList<MakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
 						
 						//This only adds an I-Frame if 'i' is a 50th frame and a change
 						//detection lied 20 frames ahead or a change detection has triggered.
-						boolean sceneChanged = scene.scene_change_detected(prevImage, currentImage);
+//						boolean sceneChanged = scene.scene_change_detected(prevImage, currentImage);
+//						
+//						if (sceneChanged == true) {
+//							System.out.println("Shot change dectedted at frame " + i);
+//						}
+//						
+//						if ((i % 80 == 0 && changeDetectDistance > 10) || sceneChanged) {
+//							prevImgBlocks = makroDifferenceEngine.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
+//							ArrayList<YCbCrMakroBlock> blocks = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks);
+//							ArrayList<DCTObject> dct = makroBlockEngine.apply_DCT_on_blocks(blocks);
+//							
+//							outputWriter.add_obj_to_queue(dct, null);
+//							referenceImages.clear();
+//							referenceImages.add(currentImage);
+//							prevImage = currentImage;
+//							prevImgBlocks = curImgBlocks;
+//							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
+//							continue;
+//						}
 						
-						if (sceneChanged == true) {
-							System.out.println("Shot change dectedted at frame " + i);
+						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
+						
+						try {
+							ImageIO.write(outputWriter.draw_MB_outlines(dim, makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(curImgBlocks)), "png", new File(output.getAbsolutePath() + "/B_" + i + ".png"));
+						} catch (Exception e) {
+							e.printStackTrace();
 						}
 						
-						if ((i % 80 == 0 && changeDetectDistance > 10) || sceneChanged) {
-							prevImgBlocks = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, null);
-							ArrayList<YCbCrMakroBlock> blocks = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks);
-							ArrayList<DCTObject> dct = makroBlockEngine.apply_DCT_on_blocks(blocks);
-							
-							outputWriter.add_obj_to_queue(dct, null);
-							referenceImages.clear();
-							referenceImages.add(currentImage);
-							prevImage = currentImage;
-							prevImgBlocks = curImgBlocks;
-							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
-							continue;
-						}
-						
-						curImgBlocks = makroBlockEngine.damp_MakroBlock_colors(prevImgBlocks, curImgBlocks, currentImage, f.get_damping_tolerance(), f.get_edge_tolerance());
-						
-						ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(prevImgBlocks, curImgBlocks, currentImage);
+						ArrayList<MakroBlock> rawDifferences = makroDifferenceEngine.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
 						ArrayList<YCbCrMakroBlock> differences = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(rawDifferences);
 						f.setDifferenceImage(rawDifferences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
 						ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
-		
-						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
+						System.out.println("Vecs: " + movementVectors.size() + " : " + differences.size());
 						f.setVectorizedImage(vectorEngine.construct_vector_path(dim, movementVectors));
 
 						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
+						
+						try {
+							ImageIO.write(outputWriter.build_Frame(prevImage, differences, movementVectors, 2), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+							ImageIO.write(outputWriter.build_Frame(prevImage, differences, null, 1), "png", new File(output.getAbsolutePath() + "/D_" + i + ".png"));
+							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/R_" + i + ".png"));
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+	
 						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(result);
 						
 						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
-						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks));
-						result = outputWriter.reconstruct_DCT_image(dcts, result);
+						
+//						try {
+//							ImageIO.write(outputWriter.reconstruct_DCT_image(diffDCT, prevImage), "png", new File(output.getAbsolutePath() + "/D_R_" + i + ".png"));
+//						} catch (Exception e) {
+//							e.printStackTrace();
+//						}
+						
+						//Just for validation
+//						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks));
+//						result = outputWriter.reconstruct_DCT_image(dcts, result);
+						
 						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
 						
 						referenceImages.add(result);

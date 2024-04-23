@@ -1,28 +1,20 @@
-package Encoder;
+package Utils;
 
 import java.awt.Point;
 
-import Main.config;
-
 public class DCTObject {
-	private double[][] Y = new double[config.MAKRO_BLOCK_SIZE][config.MAKRO_BLOCK_SIZE];
-	private double[][] CbDCT = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
-	private double[][] CrDCT = new double[config.MAKRO_BLOCK_SIZE / 2][config.MAKRO_BLOCK_SIZE / 2];
+	private double[][] Y = null;
+	private double[][] CbDCT = null;
+	private double[][] CrDCT = null;
+	private int size = 0;
 	private Point Position = new Point(0, 0);
 	
-	public DCTObject() {}
-	
-	public DCTObject(double[][] YDCT, double[][] CbDCT, double[][] CrDCT, Point pos) {
+	public DCTObject(double[][] YDCT, double[][] CbDCT, double[][] CrDCT, Point pos, int size) {
 		this.Y = YDCT;
 		this.CbDCT = CbDCT;
 		this.CrDCT = CrDCT;
 		this.Position = pos;
-	}
-	
-	public DCTObject(double[][] YDCT, double[][] CbDCT, double[][] CrDCT) {
-		this.Y = YDCT;
-		this.CbDCT = CbDCT;
-		this.CrDCT = CrDCT;
+		this.size = size;
 	}
 	
 	public double[][] getY() {
@@ -48,5 +40,11 @@ public class DCTObject {
 	}
 	public Point getPosition() {
 		return Position;
+	}
+	public void setSize(int size) {
+		this.size = size;
+	}
+	public int getSize() {
+		return this.size;
 	}
 }
