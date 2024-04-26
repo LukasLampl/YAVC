@@ -18,6 +18,7 @@ import java.util.zip.ZipOutputStream;
 import UI.Frame;
 import Utils.ColorManager;
 import Utils.DCTObject;
+import Utils.PixelRaster;
 import Utils.Vector;
 import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
@@ -62,7 +63,7 @@ public class OutputWriter {
 	 * Params: BufferedImage originalImage => First frame in the video
 	 * 			int frameNum => Number of frames in the video
 	 */
-	public void bake_meta_data(BufferedImage originalImage, int frameNum) {
+	public void bake_meta_data(PixelRaster originalImage, int frameNum) {
 		if (originalImage == null) {
 			return;
 		}
@@ -88,7 +89,7 @@ public class OutputWriter {
 	 * Return Type: void
 	 * Params: BufferedImage img => First frame
 	 */
-	public void bake_start_frame(BufferedImage img) {
+	public void bake_start_frame(PixelRaster img) {
 		StringBuilder imgInChars = new StringBuilder();
 
 		for (int y = 0; y < img.getHeight(); y++) {
@@ -315,7 +316,7 @@ public class OutputWriter {
 	 */
 	public int output = 0;
 	
-	public BufferedImage build_Frame(BufferedImage org, ArrayList<YCbCrMakroBlock> diffs, ArrayList<Vector> vecs, int diff) {
+	public BufferedImage build_Frame(PixelRaster org, ArrayList<YCbCrMakroBlock> diffs, ArrayList<Vector> vecs, int diff) {
 		BufferedImage img = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		BufferedImage img_v = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		
@@ -382,7 +383,15 @@ public class OutputWriter {
 			} else if (diff == 2) {
 				g2d.drawImage(img_v, 0, 0, img_v.getWidth(), img_v.getHeight(), null, null);
 			} else {
-				g2d.drawImage(org, 0, 0, img.getWidth(), img.getHeight(), null, null);
+				BufferedImage rep = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+				
+				for (int y = 0; y < img.getHeight(); y++) {
+					for (int x = 0; x < img.getWidth(); x++) {
+						rep.setRGB(x, y, new Color(org.getRGB(x, y)).getRGB());
+					}
+				}
+				
+				g2d.drawImage(rep, 0, 0, img.getWidth(), img.getHeight(), null, null);
 				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
 				g2d.drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null, null);
 				g2d.drawImage(img_v, 0, 0, img_v.getWidth(), img_v.getHeight(), null, null);

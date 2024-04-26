@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import Encoder.MakroBlockEngine;
 import Utils.ColorManager;
 import Utils.DCTObject;
-import Utils.MakroBlock;
 import Utils.Vector;
 import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
@@ -141,7 +140,7 @@ public class DataPipeEngine {
 			String pos = Pos[i];
 			String[] cords = pos.split("\\.");
 			Point p = new Point(Integer.parseInt(cords[0]), Integer.parseInt(cords[1]));
-			blocks[i] = this.MAKRO_BLOCK_ENGINE.apply_IDCT(new DCTObject(YCo, CbCo, CrCo, p));
+			blocks[i] = this.MAKRO_BLOCK_ENGINE.apply_IDCT(new DCTObject(YCo, CbCo, CrCo, p, YCo.length));
 		}
 		
 		for (YCbCrMakroBlock b : blocks) {
@@ -228,7 +227,8 @@ public class DataPipeEngine {
 		
 		if (vecs != null) {
 			for (Vector vec : vecs) {
-				MakroBlock block = makroBlockEngine.get_single_makro_block(vec.getStartingPoint(), referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()), 8);
+				YCbCrMakroBlock block = makroBlockEngine.get_single_makro_block(vec.getStartingPoint(), referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()), 8);
+				YCbCrColor[][] cols = block.getColors();
 				
 				for (int y = 0; y < block.getColors().length; y++) {
 					for (int x = 0; x < block.getColors()[y].length; x++) {
@@ -242,11 +242,11 @@ public class DataPipeEngine {
 							continue;
 						}
 						
-						if (block.getColors()[y][x] == 89658667) { //ASCII for YAVC
+						if (cols[y][x].getA() == 255) { //ASCII for YAVC
 							continue;
 						}
 						
-						vectors.setRGB(vecEndX + x, vecEndY + y, block.getColors()[y][x]);
+						vectors.setRGB(vecEndX + x, vecEndY + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB());
 					}
 				}
 			}

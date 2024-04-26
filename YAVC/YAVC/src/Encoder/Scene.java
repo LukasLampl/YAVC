@@ -1,7 +1,8 @@
 package Encoder;
 
 import java.awt.Color;
-import java.awt.image.BufferedImage;
+
+import Utils.PixelRaster;
 
 public class Scene {
 	/*
@@ -11,7 +12,7 @@ public class Scene {
 	 * 			BufferedImage img2 => Current image
 	 * Note: THIS ALGORITHM MIGHT FAIL OR FALSE TRIGGER SINCE IMAGES CAN'T BE "COMPARED"
 	 */
-	public boolean scene_change_detected(BufferedImage img1, BufferedImage img2) {
+	public boolean scene_change_detected(PixelRaster img1, PixelRaster img2) {
 		int[][] histogram1 = get_histogram(img1);
 		int[][] histogram2 = get_histogram(img2);
 		
@@ -52,7 +53,7 @@ public class Scene {
 	 * Return Type: int[][] => 3 histograms with all 3 colors (r, g, b)
 	 * Params: BufferedImage img => Image from which a histogram should be created
 	 */
-	private int[][] get_histogram(BufferedImage img) {
+	private int[][] get_histogram(PixelRaster img) {
 		int[][] histogram = new int[3][256]; //3 for 'r', 'g', 'b'
 		
 		for (int y = 0; y < img.getHeight(); y++) {

@@ -28,8 +28,8 @@ public class ColorManager {
 		return new Color(Math.min(Math.max(red, 0), 255), Math.min(Math.max(green, 0), 255), Math.min(Math.max(blue, 0), 255));
 	}
 	
-	public int convert_RGB_to_GRAYSCALE(int rgb) {
-		Color col = new Color(rgb);
+	public int convert_RGB_to_GRAYSCALE(int argb) {
+		Color col = new Color(argb);
 		return (int)Math.round(col.getRed() * 0.299 + col.getGreen() * 0.587 + col.getBlue() * 0.114);
 	}
 	

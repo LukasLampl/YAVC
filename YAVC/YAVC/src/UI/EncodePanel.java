@@ -1,6 +1,7 @@
 package UI;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -26,6 +27,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import Main.EntryPoint;
+import Utils.PixelRaster;
 
 public class EncodePanel extends JPanel {
 	private static final long serialVersionUID = 1L;
@@ -317,11 +319,11 @@ public class EncodePanel extends JPanel {
 		this.bar.setValue((int)Math.round(per));
 	}
 	
-	public void set_prev_frame(BufferedImage img) {
+	public void set_prev_frame(PixelRaster img) {
 		this.prevFrameLabel.setIcon(resize_image(img));
 	}
 	
-	public void set_cur_frame(BufferedImage img) {
+	public void set_cur_frame(PixelRaster img) {
 		this.curFrameLabel.setIcon(resize_image(img));
 	}
 	
@@ -331,6 +333,22 @@ public class EncodePanel extends JPanel {
 	
 	public void set_vec_frame(BufferedImage img) {
 		this.vecFrameLabel.setIcon(resize_image(img));
+	}
+	
+	private ImageIcon resize_image(PixelRaster img) {
+		float factor = (float)img.getHeight() / (float)img.getWidth();
+		int width = (int)(((float)this.getWidth() / 2) - (float)this.getWidth() / 16 * 2);
+		int height = (int)(factor * width);
+		
+		BufferedImage rep = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		
+		for (int y = 0; y < img.getHeight(); y++) {
+			for (int x = 0; x < img.getWidth(); x++) {
+				rep.setRGB(x, y, new Color(img.getRGB(x, y)).getRGB());
+			}
+		}
+		
+		return new ImageIcon(rep.getScaledInstance(width, height, Image.SCALE_FAST));
 	}
 	
 	private ImageIcon resize_image(BufferedImage img) {

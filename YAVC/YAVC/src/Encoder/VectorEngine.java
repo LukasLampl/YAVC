@@ -6,16 +6,19 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import Utils.PixelRaster;
 import Utils.Vector;
 import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
 
 public class VectorEngine {
+	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
 	/*
 	 * Purpose: Get the MovementVectors between two frames and removes a match from the differences
 	 * Return Type: ArrayList<Vector> => Movement vectors
@@ -24,7 +27,7 @@ public class VectorEngine {
 	 * 			(Vectors are applied to the differences);
 	 * 			int maxMADTolerance => Max MAD tolerance
 	 */
-	public ArrayList<Vector> calculate_movement_vectors(ArrayList<BufferedImage> refs, ArrayList<YCbCrMakroBlock> diff, int maxSADTolerance) {
+	public ArrayList<Vector> calculate_movement_vectors(ArrayList<PixelRaster> refs, ArrayList<YCbCrMakroBlock> diff, int maxSADTolerance) {
 		int threads = Runtime.getRuntime().availableProcessors();
 		final int maxGuesses = refs.size();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -115,9 +118,9 @@ public class VectorEngine {
 	 * 			BufferedImage prevFrame => Image of the previous frame;
 	 * 			int maxSADTolerance => Max tolerance of the SAD
 	 */
-	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, BufferedImage prevFrame, int maxSADTolerance) {
+	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, PixelRaster prevFrame, int maxSADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
-		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
+		HashSet<Point> set = new HashSet<Point>();
 		int searchWindow = 48;
 		int blockSize = blockToBeSearched.getSize();
 		
@@ -135,6 +138,10 @@ public class VectorEngine {
 			searchPositions = get_hexagon_points(step, blockCenter);
 			
 			for (Point p : searchPositions) {
+				if (set.contains(p)) {
+					continue;
+				}
+				
 				if (p.x < minPos.x || p.y < minPos.y
 					|| p.x > maxPos.x || p.y > maxPos.y
 					|| p.x < 0 || p.x >= prevFrame.getWidth()
@@ -142,7 +149,8 @@ public class VectorEngine {
 					continue;
 				}
 				
-				YCbCrMakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame, blockSize);
+				set.add(p);
+				YCbCrMakroBlock blockAtPosP = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(p, prevFrame, blockSize);
 				double sad = get_SAD_of_colors(blockAtPosP.getColors(), blockToBeSearched.getColors());
 				
 				if (sad < lowestSAD) {
@@ -176,7 +184,7 @@ public class VectorEngine {
 				continue;
 			}
 			
-			YCbCrMakroBlock blockAtPosP = makroBlockEngine.get_single_makro_block(p, prevFrame, blockSize);
+			YCbCrMakroBlock blockAtPosP = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(p, prevFrame, blockSize);
 			double sad = get_SAD_of_colors(blockAtPosP.getColors(), blockToBeSearched.getColors());
 			
 			if (sad < lowestSAD) {

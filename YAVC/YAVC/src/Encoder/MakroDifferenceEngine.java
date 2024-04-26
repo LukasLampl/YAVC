@@ -1,13 +1,13 @@
 package Encoder;
 
 import java.awt.Point;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import Utils.PixelRaster;
 import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
 
@@ -21,7 +21,7 @@ public class MakroDifferenceEngine {
 	 * 			ArrayList<MakroBlock> list2 => List2 to be compared with list1;
 	 * 			BufferedImage img => Image in which the current MakroBlocks are located in;
 	 */
-	public ArrayList<YCbCrMakroBlock> get_MakroBlock_difference(ArrayList<YCbCrMakroBlock> list, BufferedImage prevImg, BufferedImage curImg) {
+	public ArrayList<YCbCrMakroBlock> get_MakroBlock_difference(ArrayList<YCbCrMakroBlock> list, PixelRaster prevImg, PixelRaster curImg) {
 		ArrayList<YCbCrMakroBlock> diffs = new ArrayList<YCbCrMakroBlock>();
 		ArrayList<Future<YCbCrMakroBlock>> fmbs = new ArrayList<Future<YCbCrMakroBlock>>();
 

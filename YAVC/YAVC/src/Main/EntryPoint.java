@@ -17,7 +17,9 @@ import Encoder.OutputWriter;
 import Encoder.Scene;
 import Encoder.VectorEngine;
 import UI.Frame;
+import Utils.DCTObject;
 import Utils.Filter;
+import Utils.PixelRaster;
 import Utils.Status;
 import Utils.Vector;
 import Utils.YCbCrMakroBlock;
@@ -47,12 +49,11 @@ public class EntryPoint {
 			Thread worker = new Thread(() -> {
 				try {
 					long timeStart = System.currentTimeMillis();
-					
-					ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(MAX_REFERENCES);
+					ArrayList<PixelRaster> referenceImages = new ArrayList<PixelRaster>(MAX_REFERENCES);
 					ArrayList<YCbCrMakroBlock> prevImgBlocks = null;
 					
-					BufferedImage prevImage = null;
-					BufferedImage currentImage = null;
+					PixelRaster prevImage = null;
+					PixelRaster currentImage = null;
 					
 					Filter filter = new Filter();
 					Scene scene = new Scene();
@@ -90,7 +91,7 @@ public class EntryPoint {
 						}
 						
 						if (prevImage == null) {
-							prevImage = ImageIO.read(frame);
+							prevImage = new PixelRaster(ImageIO.read(frame));
 							referenceImages.add(prevImage);
 							prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(prevImage);
 							outputWriter.bake_meta_data(prevImage, filesCount);
@@ -98,7 +99,8 @@ public class EntryPoint {
 							continue;
 						}
 						
-						currentImage = ImageIO.read(frame);
+						currentImage = new PixelRaster(ImageIO.read(frame));
+						
 						filter.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
 						f.setPreviews(prevImage, currentImage);
 						
@@ -106,25 +108,24 @@ public class EntryPoint {
 						
 						//This only adds an I-Frame if 'i' is a 50th frame and a change
 						//detection lied 20 frames ahead or a change detection has triggered.
-//						boolean sceneChanged = scene.scene_change_detected(prevImage, currentImage);
-//						
-//						if (sceneChanged == true) {
-//							System.out.println("Shot change dectedted at frame " + i);
-//						}
-//						
-//						if ((i % 80 == 0 && changeDetectDistance > 10) || sceneChanged) {
-//							prevImgBlocks = makroDifferenceEngine.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
-//							ArrayList<YCbCrMakroBlock> blocks = makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks);
-//							ArrayList<DCTObject> dct = makroBlockEngine.apply_DCT_on_blocks(blocks);
-//							
-//							outputWriter.add_obj_to_queue(dct, null);
-//							referenceImages.clear();
-//							referenceImages.add(currentImage);
-//							prevImage = currentImage;
-//							prevImgBlocks = curImgBlocks;
-//							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
-//							continue;
-//						}
+						boolean sceneChanged = scene.scene_change_detected(prevImage, currentImage);
+						
+						if (sceneChanged == true) {
+							System.out.println("Shot change dectedted at frame " + i);
+						}
+						
+						if ((i % 80 == 0 && changeDetectDistance > 10) || sceneChanged) {
+							prevImgBlocks = makroDifferenceEngine.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
+							ArrayList<DCTObject> dct = makroBlockEngine.apply_DCT_on_blocks(prevImgBlocks);
+							
+							outputWriter.add_obj_to_queue(dct, null);
+							referenceImages.clear();
+							referenceImages.add(currentImage);
+							prevImage = currentImage;
+							prevImgBlocks = curImgBlocks;
+							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
+							continue;
+						}
 						
 						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
 						
@@ -138,7 +139,22 @@ public class EntryPoint {
 						f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
 						ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
-						System.out.println("Vecs: " + movementVectors.size() + " : " + differences.size());
+
+						///////////////////
+						//// DEBUGGING ////
+						///////////////////
+						int areaVecs = 0, areaDiffs = 0;
+						
+						for (Vector v : movementVectors) {
+							areaVecs += Math.pow(v.getAppendedBlock().getSize(), 2);
+						}
+						
+						for (YCbCrMakroBlock b : differences) {
+							areaDiffs += Math.pow(b.getSize(), 2);
+						}
+						
+						System.out.println("Vecs: " + movementVectors.size() + " (" + areaVecs + ") : " + differences.size() + " (" + areaDiffs + ")");
+						
 						f.setVectorizedImage(vectorEngine.construct_vector_path(dim, movementVectors));
 
 						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
@@ -150,8 +166,10 @@ public class EntryPoint {
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
+						
+						PixelRaster res = new PixelRaster(result);
 	
-						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(result);
+						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(res);
 						
 //						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
 						
@@ -167,9 +185,9 @@ public class EntryPoint {
 						
 //						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
 						
-						referenceImages.add(result);
+						referenceImages.add(res);
 						release_old_reference_images(referenceImages);
-						prevImage = result;
+						prevImage = res;
 					}
 					
 					f.disposeWriterPermission();
@@ -240,7 +258,7 @@ public class EntryPoint {
 					dataPipeValveEngine.release_image(outputImg);
 					prevFrame = result;
 					referenceImages.add(result);
-					release_old_reference_images(referenceImages);
+//					release_old_reference_images(referenceImages);
 					frame.update_decoder_frame_count(frameCounter, maxFrames, false);
 				}
 			});
@@ -261,7 +279,7 @@ public class EntryPoint {
 		this.DE_STATUS = Status.STOPPED;
 	}
 	
-	private void release_old_reference_images(ArrayList<BufferedImage> refList) {
+	private void release_old_reference_images(ArrayList<PixelRaster> refList) {
 		if (refList.size() < MAX_REFERENCES) {
 			return;
 		}

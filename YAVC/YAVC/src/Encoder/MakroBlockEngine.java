@@ -2,7 +2,6 @@ package Encoder;
 
 import java.awt.Color;
 import java.awt.Point;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import Main.config;
@@ -10,6 +9,7 @@ import Utils.ColorManager;
 import Utils.DCTObject;
 import Utils.Filter;
 import Utils.MakroBlock;
+import Utils.PixelRaster;
 import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
 
@@ -22,7 +22,7 @@ public class MakroBlockEngine {
 	 * Return Type: ArrayList<MakroBlock> => MakroBlocks of the image
 	 * Params: BufferedImage img => Image from which the MakroBlocks should be ripped off
 	 */
-	public ArrayList<YCbCrMakroBlock> get_makroblocks_from_image(BufferedImage img) {
+	public ArrayList<YCbCrMakroBlock> get_makroblocks_from_image(PixelRaster img) {
 		int[][] edges = this.FILTER.get_sobel_values(img);
 		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
 		
@@ -324,7 +324,7 @@ public class MakroBlockEngine {
 	 * Params: Point position => Position from where to grab the MakroBlock;
 	 * 			img => Image from which the MakroBlock should be grabbed
 	 */
-	public YCbCrMakroBlock get_single_makro_block(Point position, BufferedImage img, int size) {
+	public YCbCrMakroBlock get_single_makro_block(Point position, PixelRaster img, int size) {
 		/*
 		 * Imagine the colors as a table:
 		 * +---+---+---+---+---+---+---+---+

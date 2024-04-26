@@ -12,6 +12,7 @@ import javax.swing.JPanel;
 
 import Main.EntryPoint;
 import Utils.ColorManager;
+import Utils.PixelRaster;
 import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
 
@@ -157,7 +158,7 @@ public class Frame extends JFrame {
 	 * Params: BufferedImage img1 => previous image;
 	 * 			BufferedImage img2 => current image
 	 */
-	public void setPreviews(BufferedImage img1, BufferedImage img2) {
+	public void setPreviews(PixelRaster img1, PixelRaster img2) {
 		this.ENCODE_PANEL.set_prev_frame(img1);
 		this.ENCODE_PANEL.set_cur_frame(img2);
 		update();

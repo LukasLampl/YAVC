@@ -60,7 +60,7 @@ public class Filter {
 	private int[][] sobelY = {{3, 10, 3}, {0, 0, 0}, {-3, -10, -3}};
 	private int c = 0;
 	
-	public int[][] get_sobel_values(BufferedImage img) {
+	public int[][] get_sobel_values(PixelRaster img) {
 		int[][] values = new int[img.getWidth()][img.getHeight()];
 		BufferedImage r = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 		
@@ -107,7 +107,7 @@ public class Filter {
 	 * Params: BufferedImage img1 => Reference image;
 	 * 			BufferedImage img2 => Image to damp;
 	 */
-	public void damp_frame_colors(BufferedImage img1, BufferedImage img2) {
+	public void damp_frame_colors(PixelRaster img1, PixelRaster img2) {
 		//Error on dimension mismatching
 		if (img1.getWidth() != img2.getWidth() || img1.getHeight() != img2.getHeight()) {
 			System.err.println("Images are not compareable!");
@@ -121,8 +121,8 @@ public class Filter {
 			for (int x = 0; x < width; x++) {
 				int pixel1 = img1.getRGB(x, y);
 				int pixel2 = img2.getRGB(x, y);
-				YCbCrColor prevCol = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(pixel1));
-				YCbCrColor curCol = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(pixel2));
+				YCbCrColor prevCol = this.COLOR_MANAGER.convert_RGB_to_YCbCr(pixel1);
+				YCbCrColor curCol = this.COLOR_MANAGER.convert_RGB_to_YCbCr(pixel2);
 				
 				double deltaY = Math.abs(prevCol.getY() - curCol.getY());
 				double deltaCb = Math.abs(prevCol.getCb() - curCol.getCb());
