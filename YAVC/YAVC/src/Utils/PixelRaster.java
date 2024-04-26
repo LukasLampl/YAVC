@@ -37,6 +37,12 @@ public class PixelRaster {
 	}
 	
 	public int getRGB(int x, int y) {
+		if (x >= this.dim.width) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is bigger than " + this.dim.width);
+		} else if (y >= this.dim.height) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is bigger than " + this.dim.height);
+		}
+		
 		int pos = y * this.dim.width + x;
 		return this.data[pos];
 	}

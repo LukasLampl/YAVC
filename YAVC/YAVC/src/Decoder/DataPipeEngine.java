@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import Encoder.MakroBlockEngine;
 import Utils.ColorManager;
 import Utils.DCTObject;
+import Utils.PixelRaster;
 import Utils.Vector;
 import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
@@ -197,6 +198,7 @@ public class DataPipeEngine {
 		for (int i = 1; i < streamSet.length; i++) {
 			String s = streamSet[i];
 			String[] drawBackPart = s.split("\\_");
+			String[] vectorInfo = drawBackPart[1].split("\\~");
 			String[] parts = drawBackPart[0].split("\\;");
 			
 			String[] startPos = parts[0].split("\\,");
@@ -206,7 +208,8 @@ public class DataPipeEngine {
 			vec.setStartingPoint(new Point(Integer.parseInt(startPos[0]), Integer.parseInt(startPos[1])));
 			vec.setSpanX(Integer.parseInt(spanSize[0]));
 			vec.setSpanY(Integer.parseInt(spanSize[1]));
-			vec.setReferenceDrawback(Integer.parseInt(drawBackPart[1]));
+			vec.setReferenceDrawback(Integer.parseInt(vectorInfo[0]));
+			vec.setReferenceSize(Integer.parseInt(vectorInfo[1]));
 			vecs.add(vec);
 		}
 		
@@ -227,7 +230,8 @@ public class DataPipeEngine {
 		
 		if (vecs != null) {
 			for (Vector vec : vecs) {
-				YCbCrMakroBlock block = makroBlockEngine.get_single_makro_block(vec.getStartingPoint(), referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()), 8);
+				PixelRaster ref = new PixelRaster(referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()));
+				YCbCrMakroBlock block = makroBlockEngine.get_single_makro_block(vec.getStartingPoint(), ref, vec.getReferenceSize());
 				YCbCrColor[][] cols = block.getColors();
 				
 				for (int y = 0; y < block.getColors().length; y++) {

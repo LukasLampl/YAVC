@@ -52,7 +52,7 @@ public class MakroBlockEngine {
 		
 		switch (size) {
 		case 32:
-			passed = detail > size ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
+			passed = detail > size * 0.75 ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
 			break;
 		case 16:
 			passed = detail > size * 2.5 ? true : false; //Moderate pre-filtering (Find edges of interest)
@@ -77,6 +77,14 @@ public class MakroBlockEngine {
 		return blocks;
 	}
 	
+	/*
+	 * Purpose: Get the sobel values of the current block
+	 * Return Type: double => Value of interest
+	 * Params: int edges[][] => Sobel operator result,
+	 * 			int x => X coordinate of the block;
+	 * 			int y => Y coordinate of the block;
+	 * 			int size => Size of the block;
+	 */
 	private double calculate_detail(int edges[][], int x, int y, int size) {
 		double sum = 0;
 		
@@ -192,7 +200,6 @@ public class MakroBlockEngine {
 			DCTObject dct = apply_DCT(b);
 			dct.setSize(b.getSize());
 			obj.add(dct);
-			apply_IDCT(dct);
 		}
 		
 		return obj;
@@ -251,7 +258,7 @@ public class MakroBlockEngine {
 			}
 		}
 		
-		int m = CbCol.length;
+		int m = block.getSize() / 2;
 		
 		for (int v = 0; v < m; v++) {
             for (int u = 0; u < m; u++) {
@@ -260,8 +267,8 @@ public class MakroBlockEngine {
             	
                 for (int x = 0; x < m; x++) {
                     for (int y = 0; y < m; y++) {
-                        double cos1 = Math.cos((double)(2 * x + 1) * (double)u * Math.PI / (double)(2 * m));
-                        double cos2 = Math.cos((double)(2 * y + 1) * (double)v * Math.PI / (double)(2 * m)); 
+                        double cos1 = Math.cos(((double)(2 * x + 1) * (double)u * Math.PI) / (double)(2 * m));
+                        double cos2 = Math.cos(((double)(2 * y + 1) * (double)v * Math.PI) / (double)(2 * m)); 
                         CbSum += CbCol[y][x] * cos1 * cos2;
                         CrSum += CrCol[y][x] * cos1 * cos2;
                     }
@@ -285,14 +292,13 @@ public class MakroBlockEngine {
 		
 		for (int i = 0; i < col.length; i++) {
 			for (int n = 0; n < col[i].length; n++) {
-				col[i][n] = new YCbCrColor();
-				col[i][n].setY(obj.getY()[i][n]);
+				col[i][n] = new YCbCrColor(obj.getY()[i][n], 0, 0);
 			}
 		}
 		
 		double[][] coCb = new double[obj.getSize() / 2][obj.getSize() / 2];
 		double[][] coCr = new double[obj.getSize() / 2][obj.getSize() / 2];
-		int m = obj.getCbDCT().length;
+		int m = obj.getSize() / 2;
 
 		for (int x = 0; x < m; x++) {
 			for (int y = 0; y < m; y++) {
@@ -301,8 +307,8 @@ public class MakroBlockEngine {
 				
 				for (int u = 0; u < m; u++) {
 					for (int v = 0; v < m; v++) {
-						double cos1 = Math.cos((double)(2 * x + 1) * (double)u * Math.PI / (double)(2 * m));
-                        double cos2 = Math.cos((double)(2 * y + 1) * (double)v * Math.PI / (double)(2 * m)); 
+						double cos1 = Math.cos(((double)(2 * x + 1) * (double)u * Math.PI) / (double)(2 * m));
+                        double cos2 = Math.cos(((double)(2 * y + 1) * (double)v * Math.PI) / (double)(2 * m)); 
                         CbSum += obj.getCbDCT()[u][v] * step(u) * step(v) * cos1 * cos2;
                         CrSum += obj.getCrDCT()[u][v] * step(u) * step(v) * cos1 * cos2;
 					}
@@ -322,7 +328,7 @@ public class MakroBlockEngine {
 	 * Purpose: Get a single MakroBlock out of the whole image
 	 * Return Type: MakroBlock => Analyzed MakroBlock
 	 * Params: Point position => Position from where to grab the MakroBlock;
-	 * 			img => Image from which the MakroBlock should be grabbed
+	 * 			PixelRaster img => Image from which the MakroBlock should be grabbed
 	 */
 	public YCbCrMakroBlock get_single_makro_block(Point position, PixelRaster img, int size) {
 		/*
@@ -337,32 +343,28 @@ public class MakroBlockEngine {
 		 */
 		YCbCrColor[][] colors = new YCbCrColor[size][size];
 		
-		int currentColumn = 0;
-		int currentRow = 0;
-		
 		int maxX = img.getWidth();
 		int maxY = img.getHeight();
-		int maxMBY = position.y + size;
-		int maxMBX = position.x + size;
+		boolean setRestToNil = false;
 		
-		for (int y = position.y; y < maxMBY; y++) {
-			if (y >= maxY || y < 0) {
-				colors[currentColumn++][0] = new YCbCrColor(0, 0, 0, 255);
-				continue;
+		for (int y = 0; y < size; y++) {
+			if (y + position.y >= maxY || y + position.y < 0) {
+				colors[y][0] = new YCbCrColor(0, 0, 0, 255);
+				setRestToNil = true;
 			}
 			
-			for (int x = position.x; x < maxMBX; x++) {
-				if (currentRow >= size) {
-					currentColumn++;
-					currentRow = 0;
+			for (int x = 0; x < size; x++) {
+				if (!setRestToNil) {
+					if (x + position.x >= maxX || x + position.x < 0) {
+						colors[y][x] = new YCbCrColor(0, 0, 0, 255);
+						continue;
+					}
+					
+					colors[y][x] = this.COLOR_MANAGER.convert_RGB_to_YCbCr(img.getRGB(x + position.x, y + position.y));
+			
+				} else {
+					colors[y][x] = new YCbCrColor(0, 0, 0, 255);
 				}
-				
-				if (x >= maxX || x < 0) {
-					colors[currentColumn][currentRow++] = new YCbCrColor(0, 0, 0, 255);
-					continue;
-				}
-				
-				colors[currentColumn][currentRow++] = this.COLOR_MANAGER.convert_RGB_to_YCbCr(img.getRGB(x, y));
 			}
 		}
 		

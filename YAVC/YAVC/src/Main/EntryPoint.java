@@ -65,7 +65,7 @@ public class EntryPoint {
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
-					for (int i = 210; i < filesCount; i++, changeDetectDistance++) {
+					for (int i = 269; i < filesCount + 269; i++, changeDetectDistance++) {
 						if (this.EN_STATUS == Status.STOPPED) {
 							output.delete();
 						}
@@ -171,19 +171,19 @@ public class EntryPoint {
 	
 						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(res);
 						
-//						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
+						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
 						
-//						try {
-//							ImageIO.write(outputWriter.reconstruct_DCT_image(diffDCT, prevImage), "png", new File(output.getAbsolutePath() + "/D_R_" + i + ".png"));
-//						} catch (Exception e) {
-//							e.printStackTrace();
-//						}
+						try {
+							ImageIO.write(outputWriter.reconstruct_DCT_image(diffDCT, prevImage.getWidth(), prevImage.getHeight()), "png", new File(output.getAbsolutePath() + "/D_R_" + i + ".png"));
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 						
 						//Just for validation
-//						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(makroBlockEngine.convert_MakroBlocks_to_YCbCrMarkoBlocks(prevImgBlocks));
-//						result = outputWriter.reconstruct_DCT_image(dcts, result);
+						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(prevImgBlocks);
+						result = outputWriter.reconstruct_DCT_image(dcts, result.getWidth(), result.getHeight());
 						
-//						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
+						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
 						
 						referenceImages.add(res);
 						release_old_reference_images(referenceImages);

@@ -7,6 +7,7 @@ public class Vector {
 	private int spanX = 0;
 	private int spanY = 0;
 	private int referenceDrawback = 0;
+	private int referenceSize = 4;
 	private YCbCrMakroBlock appendedBlock = null;
 	private YCbCrMakroBlock mostEqualBlock = null;
 	
@@ -56,5 +57,13 @@ public class Vector {
 
 	public void setReferenceDrawback(int referenceDrawback) {
 		this.referenceDrawback = referenceDrawback;
+	}
+
+	public int getReferenceSize() {
+		return referenceSize;
+	}
+
+	public void setReferenceSize(int referenceSize) {
+		this.referenceSize = referenceSize;
 	}
 }
