@@ -40,19 +40,27 @@ public class MakroDifferenceEngine {
 					YCbCrMakroBlock refBlock = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(pos, prevImg, size);
 					YCbCrColor[][] colors2 = refBlock.getColors();
 					
+					double sumY = 0;
+					double sumCb = 0;
+					double sumCr = 0;
+					
 					for (int y = 0; y < size; y++) {
 						for (int x = 0; x < size; x++) {
 							YCbCrColor col1 = colors1[y][x];
 							YCbCrColor col2 = colors2[y][x];
 							
-							double deltaY = Math.abs(col1.getY() - col2.getY());
-							double deltaCb = Math.abs(col1.getCb() - col2.getCb());
-							double deltaCr = Math.abs(col1.getCr() - col2.getCr());
-							
-							if (deltaY > 3 || deltaCb > 8 || deltaCr > 8) {
-								return list.get(index);
-							}
+							sumY += Math.abs(col1.getY() - col2.getY());
+							sumCb += Math.abs(col1.getCb() - col2.getCb());
+							sumCr += Math.abs(col1.getCr() - col2.getCr());
 						}
+					}
+					
+					double normalY = sumY / (size * size);
+					double normalCb = sumCb / (size * size);
+					double normalCr = sumCr / (size * size);
+					
+					if (normalY > 3.5 || normalCb > 8.0 || normalCr > 8.0) {
+						return list.get(index);
 					}
 					
 					return null;

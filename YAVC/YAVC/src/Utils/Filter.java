@@ -2,9 +2,6 @@ package Utils;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.io.File;
-
-import javax.imageio.ImageIO;
 
 public class Filter {
 	private ColorManager COLOR_MANAGER = new ColorManager();
@@ -92,12 +89,6 @@ public class Filter {
 			}
 		}
 		
-		try {
-			ImageIO.write(r, "png", new File("C:\\Users\\Lukas Lampl\\Documents\\Res\\G_" + c++ + ".png"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
 		return values;
 	}
 	
@@ -128,7 +119,7 @@ public class Filter {
 				double deltaCb = Math.abs(prevCol.getCb() - curCol.getCb());
 				double deltaCr = Math.abs(prevCol.getCr() - curCol.getCr());
 				
-				if (deltaY > 2 || deltaCb > 6 || deltaCr > 6) {
+				if (deltaY > 3.0 || deltaCb > 8.0 || deltaCr > 8.0) {
 					continue;
 				}
 				

@@ -72,7 +72,6 @@ public class OutputWriter {
 			String meta = "META["
 					+ "D[" + originalImage.getWidth() + "," + originalImage.getHeight() + "]"
 					+ "FC[" + frameNum + "]"
-					+ "MBS[" + 0 + "]"
 					+ "]";
 			
 			File metaFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/META.DESC");

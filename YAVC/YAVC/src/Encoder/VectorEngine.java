@@ -197,19 +197,19 @@ public class VectorEngine {
 		switch (blockSize) {
 		case 32:
 			//Low filtering (Reduce distortion)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * blockSize) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * blockSize * 2.5) ? null : mostEqualBlock;
 			break;
 		case 16:
 			//Moderate filtering (Reduce distortion; Get details)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 5.0) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 12.0) ? null : mostEqualBlock;
 			break;
 		case 8:
 			//High filtering (Reduce distortion; Get details; Get Edges)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 3.0) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 6.0) ? null : mostEqualBlock;
 			break;
 		case 4:
 			//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 2.0) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 4.0) ? null : mostEqualBlock;
 			break;
 		default:
 			return null;

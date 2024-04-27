@@ -21,7 +21,7 @@ public class PixelRaster {
 			boolean hasAlpha = img.getAlphaRaster() != null ? true : false;
 			
 			for (int i = 0, index = 0; i < buffer.length; i++) {
-				int argb = 0;
+				int argb = -16777216;
 				
 				if (hasAlpha) {
 					argb += (((int)buffer[i++] & 0xff) << 24); //Alpha

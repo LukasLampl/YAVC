@@ -5,7 +5,10 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
+
+import javax.imageio.ImageIO;
 
 import Encoder.MakroBlockEngine;
 import Utils.ColorManager;
@@ -20,7 +23,7 @@ public class DataPipeEngine {
 	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	private Dimension DIMENSION = null;
-	private int MBS = 4;
+	private final int MBS = 4;
 	
 	private int MAX_FRAMES = 0;
 	private String CURRENT_FRAME_DATA = "";
@@ -39,22 +42,26 @@ public class DataPipeEngine {
 	 */
 	public BufferedImage scrape_main_image(String startFrameContent) {
 		BufferedImage render = new BufferedImage(this.DIMENSION.width, this.DIMENSION.height, BufferedImage.TYPE_INT_ARGB);
-		String[] stepInfos = startFrameContent.split("\\.");
-
-		int x = 0;
-		int y = 0;
+		String[] stepInfo = startFrameContent.split("\\.");
+		int x = 0, y = 0;
 		
-		for (String s : stepInfos) {
+		for (String s : stepInfo) {
 			if (x >= this.DIMENSION.width) {
 				x = 0;
 				y++;
 			}
 			
 			if (y >= this.DIMENSION.height) {
-				break;
+				continue;
 			}
-			
+
 			render.setRGB(x++, y, Integer.parseInt(s));
+		}
+		
+		try {
+			ImageIO.write(render, "png", new File("C:\\Users\\Lukas Lampl\\Documents\\result\\sf.png"));
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		
 		return render;
@@ -120,11 +127,11 @@ public class DataPipeEngine {
 			double[][] CbCo = new double[this.MBS / 2][this.MBS / 2];
 			double[][] CrCo = new double[this.MBS / 2][this.MBS / 2];
 			
-			for (int y = 0; y < CbCols.length; y++) {
+			for (int y = 0; y < CbCols.length && y < CrCols.length; y++) {
 				String[] CbRows = CbCols[y].split("\\.");
 				String[] CrRows = CrCols[y].split("\\.");
 				
-				for (int x = 0; x < CbRows.length; x++) {
+				for (int x = 0; x < CbRows.length && x < CrRows.length; x++) {
 					CbCo[y][x] = Integer.parseInt(CbRows[x]);
 					CrCo[y][x] = Integer.parseInt(CrRows[x]);
 				}
@@ -141,7 +148,7 @@ public class DataPipeEngine {
 			String pos = Pos[i];
 			String[] cords = pos.split("\\.");
 			Point p = new Point(Integer.parseInt(cords[0]), Integer.parseInt(cords[1]));
-			blocks[i] = this.MAKRO_BLOCK_ENGINE.apply_IDCT(new DCTObject(YCo, CbCo, CrCo, p, YCo.length));
+			blocks[i] = this.MAKRO_BLOCK_ENGINE.apply_IDCT(new DCTObject(YCo, CbCo, CrCo, p));
 		}
 		
 		for (YCbCrMakroBlock b : blocks) {
@@ -294,19 +301,6 @@ public class DataPipeEngine {
 		}
 		
 		this.MAX_FRAMES = Integer.parseInt(rawFC.toString());
-		start = metaFileContent.indexOf("]MBS[");
-		
-		StringBuilder rawMBS = new StringBuilder(16);
-		
-		for (int i = start + 5; i < metaFileContent.length(); i++) {
-			if (metaFileContent.charAt(i) == ']') {
-				break;
-			}
-
-			rawMBS.append(metaFileContent.charAt(i));
-		}
-		
-		this.MBS = Integer.parseInt(rawMBS.toString());
 	}
 	
 	public int get_max_frame_number() {

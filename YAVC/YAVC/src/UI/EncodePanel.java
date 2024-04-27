@@ -32,7 +32,6 @@ import Utils.PixelRaster;
 public class EncodePanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
-	private int EDGE_DAMPING_TOLERANCE = 4;
 	private double COLOR_DAMPING_TOLERANCE = 0.75;
 	private int SAD_TOLERANCE = 32768;
 	
@@ -71,21 +70,6 @@ public class EncodePanel extends JPanel {
 		cons.weightx = 1.0;
 		cons.insets = new Insets(0, 4, 0, 4);
 		
-		Hashtable<Integer, JLabel> edgeRecTable = new Hashtable<Integer, JLabel>();
-		edgeRecTable.put(0, create_label("Precise"));
-		edgeRecTable.put(50, create_label("Unprecise"));
-		edgeRecTable.put(100, create_label("Ignore"));
-		
-		CustomSlider edgeRecSlider = new CustomSlider(0, 100, this.EDGE_DAMPING_TOLERANCE);
-		JPanel edgeRecPanel = create_std_ctrl_panel("Edge detection", edgeRecTable, edgeRecSlider);
-		
-		edgeRecSlider.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				EDGE_DAMPING_TOLERANCE = edgeRecSlider.getValue();
-			}
-		});
-		
 		Hashtable<Integer, JLabel> colDampTable = new Hashtable<Integer, JLabel>();
 		colDampTable.put(0, create_label("0%"));
 		colDampTable.put(50, create_label("50%"));
@@ -116,8 +100,6 @@ public class EncodePanel extends JPanel {
 			}
 		});
 		
-		holder.add(edgeRecPanel, cons);
-		cons.gridx++;
 		holder.add(colDampPanel, cons);
 		cons.gridx++;
 		holder.add(maxSADPanel, cons);

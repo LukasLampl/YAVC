@@ -65,7 +65,7 @@ public class EntryPoint {
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
-					for (int i = 269; i < filesCount + 269; i++, changeDetectDistance++) {
+					for (int i = 0; i < filesCount; i++, changeDetectDistance++) {
 						if (this.EN_STATUS == Status.STOPPED) {
 							output.delete();
 						}
@@ -159,34 +159,34 @@ public class EntryPoint {
 
 						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
 						
-						try {
-							ImageIO.write(outputWriter.build_Frame(prevImage, differences, movementVectors, 2), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
-							ImageIO.write(outputWriter.build_Frame(prevImage, differences, null, 1), "png", new File(output.getAbsolutePath() + "/D_" + i + ".png"));
-							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/R_" + i + ".png"));
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
+//						try {
+//							ImageIO.write(outputWriter.build_Frame(prevImage, differences, movementVectors, 2), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+//							ImageIO.write(outputWriter.build_Frame(prevImage, differences, null, 1), "png", new File(output.getAbsolutePath() + "/D_" + i + ".png"));
+//							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/R_" + i + ".png"));
+//						} catch (Exception e) {
+//							e.printStackTrace();
+//						}
 						
 						PixelRaster res = new PixelRaster(result);
 						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(res);
 						
 						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
 						
-						try {
-							ImageIO.write(outputWriter.reconstruct_DCT_image(diffDCT, prevImage.getWidth(), prevImage.getHeight()), "png", new File(output.getAbsolutePath() + "/D_R_" + i + ".png"));
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
+//						try {
+//							ImageIO.write(outputWriter.reconstruct_DCT_image(diffDCT, prevImage.getWidth(), prevImage.getHeight()), "png", new File(output.getAbsolutePath() + "/D_R_" + i + ".png"));
+//						} catch (Exception e) {
+//							e.printStackTrace();
+//						}
 						
 						//Just for validation
 						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(prevImgBlocks);
 						result = outputWriter.reconstruct_DCT_image(dcts, result.getWidth(), result.getHeight());
 						
-						try {
-							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
+//						try {
+//							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
+//						} catch (Exception e) {
+//							e.printStackTrace();
+//						}
 						
 						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
 						
@@ -263,7 +263,11 @@ public class EntryPoint {
 					dataPipeValveEngine.release_image(outputImg);
 					prevFrame = result;
 					referenceImages.add(result);
-//					release_old_reference_images(referenceImages);
+					
+					if (referenceImages.size() > EntryPoint.MAX_REFERENCES) {
+						referenceImages.remove(0);
+					}
+					
 					frame.update_decoder_frame_count(frameCounter, maxFrames, false);
 				}
 			});
@@ -285,7 +289,7 @@ public class EntryPoint {
 	}
 	
 	private void release_old_reference_images(ArrayList<PixelRaster> refList) {
-		if (refList.size() < MAX_REFERENCES) {
+		if (refList.size() < EntryPoint.MAX_REFERENCES) {
 			return;
 		}
 		
