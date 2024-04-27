@@ -236,8 +236,14 @@ public class DataPipeEngine {
 		BufferedImage vectors = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		
 		if (vecs != null) {
+			ArrayList<PixelRaster> rasterSet = new ArrayList<PixelRaster>();
+			
+			for (int i = 0; i < referenceImages.size(); i++) {
+				rasterSet.add(new PixelRaster(referenceImages.get(i)));
+			}
+			
 			for (Vector vec : vecs) {
-				PixelRaster ref = new PixelRaster(referenceImages.get(referenceImages.size() - vec.getReferenceDrawback()));
+				PixelRaster ref = rasterSet.get(referenceImages.size() - vec.getReferenceDrawback());
 				YCbCrMakroBlock block = makroBlockEngine.get_single_makro_block(vec.getStartingPoint(), ref, vec.getReferenceSize());
 				YCbCrColor[][] cols = block.getColors();
 				
