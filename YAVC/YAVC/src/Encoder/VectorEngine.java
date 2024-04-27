@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package Encoder;
 
 import java.awt.Color;
@@ -201,15 +222,15 @@ public class VectorEngine {
 			break;
 		case 16:
 			//Moderate filtering (Reduce distortion; Get details)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 12.0) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 10.0) ? null : mostEqualBlock;
 			break;
 		case 8:
 			//High filtering (Reduce distortion; Get details; Get Edges)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 6.0) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 5.0) ? null : mostEqualBlock;
 			break;
 		case 4:
 			//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 4.0) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 3.5) ? null : mostEqualBlock;
 			break;
 		default:
 			return null;
