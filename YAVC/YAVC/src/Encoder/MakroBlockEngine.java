@@ -52,7 +52,7 @@ public class MakroBlockEngine {
 		
 		switch (size) {
 		case 32:
-			passed = detail > size * 0.75 ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
+			passed = detail > size * 1.1 ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
 			break;
 		case 16:
 			passed = detail > size * 2.5 ? true : false; //Moderate pre-filtering (Find edges of interest)
@@ -197,9 +197,8 @@ public class MakroBlockEngine {
 				continue;
 			}
 			
-			DCTObject dct = apply_DCT(b);
-			dct.setSize(b.getSize());
-			obj.add(dct);
+			ArrayList<DCTObject> dct = apply_DCT(b);
+			obj.addAll(dct);
 		}
 		
 		return obj;
@@ -222,8 +221,8 @@ public class MakroBlockEngine {
 	 * 			double[][] coCr => Cr coefficients
 	 */
 	private void reverse_subsample(YCbCrColor[][] target, double[][] coCb, double[][] coCr) {
-		for (int x = 0; x < target.length; x += 2) {
-			for (int y = 0; y < target[x].length; y += 2) {
+		for (int y = 0; y < target.length; y += 2) {
+			for (int x = 0; x < target.length; x += 2) {
 				double cb = coCb[x / 2][y / 2];
 				double cr = coCr[x / 2][y / 2];
 				
@@ -239,12 +238,23 @@ public class MakroBlockEngine {
 		}
 	}
 	
+	private ArrayList<DCTObject> apply_DCT(YCbCrMakroBlock block) {
+		ArrayList<DCTObject> objs = new ArrayList<DCTObject>(block.getSize() * block.getSize() / 16);
+		YCbCrMakroBlock[] blocks = block.splitToSmaller(4);
+		
+		for (YCbCrMakroBlock b : blocks) {
+			objs.add(apply_DCT_to_single_4x4_block(b));
+		}
+		
+		return objs;
+	}
+	
 	/*
 	 * Purpose: Apply the DCT-II to a single YCbCrMakroBlock with subsampling of 2x2 chroma
 	 * Return Type: DCTObject => Object with all coefficients
 	 * Params: YCbCrMakroBlock block => Block to process
 	 */
-	private DCTObject apply_DCT(YCbCrMakroBlock block) {
+	private DCTObject apply_DCT_to_single_4x4_block(YCbCrMakroBlock block) {
 		double[][] CbCol = this.COLOR_MANAGER.get_YCbCr_comp_sub_sample(block.getColors(), YCbCrComp.CB, block.getSize());
 		double[][] CrCol = this.COLOR_MANAGER.get_YCbCr_comp_sub_sample(block.getColors(), YCbCrComp.CR, block.getSize());
 		
@@ -279,7 +289,7 @@ public class MakroBlockEngine {
             }
         }
 		
-		return new DCTObject(YCol, CbCo, CrCo, block.getPosition(), block.getSize());
+		return new DCTObject(YCol, CbCo, CrCo, block.getPosition());
 	}
 	
 	/*
@@ -299,7 +309,7 @@ public class MakroBlockEngine {
 		double[][] coCb = new double[obj.getSize() / 2][obj.getSize() / 2];
 		double[][] coCr = new double[obj.getSize() / 2][obj.getSize() / 2];
 		int m = obj.getSize() / 2;
-
+		
 		for (int x = 0; x < m; x++) {
 			for (int y = 0; y < m; y++) {
 				double CbSum = 0;

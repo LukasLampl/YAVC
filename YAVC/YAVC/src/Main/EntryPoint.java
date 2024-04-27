@@ -168,7 +168,6 @@ public class EntryPoint {
 						}
 						
 						PixelRaster res = new PixelRaster(result);
-	
 						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(res);
 						
 						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
@@ -182,6 +181,12 @@ public class EntryPoint {
 						//Just for validation
 						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(prevImgBlocks);
 						result = outputWriter.reconstruct_DCT_image(dcts, result.getWidth(), result.getHeight());
+						
+						try {
+							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 						
 						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
 						

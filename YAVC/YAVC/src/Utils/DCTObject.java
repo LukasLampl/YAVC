@@ -6,15 +6,14 @@ public class DCTObject {
 	private double[][] Y = null;
 	private double[][] CbDCT = null;
 	private double[][] CrDCT = null;
-	private int size = 0;
-	private Point Position = new Point(0, 0);
+	private final int size = 4;
+	private Point Position = null;
 	
-	public DCTObject(double[][] YDCT, double[][] CbDCT, double[][] CrDCT, Point pos, int size) {
+	public DCTObject(double[][] YDCT, double[][] CbDCT, double[][] CrDCT, Point pos) {
 		this.Y = YDCT;
 		this.CbDCT = CbDCT;
 		this.CrDCT = CrDCT;
 		this.Position = pos;
-		this.size = size;
 	}
 	
 	public double[][] getY() {
@@ -40,9 +39,6 @@ public class DCTObject {
 	}
 	public Point getPosition() {
 		return Position;
-	}
-	public void setSize(int size) {
-		this.size = size;
 	}
 	public int getSize() {
 		return this.size;
