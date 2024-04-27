@@ -55,11 +55,11 @@ public class Filter {
 	
 	private int[][] sobelX = {{3, 0, -3}, {10, 0, -10}, {3, 0, -3}};
 	private int[][] sobelY = {{3, 10, 3}, {0, 0, 0}, {-3, -10, -3}};
-	private int c = 0;
+	private BufferedImage sobel_image = null;
 	
 	public int[][] get_sobel_values(PixelRaster img) {
 		int[][] values = new int[img.getWidth()][img.getHeight()];
-		BufferedImage r = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+		sobel_image = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 		
 		for (int x = 0; x < img.getWidth() - 2; x++) {
 			for (int y = 0; y < img.getHeight() - 2; y++) {
@@ -85,11 +85,15 @@ public class Filter {
 				
 				int val = (int)Math.sqrt(gX * gX + gY * gY);
 				values[x][y] = val;
-				r.setRGB(x, y, new Color(Math.min(val, 255), Math.min(val, 255), Math.min(val, 255)).getRGB());
+				sobel_image.setRGB(x, y, new Color(Math.min(val, 255), Math.min(val, 255), Math.min(val, 255)).getRGB());
 			}
 		}
 		
 		return values;
+	}
+	
+	public BufferedImage get_sobel_image() {
+		return this.sobel_image;
 	}
 	
 	/*

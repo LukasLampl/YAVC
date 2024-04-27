@@ -92,19 +92,23 @@ public class EntryPoint {
 						
 						if (prevImage == null) {
 							prevImage = new PixelRaster(ImageIO.read(frame));
+							int[][] edges = filter.get_sobel_values(prevImage);
 							referenceImages.add(prevImage);
-							prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(prevImage);
+							prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(prevImage, edges);
 							outputWriter.bake_meta_data(prevImage, filesCount);
 							outputWriter.bake_start_frame(prevImage);
 							continue;
 						}
 						
 						currentImage = new PixelRaster(ImageIO.read(frame));
-						
+						int[][] edges = filter.get_sobel_values(currentImage);
 						filter.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
-						f.setPreviews(prevImage, currentImage);
+						f.set_previews(prevImage, currentImage);
+						f.set_sobel_image(filter.get_sobel_image());
 						
-						ArrayList<YCbCrMakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage);
+						ArrayList<YCbCrMakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage, edges);
+						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
+						f.set_MBDiv_image(outputWriter.draw_MB_outlines(dim, curImgBlocks));
 						
 						//This only adds an I-Frame if 'i' is a 50th frame and a change
 						//detection lied 20 frames ahead or a change detection has triggered.
@@ -125,14 +129,6 @@ public class EntryPoint {
 							prevImgBlocks = curImgBlocks;
 							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
 							continue;
-						}
-						
-						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
-						
-						try {
-							ImageIO.write(outputWriter.draw_MB_outlines(dim, curImgBlocks), "png", new File(output.getAbsolutePath() + "/B_" + i + ".png"));
-						} catch (Exception e) {
-							e.printStackTrace();
 						}
 						
 						ArrayList<YCbCrMakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
@@ -168,7 +164,8 @@ public class EntryPoint {
 //						}
 						
 						PixelRaster res = new PixelRaster(result);
-						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(res);
+						edges = filter.get_sobel_values(res);
+						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(res, edges);
 						
 						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
 						

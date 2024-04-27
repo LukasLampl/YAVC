@@ -158,10 +158,18 @@ public class Frame extends JFrame {
 	 * Params: BufferedImage img1 => previous image;
 	 * 			BufferedImage img2 => current image
 	 */
-	public void setPreviews(PixelRaster img1, PixelRaster img2) {
+	public void set_previews(PixelRaster img1, PixelRaster img2) {
 		this.ENCODE_PANEL.set_prev_frame(img1);
 		this.ENCODE_PANEL.set_cur_frame(img2);
 		update();
+	}
+	
+	public void set_MBDiv_image(BufferedImage img) {
+		this.ENCODE_PANEL.set_mbdiv_frame(img);
+	}
+	
+	public void set_sobel_image(BufferedImage img) {
+		this.ENCODE_PANEL.set_sobel_frame(img);
 	}
 	
 	private void update() {

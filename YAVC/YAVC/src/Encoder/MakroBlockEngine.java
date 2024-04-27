@@ -15,15 +15,13 @@ import Utils.YCbCrMakroBlock;
 
 public class MakroBlockEngine {
 	private ColorManager COLOR_MANAGER = new ColorManager();
-	private Filter FILTER = new Filter();
 	
 	/*
 	 * Purpose: Get a list of MakroBlocks out of an image
 	 * Return Type: ArrayList<MakroBlock> => MakroBlocks of the image
 	 * Params: BufferedImage img => Image from which the MakroBlocks should be ripped off
 	 */
-	public ArrayList<YCbCrMakroBlock> get_makroblocks_from_image(PixelRaster img) {
-		int[][] edges = this.FILTER.get_sobel_values(img);
+	public ArrayList<YCbCrMakroBlock> get_makroblocks_from_image(PixelRaster img, int[][] edges) {
 		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
 		
 		int width = img.getWidth();

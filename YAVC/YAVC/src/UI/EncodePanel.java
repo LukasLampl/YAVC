@@ -37,6 +37,8 @@ public class EncodePanel extends JPanel {
 	
 	private JLabel prevFrameLabel = null;
 	private JLabel curFrameLabel = null;
+	private JLabel SobelFrameLabel = null;
+	private JLabel MBDivFrameLabel = null;
 	private JLabel resFrameLabel = null;
 	private JLabel vecFrameLabel = null;
 	
@@ -238,6 +240,25 @@ public class EncodePanel extends JPanel {
 		cons.gridx = 0;
 		cons.gridy = 1;
 		
+		JPanel SobelFramePanel = create_std_panel();
+		SobelFrameLabel = create_std_label(null);
+		SobelFramePanel.add(create_std_label("Image Edges & Textures"));
+		SobelFramePanel.add(SobelFrameLabel);
+		
+		holder.add(SobelFramePanel, cons);
+		
+		cons.gridx = 1;
+		
+		JPanel MBDivFramePanel = create_std_panel();
+		MBDivFrameLabel = create_std_label(null);
+		MBDivFramePanel.add(create_std_label("Makroblock partitioning"));
+		MBDivFramePanel.add(MBDivFrameLabel);
+		
+		holder.add(MBDivFramePanel, cons);
+		
+		cons.gridx = 0;
+		cons.gridy = 2;
+		
 		JPanel resFramePanel = create_std_panel();
 		resFrameLabel = create_std_label(null);
 		resFramePanel.add(create_std_label("Residual frame"));
@@ -307,6 +328,14 @@ public class EncodePanel extends JPanel {
 	
 	public void set_cur_frame(PixelRaster img) {
 		this.curFrameLabel.setIcon(resize_image(img));
+	}
+	
+	public void set_sobel_frame(BufferedImage img) {
+		this.SobelFrameLabel.setIcon(resize_image(img));
+	}
+	
+	public void set_mbdiv_frame(BufferedImage img) {
+		this.MBDivFrameLabel.setIcon(resize_image(img));
 	}
 	
 	public void set_res_frame(BufferedImage img) {
