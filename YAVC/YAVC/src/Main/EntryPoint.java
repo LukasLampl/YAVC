@@ -277,15 +277,15 @@ public class EntryPoint {
 					ArrayList<Vector> vecs = dataPipeEngine.scrape_vectors(frameCounter++);
 					BufferedImage result = dataPipeEngine.build_frame(vecs, referenceImages, prevFrame, currFrame);
 					
-					try {
-						ImageIO.write(result, "png", new File("C:\\Users\\Lukas Lampl\\Documents\\result\\UP_" + frameCounter + ".png"));
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+//					try {
+//						ImageIO.write(result, "png", new File("C:\\Users\\Lukas Lampl\\Documents\\result\\UP_" + frameCounter + ".png"));
+//					} catch (Exception e) {
+//						e.printStackTrace();
+//					}
 					
-					if (vecs != null) {
-						filter.apply_deblocking_filter(vecs, new PixelRaster(result));
-					}
+//					if (vecs != null) {
+//						filter.apply_deblocking_filter(vecs, new PixelRaster(result));
+//					}
 //					BufferedImage outputImg = filter.apply_gaussian_blur(result, 1);
 					
 					dataPipeValveEngine.release_image(result);
