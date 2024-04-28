@@ -34,6 +34,7 @@ import javax.imageio.ImageIO;
 import Encoder.MakroBlockEngine;
 import Utils.ColorManager;
 import Utils.DCTObject;
+import Utils.Filter;
 import Utils.PixelRaster;
 import Utils.Vector;
 import Utils.YCbCrColor;
@@ -42,6 +43,7 @@ import Utils.YCbCrMakroBlock;
 public class DataPipeEngine {
 	private DataGrabber GRABBER = null;
 	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
+	private Filter FILTER = new Filter();
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	private Dimension DIMENSION = null;
 	private final int MBS = 4;
@@ -252,7 +254,6 @@ public class DataPipeEngine {
 	 * 			BufferedImage currImg => Current frame (differences)
 	 */
 	public BufferedImage build_frame(ArrayList<Vector> vecs, ArrayList<BufferedImage> referenceImages, BufferedImage prevImg, BufferedImage currImg) {
-		MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
 		BufferedImage render = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		BufferedImage vectors = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		
@@ -265,7 +266,7 @@ public class DataPipeEngine {
 			
 			for (Vector vec : vecs) {
 				PixelRaster ref = rasterSet.get(referenceImages.size() - vec.getReferenceDrawback());
-				YCbCrMakroBlock block = makroBlockEngine.get_single_makro_block(vec.getStartingPoint(), ref, vec.getReferenceSize());
+				YCbCrMakroBlock block = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(vec.getStartingPoint(), ref, vec.getReferenceSize());
 				YCbCrColor[][] cols = block.getColors();
 				
 				for (int y = 0; y < block.getColors().length; y++) {
@@ -296,6 +297,33 @@ public class DataPipeEngine {
 		g2d.drawImage(currImg, 0, 0, currImg.getWidth(), currImg.getHeight(), null, null);
 		g2d.drawImage(vectors, 0, 0, vectors.getWidth(), vectors.getHeight(), null, null);
 		g2d.dispose();
+		
+		return render;
+	}
+	
+	public BufferedImage build_smoothed_image(ArrayList<YCbCrMakroBlock> smoothedBlocks, BufferedImage prevImg) {
+		BufferedImage render = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_RGB);
+		Graphics2D g2d = (Graphics2D)render.createGraphics();
+		g2d.drawImage(prevImg, 0, 0, prevImg.getWidth(), prevImg.getHeight(), null, null);
+		g2d.dispose();
+		
+		for (YCbCrMakroBlock b : smoothedBlocks) {
+			YCbCrColor[][] cols = b.getColors();
+			
+			for (int y = 0; y < b.getSize(); y++) {
+				if (b.getPosition().y + y >= render.getHeight() || b.getPosition().y + y < 0) {
+					continue;
+				}
+				
+				for (int x = 0; x < b.getSize(); x++) {
+					if (b.getPosition().x + x >= render.getWidth() || b.getPosition().x + x < 0) {
+						continue;
+					}
+					
+					render.setRGB(b.getPosition().x + x, b.getPosition().y + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB());
+				}
+			}
+		}
 		
 		return render;
 	}

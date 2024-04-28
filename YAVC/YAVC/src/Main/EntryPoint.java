@@ -284,8 +284,7 @@ public class EntryPoint {
 					}
 					
 					if (vecs != null) {
-						ArrayList<YCbCrMakroBlock> smoothedBlocks = filter.apply_deblocking_filter(vecs, new PixelRaster(result));
-						result = dataPipeEngine.build_smoothed_image(smoothedBlocks, result);
+						filter.apply_deblocking_filter(vecs, new PixelRaster(result));
 					}
 //					BufferedImage outputImg = filter.apply_gaussian_blur(result, 1);
 					

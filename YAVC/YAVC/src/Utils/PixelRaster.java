@@ -69,6 +69,11 @@ public class PixelRaster {
 	}
 	
 	public void setRGB(int x, int y, int rgb) {
+		if (y < 0 || x < 0
+			|| y >= this.dim.height || x >= this.dim.width) {
+			return;
+		}
+		
 		int pos = y * this.dim.width + x;
 		this.data[pos] = rgb;
 	}
@@ -79,5 +84,17 @@ public class PixelRaster {
 	
 	public int getHeight() {
 		return this.dim.height;
+	}
+	
+	public BufferedImage toBufferedImage() {
+		BufferedImage render = new BufferedImage(this.dim.width, this.dim.height, BufferedImage.TYPE_INT_ARGB);
+		
+		for (int y = 0; y < this.dim.height; y++) {
+			for (int x = 0; x < this.dim.width; x++) {
+				render.setRGB(x, y, getRGB(x, y));
+			}
+		}
+		
+		return render;
 	}
 }
