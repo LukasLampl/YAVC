@@ -115,7 +115,7 @@ public class EntryPoint {
 							prevImage = new PixelRaster(ImageIO.read(frame));
 							int[][] edges = filter.get_sobel_values(prevImage);
 							referenceImages.add(prevImage);
-							prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(prevImage, edges);
+							prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(prevImage, edges, config.SUPER_BLOCK);
 							outputWriter.bake_meta_data(prevImage, filesCount);
 							outputWriter.bake_start_frame(prevImage);
 							continue;
@@ -127,7 +127,7 @@ public class EntryPoint {
 						f.set_previews(prevImage, currentImage);
 						f.set_sobel_image(filter.get_sobel_image());
 						
-						ArrayList<YCbCrMakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage, edges);
+						ArrayList<YCbCrMakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage, edges, config.SUPER_BLOCK);
 						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
 						f.set_MBDiv_image(outputWriter.draw_MB_outlines(dim, curImgBlocks));
 						
@@ -186,7 +186,7 @@ public class EntryPoint {
 						
 						PixelRaster res = new PixelRaster(result);
 						edges = filter.get_sobel_values(res);
-						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(res, edges);
+						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(res, edges, config.SUPER_BLOCK);
 						
 						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
 						
@@ -276,9 +276,20 @@ public class EntryPoint {
 					
 					ArrayList<Vector> vecs = dataPipeEngine.scrape_vectors(frameCounter++);
 					BufferedImage result = dataPipeEngine.build_frame(vecs, referenceImages, prevFrame, currFrame);
-					BufferedImage outputImg = filter.apply_gaussian_blur(result, 1);
 					
-					dataPipeValveEngine.release_image(outputImg);
+					try {
+						ImageIO.write(result, "png", new File("C:\\Users\\Lukas Lampl\\Documents\\result\\UP_" + frameCounter + ".png"));
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+					if (vecs != null) {
+						ArrayList<YCbCrMakroBlock> smoothedBlocks = filter.apply_deblocking_filter(vecs, new PixelRaster(result));
+						result = dataPipeEngine.build_smoothed_image(smoothedBlocks, result);
+					}
+//					BufferedImage outputImg = filter.apply_gaussian_blur(result, 1);
+					
+					dataPipeValveEngine.release_image(result);
 					prevFrame = result;
 					referenceImages.add(result);
 					

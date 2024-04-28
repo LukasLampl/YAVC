@@ -25,10 +25,8 @@ import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 
-import Main.config;
 import Utils.ColorManager;
 import Utils.DCTObject;
-import Utils.Filter;
 import Utils.MakroBlock;
 import Utils.PixelRaster;
 import Utils.YCbCrColor;
@@ -42,16 +40,16 @@ public class MakroBlockEngine {
 	 * Return Type: ArrayList<MakroBlock> => MakroBlocks of the image
 	 * Params: BufferedImage img => Image from which the MakroBlocks should be ripped off
 	 */
-	public ArrayList<YCbCrMakroBlock> get_makroblocks_from_image(PixelRaster img, int[][] edges) {
+	public ArrayList<YCbCrMakroBlock> get_makroblocks_from_image(PixelRaster img, int[][] edges, int startSize) {
 		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
 		
 		int width = img.getWidth();
 		int height = img.getHeight();
 		
-		for (int y = 0; y < height; y += config.SUPER_BLOCK) {
-			for (int x = 0; x < width; x += config.SUPER_BLOCK) {
-				YCbCrMakroBlock originBlock = get_single_makro_block(new Point(x, y), img, config.SUPER_BLOCK);
-				blocks.addAll(divide_down_MakroBlock(originBlock, edges, config.SUPER_BLOCK));
+		for (int y = 0; y < height; y += startSize) {
+			for (int x = 0; x < width; x += startSize) {
+				YCbCrMakroBlock originBlock = get_single_makro_block(new Point(x, y), img, startSize);
+				blocks.addAll(divide_down_MakroBlock(originBlock, edges, startSize));
 			}
 		}
 		

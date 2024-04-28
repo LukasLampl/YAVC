@@ -142,7 +142,7 @@ public class VectorEngine {
 	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, PixelRaster prevFrame, int maxSADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
 		HashSet<Point> set = new HashSet<Point>();
-		int searchWindow = 48;
+		int searchWindow = 64;
 		int blockSize = blockToBeSearched.getSize();
 		
 		Point blockCenter = new Point(blockToBeSearched.getPosition().x + blockSize / 2, blockToBeSearched.getPosition().y + blockSize / 2);
@@ -218,19 +218,19 @@ public class VectorEngine {
 		switch (blockSize) {
 		case 32:
 			//Low filtering (Reduce distortion)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * blockSize * 2.5) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * 6.8) ? null : mostEqualBlock;
 			break;
 		case 16:
 			//Moderate filtering (Reduce distortion; Get details)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 10.0) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * 1.74) ? null : mostEqualBlock;
 			break;
 		case 8:
 			//High filtering (Reduce distortion; Get details; Get Edges)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 5.0) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * 0.43) ? null : mostEqualBlock;
 			break;
 		case 4:
 			//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 3.5) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * 0.043) ? null : mostEqualBlock;
 			break;
 		default:
 			return null;
@@ -281,7 +281,7 @@ public class VectorEngine {
 			}
 		}
 		
-		return (Math.pow(resY, 4) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(colors1.length * colors1.length);
+		return (Math.pow(resY, 2) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(colors1.length * colors1.length);
 	}
 	
 	/*
