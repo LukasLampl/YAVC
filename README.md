@@ -51,23 +51,23 @@ It is relatively simple and the only major issues may occur at the different sli
 
 # 3. How it works #
 Since I want to keep everything simple, I do not go into theoretical and high detail.
-First of all the program takes two images from the input folder and loads them into memory. Now both images are converted into 5x5 MakroBlocks, if a MakroBlock is bigger than the image, the unused memory is set to a specific number for later recognition. Followed by the MakroBlock conversion is the color-damping part, in which the
+First of all the program takes two images from the input folder and loads them into memory. Now both images are converted into 32x32 MakroBlocks, using the sobel operator details and textures are detected and thus the MakroBlock size reduced to 16x16, 8x8 or 4x4. If a MakroBlock is bigger than the image, the unused memory is set to a specific number for later recognition. Followed by the MakroBlock conversion is the color-damping part, in which the
 MakroBlocks of the same position are compared to each other and damped if necessary to create as much redundancy as possible. No the differences between those MakroBlocks are calculated, meaning if the frames have a static background, the difference is a moving object for instance. After the differences are computed, the
 differences are tried to match up with MakroBlock from the previous frame, to save space (Since the block just has to be defined once). Now the vectorized MakroBlocks are written to a file. The process repeats for all frames. If all frames have been processed the final file is deflated
 using ZIP.
 
 # 4. Statistics #
 > [!Caution]
-> Until now the whole program is still lacking the DTC-II, so the statistics are based of Color damping, Color reduction, Edge & Difference detection and Block matching (5 reference Frames)  
+> Until now the whole program is still lacking the "Deblocking filter", so the statistics are based of Color damping, Color reduction, Edge & Difference detection, DCT-II and Blockmatching (5 reference Frames)  
 
 All the frames are measured by their "original" size, which means in `.bmp` format. Moreover all settings are the standard values.  
   
-|  Video name  | Original size | YAVC size | Decrease | Resolution | Frames | FPS |
-|--------------|---------------|-----------|----------|------------|--------|-----|
-| Big Buck Bunny | 348 MB | 34.4 MB | 90.1 % | 1280x720 | 132 | 25 |
-| Sunset | 3.89 GB | 0.99 GB | 74.5 % | 1280x720 | 1512 | 25 |
-| Road in city | 0,99 GB | 408 MB | 58.8 % | 1920x1080 | 171 | 30 |
-| Watering a flower | 495 MB | 53.8 MB | 89.1 % | 640x360 | 752 | 25 |
+|  Video name  | Original size | YAVC size (old) | YAVC size (new) | Decrease (old) | Decrease (new) | Resolution | Frames | FPS |
+|--------------|---------------|-----------------|-----------------|----------------|----------------|------------|--------|-----|
+| Big Buck Bunny | 348 MB | 34.4 MB | 18.1 MB | 90.1 % | 94.8 % | 1280x720 | 132 | 25 |
+| Sunset | 3.89 GB | 0.99 GB | 395 MB | 74.5 % | 89.9 % | 1280x720 | 1512 | 25 |
+| Road in city | 0,99 GB | 408 MB | 137 MB | 58.8 % | 86.2 % | 1920x1080 | 171 | 30 |
+| Watering a flower | 495 MB | 53.8 MB | 20.1 MB | 89.1 % | 95.5 % | 640x360 | 752 | 25 |
 
 # 4. Contact: #  
 **E-Mail:** lampl.lukas@outlook.com
