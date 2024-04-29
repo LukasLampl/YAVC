@@ -122,6 +122,7 @@ public class EntryPoint {
 						}
 						
 						currentImage = new PixelRaster(ImageIO.read(frame));
+						
 						int[][] edges = filter.get_sobel_values(currentImage);
 						filter.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
 						f.set_previews(prevImage, currentImage);
@@ -129,20 +130,23 @@ public class EntryPoint {
 						
 						ArrayList<YCbCrMakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage, edges, config.SUPER_BLOCK);
 						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
-						f.set_MBDiv_image(outputWriter.draw_MB_outlines(dim, curImgBlocks));
 						
-						//This only adds an I-Frame if 'i' is a 50th frame and a change
-						//detection lied 20 frames ahead or a change detection has triggered.
+						//This only adds an I-Frame if 'i' is a 80th frame and a change
+						//detection lied 10 frames ahead or a change detection has triggered.
 						boolean sceneChanged = scene.scene_change_detected(prevImage, currentImage);
 						
 						if (sceneChanged == true) {
 							System.out.println("Shot change dectedted at frame " + i);
 						}
 						
+						if (scene.get_color_count() <= 750) {
+							System.out.println("Mini-mode active!");
+							curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage, edges, config.SMALL_BLOCK);
+						}
+						
 						if ((i % 80 == 0 && changeDetectDistance > 10) || sceneChanged) {
-							prevImgBlocks = makroDifferenceEngine.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
+							prevImgBlocks = curImgBlocks;
 							ArrayList<DCTObject> dct = makroBlockEngine.apply_DCT_on_blocks(prevImgBlocks);
-							
 							outputWriter.add_obj_to_queue(dct, null);
 							referenceImages.clear();
 							referenceImages.add(currentImage);
@@ -153,6 +157,7 @@ public class EntryPoint {
 						}
 						
 						ArrayList<YCbCrMakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
+						f.set_MBDiv_image(outputWriter.draw_MB_outlines(dim, curImgBlocks));
 						f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
 						ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
@@ -197,8 +202,7 @@ public class EntryPoint {
 //						}
 						
 						//Just for validation
-						ArrayList<DCTObject> dcts = makroBlockEngine.apply_DCT_on_blocks(prevImgBlocks);
-						result = outputWriter.reconstruct_DCT_image(dcts, result.getWidth(), result.getHeight());
+						res = outputWriter.reconstruct_DCT_image(diffDCT, res);
 						
 //						try {
 //							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
@@ -286,9 +290,10 @@ public class EntryPoint {
 //					if (vecs != null) {
 //						filter.apply_deblocking_filter(vecs, new PixelRaster(result));
 //					}
-//					BufferedImage outputImg = filter.apply_gaussian_blur(result, 1);
 					
-					dataPipeValveEngine.release_image(result);
+					BufferedImage outputImg = filter.apply_gaussian_blur(result, 1);
+					
+					dataPipeValveEngine.release_image(outputImg);
 					prevFrame = result;
 					referenceImages.add(result);
 					

@@ -298,16 +298,16 @@ public class OutputWriter {
 		}
 	}
 	
-	public BufferedImage reconstruct_DCT_image(ArrayList<DCTObject> objs, int width, int height) {
-		BufferedImage render = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+	public PixelRaster reconstruct_DCT_image(ArrayList<DCTObject> objs, PixelRaster img) {
+		PixelRaster render = img;
 		
 		for (DCTObject obj : objs) {
 			YCbCrMakroBlock block = this.MAKRO_BLOCK_ENGINE.apply_IDCT(obj);
 			
 			for (int y = 0; y < block.getColors().length; y++) {
 				for (int x = 0; x < block.getColors()[y].length; x++) {
-					if (block.getPosition().x + x >= width
-						|| block.getPosition().y + y >= height) {
+					if (block.getPosition().x + x >= img.getWidth()
+						|| block.getPosition().y + y >= img.getHeight()) {
 						continue;
 					}
 					

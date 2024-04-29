@@ -22,10 +22,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package Encoder;
 
 import java.awt.Color;
+import java.util.HashSet;
 
 import Utils.PixelRaster;
 
 public class Scene {
+	private HashSet<Color> currentColors = new HashSet<Color>();
 	/*
 	 * Purpose: Detect whether the scene has changed / shot has changed between two images
 	 * Return Type: boolean => true = scene changes; false = scene almost the same
@@ -34,6 +36,7 @@ public class Scene {
 	 * Note: THIS ALGORITHM MIGHT FAIL OR FALSE TRIGGER SINCE IMAGES CAN'T BE "COMPARED"
 	 */
 	public boolean scene_change_detected(PixelRaster img1, PixelRaster img2) {
+		this.currentColors.clear();
 		int[][] histogram1 = get_histogram(img1);
 		int[][] histogram2 = get_histogram(img2);
 		
@@ -83,9 +86,14 @@ public class Scene {
 				histogram[0][col.getRed()]++;
 				histogram[1][col.getGreen()]++;
 				histogram[2][col.getBlue()]++;
+				this.currentColors.add(col);
 			}
 		}
 		
 		return histogram;
+	}
+	
+	public int get_color_count() {
+		return this.currentColors.size();
 	}
 }
