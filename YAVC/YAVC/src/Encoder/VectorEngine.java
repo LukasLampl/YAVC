@@ -81,6 +81,7 @@ public class VectorEngine {
 						vec.setAppendedBlock(block);
 						vec.setMostEqualBlock(bestGuess);
 						vec.setReferenceDrawback(bestGuess.getReferenceDrawback());
+						vec.setReferenceSize(block.getSize());
 						vec.setStartingPoint(bestGuess.getPosition());
 						vec.setSpanX(block.getPosition().x - bestGuess.getPosition().x);
 						vec.setSpanY(block.getPosition().y - bestGuess.getPosition().y);
@@ -218,19 +219,19 @@ public class VectorEngine {
 		switch (blockSize) {
 		case 32:
 			//Low filtering (Reduce distortion)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * 6.8) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * blockSize) ? null : mostEqualBlock;
 			break;
 		case 16:
 			//Moderate filtering (Reduce distortion; Get details)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * 1.74) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 5.7) ? null : mostEqualBlock;
 			break;
 		case 8:
 			//High filtering (Reduce distortion; Get details; Get Edges)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * 0.43) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 3.0) ? null : mostEqualBlock;
 			break;
 		case 4:
 			//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * 0.043) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 1.9) ? null : mostEqualBlock;
 			break;
 		default:
 			return null;
@@ -281,7 +282,7 @@ public class VectorEngine {
 			}
 		}
 		
-		return (Math.pow(resY, 2) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(colors1.length * colors1.length);
+		return (Math.pow(resY, 3) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(colors1.length * colors1.length);
 	}
 	
 	/*
@@ -293,6 +294,11 @@ public class VectorEngine {
 	 */
 	public BufferedImage construct_vector_path(Dimension dim, ArrayList<Vector> vecs) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		
+		if (vecs == null) {
+			return render;
+		}
+		
 		Graphics2D g2d = render.createGraphics();
 		g2d.setColor(Color.red);
 		

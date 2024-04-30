@@ -46,7 +46,6 @@ import Utils.Vector;
 import Utils.YCbCrMakroBlock;
 
 public class EntryPoint {
-	private static int MAX_REFERENCES = 7;
 	private Status EN_STATUS = Status.STOPPED;
 	private Status DE_STATUS = Status.STOPPED;
 	
@@ -70,7 +69,7 @@ public class EntryPoint {
 			Thread worker = new Thread(() -> {
 				try {
 					long timeStart = System.currentTimeMillis();
-					ArrayList<PixelRaster> referenceImages = new ArrayList<PixelRaster>(MAX_REFERENCES);
+					ArrayList<PixelRaster> referenceImages = new ArrayList<PixelRaster>(config.MAX_BACK_REF);
 					ArrayList<YCbCrMakroBlock> prevImgBlocks = null;
 					
 					PixelRaster prevImage = null;
@@ -160,6 +159,7 @@ public class EntryPoint {
 						f.set_MBDiv_image(outputWriter.draw_MB_outlines(dim, curImgBlocks));
 						f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
+//						ArrayList<Vector> movementVectors = null;
 						ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
 
 						///////////////////
@@ -179,7 +179,7 @@ public class EntryPoint {
 						
 						f.setVectorizedImage(vectorEngine.construct_vector_path(dim, movementVectors));
 
-						BufferedImage result = outputWriter.build_Frame(prevImage, differences, movementVectors, 3);
+						BufferedImage result = outputWriter.build_Frame(prevImage, referenceImages, differences, movementVectors, 3);
 						
 //						try {
 //							ImageIO.write(outputWriter.build_Frame(prevImage, differences, movementVectors, 2), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
@@ -261,7 +261,7 @@ public class EntryPoint {
 				DataPipeEngine dataPipeEngine = new DataPipeEngine(grabber);
 				DataPipeValveEngine dataPipeValveEngine = new DataPipeValveEngine("C:\\Users\\Lukas Lampl\\Documents");
 				
-				ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(MAX_REFERENCES);
+				ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(config.MAX_BACK_REF);
 				
 				int frameCounter = 0;
 				int maxFrames = dataPipeEngine.get_max_frame_number();
@@ -297,7 +297,7 @@ public class EntryPoint {
 					prevFrame = result;
 					referenceImages.add(result);
 					
-					if (referenceImages.size() > EntryPoint.MAX_REFERENCES) {
+					if (referenceImages.size() > config.MAX_BACK_REF) {
 						referenceImages.remove(0);
 					}
 					
@@ -322,7 +322,7 @@ public class EntryPoint {
 	}
 	
 	private void release_old_reference_images(ArrayList<PixelRaster> refList) {
-		if (refList.size() < EntryPoint.MAX_REFERENCES) {
+		if (refList.size() < config.MAX_BACK_REF) {
 			return;
 		}
 		

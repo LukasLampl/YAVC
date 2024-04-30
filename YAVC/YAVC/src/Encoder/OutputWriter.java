@@ -25,7 +25,6 @@ import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -157,11 +156,8 @@ public class OutputWriter {
 					double Cb = dct.getCbDCT()[y][x];
 					double Cr = dct.getCrDCT()[y][x];
 					
-					int absCb = (int)Math.abs(Cb);
-					int absCr = (int)Math.abs(Cr);
-					
-					char CbC = shift_DCT_bits(Cb, absCb);
-					char CrC = shift_DCT_bits(Cr, absCr);
+					char CbC = shift_DCT_bits(Cb);
+					char CrC = shift_DCT_bits(Cr);
 					
 					CbCoStr.append(CbC);
 					CrCoStr.append(CrC);
@@ -178,7 +174,7 @@ public class OutputWriter {
 			
 			for (int y = 0; y < dct.getY().length; y++) {
 				for (int x = 0; x < dct.getY()[y].length; x++) {
-					YCoStr.append((char)shift_DCT_bits(dct.getY()[y][x], (int)Math.abs(dct.getY()[y][x])));
+					YCoStr.append((char)shift_DCT_bits(dct.getY()[y][x]));
 				}
 				
 				if (y + 1 < dct.getY().length) {
@@ -207,7 +203,7 @@ public class OutputWriter {
 		return frameFile;
 	}
 	
-	private char shift_DCT_bits(double val, int absVal) {
+	private char shift_DCT_bits(double val) {
 		/*
 		 * UTF-8 provides 16 Bits per char.
 		 * 00000000 00000000
@@ -219,10 +215,10 @@ public class OutputWriter {
 		 */
 		
 		if (val < 0) {
-			return (char)(1 << 14 | ((int)absVal & 0xFFF) + config.RESERVED_TABLE_SIZE);
+			return (char)(1 << 14 | ((int)Math.abs(val) + config.RESERVED_TABLE_SIZE) & 0xFFF);
 		}
 		
-		return (char)(((int)absVal & 0xFFF) + config.RESERVED_TABLE_SIZE);
+		return (char)((int)Math.abs(val) + config.RESERVED_TABLE_SIZE);
 	}
 	
 	/*
@@ -379,7 +375,7 @@ public class OutputWriter {
 	 */
 	public int output = 0;
 	
-	public BufferedImage build_Frame(PixelRaster org, ArrayList<YCbCrMakroBlock> diffs, ArrayList<Vector> vecs, int diff) {
+	public BufferedImage build_Frame(PixelRaster org, ArrayList<PixelRaster> refs, ArrayList<YCbCrMakroBlock> diffs, ArrayList<Vector> vecs, int diff) {
 		BufferedImage img = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		BufferedImage img_v = new BufferedImage(org.getWidth(), org.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		
@@ -408,8 +404,8 @@ public class OutputWriter {
 		
 		if (vecs != null) {
 			for (Vector vec : vecs) {
-				YCbCrColor[][] cols = vec.getMostEqualBlock().getColors();
-				int size = vec.getMostEqualBlock().getSize();
+				YCbCrColor[][] cols = vec.getAppendedBlock().getColors();
+				int size = vec.getReferenceSize();
 				
 				for (int y = 0; y < size; y++) {
 					for (int x = 0; x < size; x++) {

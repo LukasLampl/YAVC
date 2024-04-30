@@ -28,6 +28,8 @@ public class config {
 	public static final int NORMAL_BLOCK = 8;
 	public static final int SMALL_BLOCK = 4;
 	
+	public static final int MAX_BACK_REF = 7;
+	
 	public static final int RESERVED_TABLE_SIZE = 45;
 	public static final char V_DEF_S = (char)1;
 	public static final char DCT_DEF_S = (char)2;

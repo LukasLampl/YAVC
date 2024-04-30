@@ -35,7 +35,6 @@ import Encoder.MakroBlockEngine;
 import Main.config;
 import Utils.ColorManager;
 import Utils.DCTObject;
-import Utils.Filter;
 import Utils.PixelRaster;
 import Utils.Vector;
 import Utils.YCbCrColor;
@@ -44,10 +43,8 @@ import Utils.YCbCrMakroBlock;
 public class DataPipeEngine {
 	private DataGrabber GRABBER = null;
 	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
-	private Filter FILTER = new Filter();
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	private Dimension DIMENSION = null;
-	private final int MBS = 4;
 	
 	private int MAX_FRAMES = 0;
 	private String CURRENT_FRAME_DATA = "";
@@ -118,7 +115,7 @@ public class DataPipeEngine {
 		String[] splitVecs = this.CURRENT_FRAME_DATA.split(Character.toString(config.V_DEF_S));
 		splitVecs[0] = splitVecs[0].replaceFirst(Character.toString(config.DCT_DEF_S), "");
 		
-		if (splitVecs.length <= 1) {
+		if (splitVecs.length <= 0) {
 			return render;
 		}
 		

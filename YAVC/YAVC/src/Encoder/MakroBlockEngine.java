@@ -69,13 +69,13 @@ public class MakroBlockEngine {
 		
 		switch (size) {
 		case 32:
-			passed = detail > size * 0.56 ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
+			passed = detail > size * 0.46 ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
 			break;
 		case 16:
-			passed = detail > size * 1.89 ? true : false; //Moderate pre-filtering (Find edges of interest)
+			passed = detail > size * 1.29 ? true : false; //Moderate pre-filtering (Find edges of interest)
 			break;
 		case 8:
-			passed = detail > size * 5.17 ? true : false; //High pre-filtering (Get edges with really high interest)
+			passed = detail > size * 2.74 ? true : false; //High pre-filtering (Get edges with really high interest)
 			break;
 		default:
 			break;

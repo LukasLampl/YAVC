@@ -21,20 +21,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Main;
 
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import UI.Frame;
 
 public class app {
 	public static void main(String [] args) {
-		try {
-			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-	    } catch (Exception e) {
-	    	e.printStackTrace();
-	    }
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+			    } catch (Exception e) {
+			    	e.printStackTrace();
+			    }
 
-		Frame f = new Frame();
-		f.setSize(700, 600);
-		f.setVisible(true);
+				Frame f = new Frame();
+				f.setSize(700, 600);
+				f.setVisible(true);
+			}
+		});
 	}
 }

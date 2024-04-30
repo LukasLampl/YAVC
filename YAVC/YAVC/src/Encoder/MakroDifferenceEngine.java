@@ -80,7 +80,7 @@ public class MakroDifferenceEngine {
 					double normalCb = sumCb / (size * size);
 					double normalCr = sumCr / (size * size);
 					
-					if (normalY > 2.5 || normalCb > 6.0 || normalCr > 6.0) {
+					if (normalY > 1.65 || normalCb > 3.6 || normalCr > 3.6) {
 						return list.get(index);
 					}
 					
