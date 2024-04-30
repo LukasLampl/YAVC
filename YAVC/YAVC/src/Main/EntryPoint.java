@@ -257,7 +257,6 @@ public class EntryPoint {
 				DataGrabber grabber = new DataGrabber();
 				grabber.slice(file);
 				
-				Filter filter = new Filter();
 				DataPipeEngine dataPipeEngine = new DataPipeEngine(grabber);
 				DataPipeValveEngine dataPipeValveEngine = new DataPipeValveEngine("C:\\Users\\Lukas Lampl\\Documents");
 				
@@ -291,7 +290,7 @@ public class EntryPoint {
 //						filter.apply_deblocking_filter(vecs, new PixelRaster(result));
 //					}
 					
-					BufferedImage outputImg = filter.apply_gaussian_blur(result, 1);
+					BufferedImage outputImg = this.FILTER.apply_gaussian_blur(result, 1);
 					
 					dataPipeValveEngine.release_image(outputImg);
 					prevFrame = result;
