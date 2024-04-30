@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import Encoder.MakroBlockEngine;
+import Main.config;
 import Utils.ColorManager;
 import Utils.DCTObject;
 import Utils.Filter;
@@ -112,66 +113,74 @@ public class DataPipeEngine {
 			return null;
 		}
 		
-		String[] splitVecs = this.CURRENT_FRAME_DATA.split("$V$");
+		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
 		
-		String POSREGEX = "$DCT_P$";
-		String YREGEX = "$DCT_Y$";
-		String CbREGEX = "$DCT_CB$";
-		String CrREGEX = "$DCT_CR$";
+		String[] splitVecs = this.CURRENT_FRAME_DATA.split(Character.toString(config.V_DEF_S));
+		splitVecs[0] = splitVecs[0].replaceFirst(Character.toString(config.DCT_DEF_S), "");
 		
-		int PosStart = splitVecs[0].indexOf(POSREGEX);
-		int YStart = splitVecs[0].indexOf(YREGEX);
-		int CbStart = splitVecs[0].indexOf(CbREGEX);
-		int CrStart = splitVecs[0].indexOf(CrREGEX);
-		
-		String PosComp = splitVecs[0].substring(PosStart + POSREGEX.length(), YStart);
-		String YComp = splitVecs[0].substring(YStart + YREGEX.length(), CbStart);
-		String CbComp = splitVecs[0].substring(CbStart + CbREGEX.length(), CrStart);
-		String CrComp = splitVecs[0].substring(CrStart + CrREGEX.length(), splitVecs[0].length());
-		
-		String[] Pos = PosComp.split(":");
-		String[] YBlocks = YComp.split(":");
-		String[] CbBlocks = CbComp.split(":");
-		String[] CrBlocks = CrComp.split(":");
-
-		//No data in file
-		if (Pos.length == 1 || YBlocks.length == 1 || CbBlocks.length == 1 || CrBlocks.length == 1) {
+		if (splitVecs.length <= 1) {
 			return render;
 		}
 		
-		YCbCrMakroBlock[] blocks = new YCbCrMakroBlock[YBlocks.length];
+		String[] matrices = splitVecs[0].split(Character.toString(config.DCT_POS_END_DEF));
 		
-		for (int i = 0; i < YBlocks.length; i++) {
-			String Ycols[] = YBlocks[i].split("&");
-			String CbCols[] = CbBlocks[i].split("&");
-			String CrCols[] = CrBlocks[i].split("&");
+		if (matrices.length <= 1) {
+			return render;
+		}
+		
+		for (String matrix : matrices) {
+			int YEnd = matrix.indexOf(config.DCT_Y_END_DEF);
+			int CbEnd = matrix.indexOf(config.DCT_CB_END_DEF);
+			int CrEnd = matrix.indexOf(config.DCT_CR_END_DEF);
 			
-			double[][] YCo = new double[this.MBS][this.MBS];
-			double[][] CbCo = new double[this.MBS / 2][this.MBS / 2];
-			double[][] CrCo = new double[this.MBS / 2][this.MBS / 2];
+			String YComp = matrix.substring(0, YEnd);
+			String CbComp = matrix.substring(YEnd + 1, CbEnd);
+			String CrComp = matrix.substring(CbEnd + 1, CrEnd);
+			String Pos = matrix.substring(CrEnd + 1, matrix.length());
+
+			String[] YCoef = YComp.split(Character.toString(config.DCT_MATRIX_NL_DEF));
+			String[] CbCoef = CbComp.split(Character.toString(config.DCT_MATRIX_NL_DEF));
+			String[] CrCoef = CrComp.split(Character.toString(config.DCT_MATRIX_NL_DEF));
 			
-			for (int y = 0; y < CbCols.length && y < CrCols.length; y++) {
-				String[] CbRows = CbCols[y].split("\\.");
-				String[] CrRows = CrCols[y].split("\\.");
-				
-				for (int x = 0; x < CbRows.length && x < CrRows.length; x++) {
-					CbCo[y][x] = Integer.parseInt(CbRows[x]);
-					CrCo[y][x] = Integer.parseInt(CrRows[x]);
+			double[][] YCols = new double[YCoef.length][YCoef.length];
+			double[][] CbCols = new double[CbCoef.length][CbCoef.length];
+			double[][] CrCols = new double[CrCoef.length][CrCoef.length];
+			
+			//Luma handling
+			for (int y = 0; y < YCoef.length; y++) {
+				for (int x = 0; x < YCoef[y].length(); x++) {
+					char t = YCoef[y].charAt(x);
+					int res = shift_DCT_back(t);
+
+					YCols[y][x] = res;
 				}
 			}
 			
-			for (int y = 0; y < Ycols.length; y++) {
-				String[] rows = Ycols[y].split("\\.");
-				
-				for (int x = 0; x < rows.length; x++) {
-					YCo[y][x] = Integer.parseInt(rows[x]);
+			//Chroma handling
+			for (int y = 0; y < CbCoef.length && y < CrCoef.length; y++) {
+				for (int x = 0; x < CbCoef.length && x < CrCoef.length; x++) {
+					char cb = CbCoef[y].charAt(x);
+					char cr = CrCoef[y].charAt(x);
+					
+					int valCb = shift_DCT_back(cb);
+					int valCr = shift_DCT_back(cr);
+					
+					CbCols[y][x] = valCb;
+					CrCols[y][x] = valCr;
 				}
 			}
 			
-			String pos = Pos[i];
-			String[] cords = pos.split("\\.");
-			Point p = new Point(Integer.parseInt(cords[0]), Integer.parseInt(cords[1]));
-			blocks[i] = this.MAKRO_BLOCK_ENGINE.apply_IDCT(new DCTObject(YCo, CbCo, CrCo, p));
+			Point pos = new Point(0, 0);
+			
+			if (Pos.length() > 2 || Pos.length() < 2) {
+				System.err.println("Position longer than 2? Position available?");
+			} else {
+				int x = (int)(Pos.charAt(0)) - config.RESERVED_TABLE_SIZE;
+				int y = (int)(Pos.charAt(1)) - config.RESERVED_TABLE_SIZE;
+				pos.setLocation(x, y);
+			}
+			
+			blocks.add(this.MAKRO_BLOCK_ENGINE.apply_IDCT(new DCTObject(YCols, CbCols, CrCols, pos)));
 		}
 		
 		for (YCbCrMakroBlock b : blocks) {
@@ -192,8 +201,16 @@ public class DataPipeEngine {
 				}
 			}
 		}
-		
+		System.out.println("Blocks: " + blocks.size());
 		return render;
+	}
+	
+	private int shift_DCT_back(char val) {
+		if (((val >> 14) & 0x1) == 1) {
+			return -1 * (((int)val - config.RESERVED_TABLE_SIZE) & 0xFFF);
+		}
+		
+		return (((int)val - config.RESERVED_TABLE_SIZE) & 0xFFF);
 	}
 	
 	/*
@@ -209,41 +226,55 @@ public class DataPipeEngine {
 			return null;
 		}
 		
-		int start = this.CURRENT_FRAME_DATA.indexOf("$V$");
+		int start = this.CURRENT_FRAME_DATA.indexOf(config.V_DEF_S);
 		
 		if (start == -1) {
 			System.err.println("No Vector indicies found! (" + frameNumber + ")");
 			return null;
 		}
 		
-		String data = this.CURRENT_FRAME_DATA.substring(start, this.CURRENT_FRAME_DATA.length());
-		System.out.println(frameNumber);
+		int vecCount = ((int)this.CURRENT_FRAME_DATA.charAt(start + 1) << 16) | (int)this.CURRENT_FRAME_DATA.charAt(start + 2);
+		String data = this.CURRENT_FRAME_DATA.substring(start + 3, this.CURRENT_FRAME_DATA.length());
+
 		if (data == null) {
 			System.err.println("MISSING VECTOR FOUND!!! (F_" + frameNumber + ")");
 			return null;
 		}
 		
-		String[] streamSet = data.split("\\*");
+		int vecNum = 0;
 		
-		for (int i = 1; i < streamSet.length; i++) {
-			String s = streamSet[i];
-			String[] drawBackPart = s.split("\\_");
-			String[] vectorInfo = drawBackPart[1].split("\\~");
-			String[] parts = drawBackPart[0].split("\\;");
+		//+4 since vectors are composed of 4 chars
+		for (int i = 0; i < data.length(); i += 5, vecNum++) {
+			char sPointX = data.charAt(i);
+			char sPointY = data.charAt(i + 1);
+			char vSpanX = data.charAt(i + 2);
+			char vSpanY = data.charAt(i + 3);
+			char info = data.charAt(i + 4);
 			
-			String[] startPos = parts[0].split("\\,");
-			String[] spanSize = parts[1].split("\\,");
-
-			Vector vec = new Vector();
-			vec.setStartingPoint(new Point(Integer.parseInt(startPos[0]), Integer.parseInt(startPos[1])));
-			vec.setSpanX(Integer.parseInt(spanSize[0]));
-			vec.setSpanY(Integer.parseInt(spanSize[1]));
-			vec.setReferenceDrawback(Integer.parseInt(vectorInfo[0]));
-			vec.setReferenceSize(Integer.parseInt(vectorInfo[1]));
-			vecs.add(vec);
+			int x = ((int)sPointX) - config.RESERVED_TABLE_SIZE;
+			int y = ((int)sPointY) - config.RESERVED_TABLE_SIZE;
+			int spanX = shift_vec_span_back(vSpanX);
+			int spanY = shift_vec_span_back(vSpanY);
+			int ref = (((((int)info) - config.RESERVED_TABLE_SIZE) >> 8) & 0xFF);
+			int size = (((int)info) - config.RESERVED_TABLE_SIZE) & 0xFF;
+			
+			vecs.add(new Vector(new Point(x, y), spanX, spanY, ref, size));
+		}
+		
+		if (vecNum < vecCount) {
+			System.out.println(vecNum);
+			System.out.println("Less vectors than there should be..");
 		}
 		
 		return vecs;
+	}
+	
+	private int shift_vec_span_back(char span) {
+		if (((span >> 14) & 0x1) == 1) {
+			return -1 * ((int)span - config.RESERVED_TABLE_SIZE) & 0xFFF;
+		}
+		
+		return ((int)span) - config.RESERVED_TABLE_SIZE;
 	}
 	
 	/*

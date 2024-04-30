@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
@@ -78,7 +79,7 @@ public class DataGrabber {
 		}
 		
 		try {
-			content = new String(Files.readAllBytes(Path.of(md_file.getAbsolutePath())));
+			content = new String(Files.readAllBytes(Path.of(md_file.getAbsolutePath())), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -96,7 +97,7 @@ public class DataGrabber {
 		}
 		
 		try {
-			content = new String(Files.readAllBytes(Path.of(sf_file.getAbsolutePath())));
+			content = new String(Files.readAllBytes(Path.of(sf_file.getAbsolutePath())), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -114,7 +115,7 @@ public class DataGrabber {
 		}
 		
 		try {
-			content = new String(Files.readAllBytes(Path.of(f_file.getAbsolutePath())));
+			content = new String(Files.readAllBytes(Path.of(f_file.getAbsolutePath())), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

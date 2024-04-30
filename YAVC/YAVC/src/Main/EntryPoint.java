@@ -46,7 +46,7 @@ import Utils.Vector;
 import Utils.YCbCrMakroBlock;
 
 public class EntryPoint {
-	private static int MAX_REFERENCES = 5;
+	private static int MAX_REFERENCES = 7;
 	private Status EN_STATUS = Status.STOPPED;
 	private Status DE_STATUS = Status.STOPPED;
 	

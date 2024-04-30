@@ -32,6 +32,16 @@ public class Vector {
 	private YCbCrMakroBlock appendedBlock = null;
 	private YCbCrMakroBlock mostEqualBlock = null;
 	
+	public Vector() {}
+	
+	public Vector(Point start, int spanX, int spanY, int refB, int refS) {
+		this.startingPoint = start;
+		this.spanX = spanX;
+		this.spanY = spanY;
+		this.referenceDrawback = refB;
+		this.referenceSize = refS;
+	}
+	
 	public Point getStartingPoint() {
 		return startingPoint;
 	}

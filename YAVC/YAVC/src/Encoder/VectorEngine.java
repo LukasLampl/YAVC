@@ -142,7 +142,7 @@ public class VectorEngine {
 	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, PixelRaster prevFrame, int maxSADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
 		HashSet<Point> set = new HashSet<Point>();
-		int searchWindow = 64;
+		int searchWindow = 64; //NEVER ABOVE 64 (BIGGER THAN 1 Byte for range and high computational complexity)
 		int blockSize = blockToBeSearched.getSize();
 		
 		Point blockCenter = new Point(blockToBeSearched.getPosition().x + blockSize / 2, blockToBeSearched.getPosition().y + blockSize / 2);

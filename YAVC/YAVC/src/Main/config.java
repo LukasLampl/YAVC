@@ -27,4 +27,13 @@ public class config {
 	public static final int LARGE_BLOCK = 16;
 	public static final int NORMAL_BLOCK = 8;
 	public static final int SMALL_BLOCK = 4;
+	
+	public static final int RESERVED_TABLE_SIZE = 45;
+	public static final char V_DEF_S = (char)1;
+	public static final char DCT_DEF_S = (char)2;
+	public static final char DCT_Y_END_DEF = (char)3;
+	public static final char DCT_CB_END_DEF = (char)4;
+	public static final char DCT_CR_END_DEF = (char)5;
+	public static final char DCT_MATRIX_NL_DEF = (char)6;
+	public static final char DCT_POS_END_DEF = (char)7;
 }

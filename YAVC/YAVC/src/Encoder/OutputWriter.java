@@ -29,6 +29,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import Main.config;
 import UI.Frame;
 import Utils.ColorManager;
 import Utils.DCTObject;
@@ -98,7 +100,7 @@ public class OutputWriter {
 			File metaFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/META.DESC");
 			metaFile.createNewFile();
 			
-			Files.write(Path.of(metaFile.getAbsolutePath()), meta.getBytes(), StandardOpenOption.WRITE);
+			Files.write(Path.of(metaFile.getAbsolutePath()), meta.getBytes(StandardCharsets.UTF_8), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -122,7 +124,7 @@ public class OutputWriter {
 			File startFrameFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/SF.YAVCF");
 			startFrameFile.createNewFile();
 			
-			Files.write(Path.of(startFrameFile.getAbsolutePath()), imgInChars.toString().getBytes(), StandardOpenOption.WRITE);
+			Files.write(Path.of(startFrameFile.getAbsolutePath()), imgInChars.toString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -141,69 +143,85 @@ public class OutputWriter {
 			return null;
 		}
 		
-		StringBuilder DCTPos = new StringBuilder();
-		StringBuilder CbCoStr = new StringBuilder();
-		StringBuilder CrCoStr = new StringBuilder();
-		StringBuilder YCoStr = new StringBuilder();
+		StringBuilder DCT = new StringBuilder();
+		DCT.append(config.DCT_DEF_S);
 
 		for (DCTObject dct : DCTList) {
+			StringBuilder CbCoStr = new StringBuilder();
+			StringBuilder CrCoStr = new StringBuilder();
+			StringBuilder YCoStr = new StringBuilder();
+			
 			for (int y = 0; y < dct.getCbDCT().length; y++) {
 				for (int x = 0; x < dct.getCbDCT()[y].length; x++) {
-					CbCoStr.append((int)dct.getCbDCT()[y][x]);
-					CrCoStr.append((int)dct.getCrDCT()[y][x]);
+					double Cb = dct.getCbDCT()[y][x];
+					double Cr = dct.getCrDCT()[y][x];
 					
-					if (x + 1 < dct.getCbDCT()[y].length) {
-						CbCoStr.append(".");
-						CrCoStr.append(".");
-					}
+					int absCb = (int)Math.abs(Cb);
+					int absCr = (int)Math.abs(Cr);
+					
+					char CbC = shift_DCT_bits(Cb, absCb);
+					char CrC = shift_DCT_bits(Cr, absCr);
+					
+					CbCoStr.append(CbC);
+					CrCoStr.append(CrC);
 				}
 				
 				if (y + 1 < dct.getCbDCT().length) {
-					CbCoStr.append("&");
-					CrCoStr.append("&");
+					CbCoStr.append(config.DCT_MATRIX_NL_DEF);
+					CrCoStr.append(config.DCT_MATRIX_NL_DEF);
 				}
 			}
+			
+			CbCoStr.append(config.DCT_CB_END_DEF);
+			CrCoStr.append(config.DCT_CR_END_DEF);
 			
 			for (int y = 0; y < dct.getY().length; y++) {
 				for (int x = 0; x < dct.getY()[y].length; x++) {
-					YCoStr.append((int)dct.getY()[y][x]);
-					
-					if (x + 1 < dct.getY()[y].length) {
-						YCoStr.append(".");
-					}
+					YCoStr.append((char)shift_DCT_bits(dct.getY()[y][x], (int)Math.abs(dct.getY()[y][x])));
 				}
 				
 				if (y + 1 < dct.getY().length) {
-					YCoStr.append("&");
+					YCoStr.append(config.DCT_MATRIX_NL_DEF);
 				}
 			}
 			
-			DCTPos.append(dct.getPosition().x + "." + dct.getPosition().y + ":");
-			CbCoStr.append(":");
-			CrCoStr.append(":");
-			YCoStr.append(":");
+			YCoStr.append(config.DCT_Y_END_DEF);
+			DCT.append(YCoStr);
+			DCT.append(CbCoStr);
+			DCT.append(CrCoStr);
+			DCT.append((char)(dct.getPosition().x + config.RESERVED_TABLE_SIZE));
+			DCT.append((char)(dct.getPosition().y + + config.RESERVED_TABLE_SIZE));
+			DCT.append(config.DCT_POS_END_DEF);
 		}
 		
 		File frameFile = new File(this.COMPRESS_DIR.getAbsolutePath() + "/F_" + outputFrames++ + ".YAVCF");
-		StringBuilder imgInChars = new StringBuilder();
-		
-		imgInChars.append("$DCT_P$");
-		imgInChars.append(DCTPos);
-		imgInChars.append("$DCT_Y$");
-		imgInChars.append(YCoStr);
-		imgInChars.append("$DCT_CB$");
-		imgInChars.append(CbCoStr);
-		imgInChars.append("$DCT_CR$");
-		imgInChars.append(CrCoStr);
-		
+
 		try {
 			frameFile.createNewFile();
-			Files.write(Path.of(frameFile.getAbsolutePath()), imgInChars.toString().getBytes(), StandardOpenOption.WRITE);
+			Files.write(Path.of(frameFile.getAbsolutePath()), DCT.toString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.WRITE);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
 		return frameFile;
+	}
+	
+	private char shift_DCT_bits(double val, int absVal) {
+		/*
+		 * UTF-8 provides 16 Bits per char.
+		 * 00000000 00000000
+		 * 
+		 * 1) If the number is negative, set the 14th Bit to 1
+		 * 00100000 00000000
+		 * 
+		 * 2) Else let it like it is and fill up the 14 prior Bits with data
+		 */
+		
+		if (val < 0) {
+			return (char)(1 << 14 | ((int)absVal & 0xFFF) + config.RESERVED_TABLE_SIZE);
+		}
+		
+		return (char)(((int)absVal & 0xFFF) + config.RESERVED_TABLE_SIZE);
 	}
 	
 	/*
@@ -219,16 +237,40 @@ public class OutputWriter {
 		
 		try {
 			StringBuilder vecRes = new StringBuilder(movementVectors.size() * 2);
-			vecRes.append("$V$");
+			vecRes.append(config.V_DEF_S);
+			
+			int size = movementVectors.size();
+			vecRes.append((char)(size >> 16));
+			vecRes.append((char)(size & 0xFFFF));
 			
 			for (Vector vec : movementVectors) {
-				vecRes.append("*" + vec.getStartingPoint().x + "," + vec.getStartingPoint().y + ";" + vec.getSpanX() + "," + vec.getSpanY() + "_" + vec.getReferenceDrawback() + "~" + vec.getAppendedBlock().getSize());
+				int refAndSizeShift = ((vec.getReferenceDrawback() & 0xFF) << 8 | (vec.getReferenceSize() & 0xFF));
+				
+				char sPointX = (char)(vec.getStartingPoint().x + config.RESERVED_TABLE_SIZE);
+				char sPointY = (char)(vec.getStartingPoint().y + config.RESERVED_TABLE_SIZE);
+				char spanX = shift_vec_span(vec.getSpanX());
+				char spanY = shift_vec_span(vec.getSpanY());
+				char refAndSize = (char)((refAndSizeShift & 0xFFFF) + config.RESERVED_TABLE_SIZE);
+				
+				vecRes.append(sPointX);
+				vecRes.append(sPointY);
+				vecRes.append(spanX);
+				vecRes.append(spanY);
+				vecRes.append(refAndSize);
 			}
 			
-			Files.write(Path.of(frameFile.getAbsolutePath()), vecRes.toString().getBytes(), StandardOpenOption.APPEND);
+			Files.write(Path.of(frameFile.getAbsolutePath()), vecRes.toString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private char shift_vec_span(int span) {
+		if (span < 0) {
+			return (char)((1 << 14) | ((span + config.RESERVED_TABLE_SIZE) & 0xFFF));
+		}
+		
+		return (char)(span + config.RESERVED_TABLE_SIZE);
 	}
 	
 	/*
