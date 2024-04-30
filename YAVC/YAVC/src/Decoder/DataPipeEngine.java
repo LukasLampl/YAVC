@@ -271,7 +271,7 @@ public class DataPipeEngine {
 	
 	private int shift_vec_span_back(char span) {
 		if (((span >> 14) & 0x1) == 1) {
-			return -1 * ((int)span - config.RESERVED_TABLE_SIZE) & 0xFFF;
+			return (-1 * (((int)span & 0xFFF) - config.RESERVED_TABLE_SIZE));
 		}
 		
 		return ((int)span) - config.RESERVED_TABLE_SIZE;

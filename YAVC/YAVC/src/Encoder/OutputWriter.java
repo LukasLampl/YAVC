@@ -25,6 +25,7 @@ import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -251,7 +252,7 @@ public class OutputWriter {
 				char spanX = shift_vec_span(vec.getSpanX());
 				char spanY = shift_vec_span(vec.getSpanY());
 				char refAndSize = (char)((refAndSizeShift & 0xFFFF) + config.RESERVED_TABLE_SIZE);
-				
+
 				vecRes.append(sPointX);
 				vecRes.append(sPointY);
 				vecRes.append(spanX);
@@ -267,7 +268,7 @@ public class OutputWriter {
 	
 	private char shift_vec_span(int span) {
 		if (span < 0) {
-			return (char)((1 << 14) | ((span + config.RESERVED_TABLE_SIZE) & 0xFFF));
+			return (char)((1 << 14) | ((Math.abs(span) + config.RESERVED_TABLE_SIZE) & 0xFFF));
 		}
 		
 		return (char)(span + config.RESERVED_TABLE_SIZE);
