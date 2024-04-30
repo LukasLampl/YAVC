@@ -41,20 +41,112 @@ The UI is now in a state, in which the user can use the application even without
 It is relatively simple and the only major issues may occur at the different sliders, which I'll explain now.  
 **Encode -> Start** -> This button is the entry to the encoding process.  
 **Decode -> Start** -> This button starts the decoding process for a YAVC file.  
-**Slider 1** -> This slider defines the edge recognition damping. (The lower the tolerance to precise the compression)  
-**Slider 2** -> This slider manages the color damping tolerance. (If the slider is at its highest the damping occures if 100% of the colors match)  
-**Slider 3** -> This slider determines the maximum SAD a block can have before getting filtered. (The lower the higher the precision)
+**Slider 1** -> This slider manages the color damping tolerance. (If the slider is at its highest the damping occures if 100% of the colors match)  
+**Slider 2** -> This slider determines the maximum SAD a block can have before getting filtered. (The lower the higher the precision)
 
 > [!TIP]
 > Just play a little with the sliders until you get your desired results. Massive changes are followed by massive changes.
 > The better the result, the worse the compression ration!
 
 # 3. How it works #
-Since I want to keep everything simple, I do not go into theoretical and high detail.
-First of all the program takes two images from the input folder and loads them into memory. Now both images are converted into 32x32 MakroBlocks, using the sobel operator details and textures are detected and thus the MakroBlock size reduced to 16x16, 8x8 or 4x4. If a MakroBlock is bigger than the image, the unused memory is set to a specific number for later recognition. Followed by the MakroBlock conversion is the color-damping part, in which the
-MakroBlocks of the same position are compared to each other and damped if necessary to create as much redundancy as possible. No the differences between those MakroBlocks are calculated, meaning if the frames have a static background, the difference is a moving object for instance. After the differences are computed, the
-differences are tried to match up with MakroBlock from the previous frame, to save space (Since the block just has to be defined once). Now the vectorized MakroBlocks are written to a file. The process repeats for all frames. If all frames have been processed the final file is deflated
-using ZIP.
+I'll keep everything simple and try to explain it as good as possible.  
+First of all all frames are converted from ```RGB / ARGB``` to ```YCbCr / YUV```. Furthermore the colors are then subsampled from `4:4:4` to `4:2:0`
+  
+<details>  
+<summary>Reading the input</summary>  
+  
+To start compressing the compressor needs a source. For YAVC it's a folder filled with a bunch of raw frames to compress.
+After pressing on ```Encode``` -> ```Start```, you'll be asked to select a folder, that contains the frames.
+Followed by that you should select a folder, in which the compressed YAVC file should be stored.
+</details>
+
+<details>
+<summary>Edges & Textures</summary>
+  
+Afterall this compressor works by exploiting redundancy, to avoid compressing smaller-fine details like the textures of a T-Shirt or leaves of a tree, YAVC consists of a texture and edge detection algorithm (Scharr-Operator / Sobel-Operator). The frame gets read in and the ```Sobel-Operator (Scharr-Operator)``` values are calculated. The higher the value the more "complexity" is in that area (by complexity I mean edges and textures or "area of interest").
+</details>
+
+<details>
+<summary>Color damping</summary>  
+  
+The intermediate step of color damping constists of scanning all pixels of the previous and current frame and compare them, if the delta values are in a specific threshold, the color of the current frame is damped to create as much redundancy as possible.  
+
+```Threshold:``` _delta_Y > 3.0 && delta_Cb > 8.0 && delta_Cr > 8.0_  
+
+To make it more clear, _the human eye is more sensitive to changes in contrast than in chroma_, so finding the "next best color" is not affecting the visuals.
+</details>
+
+<details>
+<summary>Makroblock partitioning</summary>  
+  
+Followed by the texture and edge determination is the Makroblock partitioning. To achieve that the compressor uses the generated values of the ```"Edge & Texture"``` detection and puts ```"Areas of interest"```  at parts, that have a lot of textures and edges. This happens, since textures and edges should be as detailed as possible. The partitioning itself is by dividing a ```Superblock (32x32)``` to smaller Subblocks. Every Subblock has its own threshold, at which it divides again. The available blocksizes are: _32x32_, _16x16_, _8x8_ and _4x4_.  
+  
+> The threshold contains the variable ```size```, that stands for the block size. In addition to that the ```detail``` is normalized by the size.
+    
+| Blocksize | Threshold |
+|-----------|-----------|
+| 32x32 | size * 0.46 |
+| 16x16 | size * 1.29 |
+| 8x8 | size * 2.74 |
+| 4x4 | N/A |
+</details>
+
+<details>
+<summary>Scene change detection & I-Frames</summary>  
+  
+If the colors of a video are changing drastically, the motion estimation and block-matching might fail. In order to prevent that, the YAVC compressor constists of a scene change detector, that sets an ```I-Frame``` if a lot of color changing is happening. The I-Frames are placed all ```80 Frames```, when no scene detection has occured within ```10 frames``` prior.  
+For the scene change detection the current frame is scanned for all colors it contains. Based on that ```3 histograms``` are created containing the color samples of the current frame. If the delta values of the histogram of the previous frame and the current frame are higher than ```1.0``` (adaptive; based on frame size) there might have been a scene change.  
+If a scene change has occured a I-Frame is placed.  
+The scene change detection has no guarantee to detect every shot change, it is especially good at finding ```hard cuts```.
+</details>
+
+<details>
+<summary>Computing differences</summary>  
+  
+Since a video has a lot redundancy, YAVC filters the most obvious ones out by finding the differences. To do that the MakroBlocks from the current frame are compared to the MakroBlocks of the previus frame. If a change is detected that difference is marked as "difference", while the ones that are mostly the same are filtered out.  
+
+> The MakroBlocks of the current frame are compared with the exact MakroBlock from the previous frame. Let's say the current MakroBlock has the follwing properties: Position = 35, 75; Size = 16,
+> then the comparable MakroBlock would be MakroBlock at Position 35, 75 and Size 16 from the previous frame.
+  
+</details>
+
+<details>
+<summary>Computing motion</summary>
+
+Motion estimation is a really crucial step in YAVC, because that's the main source of compression. For motion estimation the differences are read one by one and are tried to match with another block in the previous frame. For that YAVC uses ```Hexagonal-search```, which ensures a low time complexity and good matching. For the matching itself the indivisual SAD values of the predicted blocks are calculated and compared, the lower, the better. YAVC uses 7 reference frames, which means a motion vector can point up to 7 frames into the past.  
+  
+  ```SAD Formula```: _((delta_Y)³ + (delta_Cb)² + (delta_Cr)² + (delta_A)<sup>delta_A</sup>) / (colorSize)²_  
+
+After getting the best match, a vector is calculated, that references to the reference frame and position.
+</details>
+
+<details>
+<summary>DCT-II</summary>
+  
+The last step of the YAVC video compressor is the DCT-II (Discrete Cosine Transform). All remaining MakroBlocks, that were not encoded as a vector are split into ```4x4 MakroBlocks``` and their chroma is transformed using DCT, the luma remains untouched. After transforming the chroma is a double, which gets rounded (the actual compression in DCT). Now the YAVC compression is complete.
+</details>
+
+<details>
+<summary>Codec</summary>
+  
+To store the file and read out of it again a file codec is necessary. For that the files are encoded in ```UTF-8```.  
+For Seperation of information the YAVC compressor creates a file for every frame, the start frame and meta data.  
+In order for the vectors and DCT-II coefficients to be stored there is a strict notation form.
+
+| Reserved HEX code | Reserved Binary | Meaning |
+|-------------------|-----------------|---------|
+| 0x01 | 00000000 00000001 | Start of movement vectors |
+| 0x02 | 00000000 00000010 | Start of DCT-II Coefficients |
+| 0x03 | 00000000 00000011 | End of Y - Coefficients |
+| 0x04 | 00000000 00000101 | End of Cb - Coefficients |
+| 0x05 | 00000000 00000110 | End of Cr - Coefficients |
+| 0x06 | 00000000 00000111 | Newline of Coefficient matrix |
+| 0x07 | 00000000 00001000 | DCT-II matrix end |
+  
+Like the table shows the Coefficients all have their place behind each other.  
+Another specialty is the encoding of the coefficients, which occures with Bitshifting for negative values (1 << 14 = negative number).  
+For Vectors every value has its own character except of ```size``` and ```reference drawback``` (shifted into one value).
+</details>
 
 # 4. Statistics #
 > [!Caution]
