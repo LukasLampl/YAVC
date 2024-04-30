@@ -49,6 +49,14 @@ public class EntryPoint {
 	private Status EN_STATUS = Status.STOPPED;
 	private Status DE_STATUS = Status.STOPPED;
 	
+	private Filter FILTER = new Filter();
+	private Scene SCENE = new Scene();
+	private MakroBlockEngine MAKROBLOCK_ENGINE = new MakroBlockEngine();
+	private MakroDifferenceEngine MAKROBLOCK_DIFFERENCE_ENGINE = new MakroDifferenceEngine();
+	private VectorEngine VECTOR_ENGINE = new VectorEngine();
+	private OutputWriter OUTPUT_WRITER = null;
+	
+	
 	public boolean start_encode(Frame f) {
 		this.EN_STATUS = Status.RUNNING;
 		
@@ -62,6 +70,8 @@ public class EntryPoint {
 			chooser.showOpenDialog(null);
 			File output = chooser.getSelectedFile();
 			
+			this.OUTPUT_WRITER = new OutputWriter(output.getAbsolutePath(), f);
+			
 			if (input == null || output == null) {
 				return false;
 			}
@@ -70,17 +80,9 @@ public class EntryPoint {
 				try {
 					long timeStart = System.currentTimeMillis();
 					ArrayList<PixelRaster> referenceImages = new ArrayList<PixelRaster>(config.MAX_BACK_REF);
-					ArrayList<YCbCrMakroBlock> prevImgBlocks = null;
-					
+
 					PixelRaster prevImage = null;
 					PixelRaster currentImage = null;
-					
-					Filter filter = new Filter();
-					Scene scene = new Scene();
-					MakroBlockEngine makroBlockEngine = new MakroBlockEngine();
-					MakroDifferenceEngine makroDifferenceEngine = new MakroDifferenceEngine();
-					VectorEngine vectorEngine = new VectorEngine();
-					OutputWriter outputWriter = new OutputWriter(output.getAbsolutePath(), f);
 					
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
@@ -91,19 +93,8 @@ public class EntryPoint {
 						}
 						
 						f.update_encoder_frame_count(i, filesCount, false);
-						String name = "";
-						
-						if (i < 10) {
-							name = "000" + i;
-						} else if (i < 100) {
-							name = "00" + i;
-						} else if (i < 1000) {
-							name = "0" + i;
-						} else {
-							name = "" + i;
-						}
-						
-						File frame = new File(input.getAbsolutePath() + "/" + name + ".bmp");
+						String name = set_awaited_file_name(i, ".bmp");
+						File frame = new File(input.getAbsolutePath() + "/" + name);
 						
 						if (!frame.exists()) {
 							System.out.println("SKIP:" + frame.getAbsolutePath());
@@ -112,74 +103,58 @@ public class EntryPoint {
 						
 						if (prevImage == null) {
 							prevImage = new PixelRaster(ImageIO.read(frame));
-							int[][] edges = filter.get_sobel_values(prevImage);
 							referenceImages.add(prevImage);
-							prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(prevImage, edges, config.SUPER_BLOCK);
-							outputWriter.bake_meta_data(prevImage, filesCount);
-							outputWriter.bake_start_frame(prevImage);
+							this.OUTPUT_WRITER.bake_meta_data(prevImage, filesCount);
+							this.OUTPUT_WRITER.bake_start_frame(prevImage);
 							continue;
 						}
 						
 						currentImage = new PixelRaster(ImageIO.read(frame));
 						
-						int[][] edges = filter.get_sobel_values(currentImage);
-						filter.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
+						int[][] edges = this.FILTER.get_sobel_values(currentImage);
+						this.FILTER.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
 						f.set_previews(prevImage, currentImage);
-						f.set_sobel_image(filter.get_sobel_image());
+						f.set_sobel_image(this.FILTER.get_sobel_image());
 						
-						ArrayList<YCbCrMakroBlock> curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage, edges, config.SUPER_BLOCK);
+						ArrayList<YCbCrMakroBlock> curImgBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(currentImage, edges, config.SUPER_BLOCK);
 						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
 						
 						//This only adds an I-Frame if 'i' is a 80th frame and a change
 						//detection lied 10 frames ahead or a change detection has triggered.
-						boolean sceneChanged = scene.scene_change_detected(prevImage, currentImage);
+						boolean sceneChanged = this.SCENE.scene_change_detected(prevImage, currentImage);
 						
 						if (sceneChanged == true) {
 							System.out.println("Shot change dectedted at frame " + i);
 						}
 						
-						if (scene.get_color_count() <= 750) {
+						if (this.SCENE.get_color_count() <= 750) {
 							System.out.println("Mini-mode active!");
-							curImgBlocks = makroBlockEngine.get_makroblocks_from_image(currentImage, edges, config.SMALL_BLOCK);
+							curImgBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(currentImage, edges, config.SMALL_BLOCK);
 						}
 						
 						if ((i % 80 == 0 && changeDetectDistance > 10) || sceneChanged) {
-							prevImgBlocks = curImgBlocks;
-							ArrayList<DCTObject> dct = makroBlockEngine.apply_DCT_on_blocks(prevImgBlocks);
-							outputWriter.add_obj_to_queue(dct, null);
+							ArrayList<DCTObject> dct = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(curImgBlocks);
+							this.OUTPUT_WRITER.add_obj_to_queue(dct, null);
 							referenceImages.clear();
 							referenceImages.add(currentImage);
 							prevImage = currentImage;
-							prevImgBlocks = curImgBlocks;
 							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
 							continue;
 						}
 						
-						ArrayList<YCbCrMakroBlock> differences = makroDifferenceEngine.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
-						f.set_MBDiv_image(outputWriter.draw_MB_outlines(dim, curImgBlocks));
+						ArrayList<YCbCrMakroBlock> differences = this.MAKROBLOCK_DIFFERENCE_ENGINE.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
+						f.set_MBDiv_image(this.OUTPUT_WRITER.draw_MB_outlines(dim, curImgBlocks));
 						f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
 //						ArrayList<Vector> movementVectors = null;
-						ArrayList<Vector> movementVectors = vectorEngine.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
+						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
 
-						///////////////////
-						//// DEBUGGING ////
-						///////////////////
-						int areaVecs = 0, areaDiffs = 0;
+						print_statistics(movementVectors, differences, dim);
 						
-						for (Vector v : movementVectors) {
-							areaVecs += Math.pow(v.getAppendedBlock().getSize(), 2);
-						}
-						
-						for (YCbCrMakroBlock b : differences) {
-							areaDiffs += Math.pow(b.getSize(), 2);
-						}
-						
-						System.out.println("Vecs: " + movementVectors.size() + " (" + areaVecs + ") : " + differences.size() + " (" + areaDiffs + ")");
-						
-						f.setVectorizedImage(vectorEngine.construct_vector_path(dim, movementVectors));
+						f.setVectorizedImage(this.VECTOR_ENGINE.construct_vector_path(dim, movementVectors));
 
-						BufferedImage result = outputWriter.build_Frame(prevImage, referenceImages, differences, movementVectors, 3);
+						BufferedImage result = this.OUTPUT_WRITER.build_Frame(prevImage, referenceImages, differences, movementVectors, 3);
+						
 						
 //						try {
 //							ImageIO.write(outputWriter.build_Frame(prevImage, differences, movementVectors, 2), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
@@ -190,10 +165,7 @@ public class EntryPoint {
 //						}
 						
 						PixelRaster res = new PixelRaster(result);
-						edges = filter.get_sobel_values(res);
-						prevImgBlocks = makroBlockEngine.get_makroblocks_from_image(res, edges, config.SUPER_BLOCK);
-						
-						ArrayList<DCTObject> diffDCT = makroBlockEngine.apply_DCT_on_blocks(differences);
+						ArrayList<DCTObject> diffDCT = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(differences);
 						
 //						try {
 //							ImageIO.write(outputWriter.reconstruct_DCT_image(diffDCT, prevImage.getWidth(), prevImage.getHeight()), "png", new File(output.getAbsolutePath() + "/D_R_" + i + ".png"));
@@ -202,15 +174,15 @@ public class EntryPoint {
 //						}
 						
 						//Just for validation
-						res = outputWriter.reconstruct_DCT_image(diffDCT, res);
+						res = this.OUTPUT_WRITER.reconstruct_DCT_image(diffDCT, res);
 						
-//						try {
-//							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
-//						} catch (Exception e) {
-//							e.printStackTrace();
-//						}
+						try {
+							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 						
-						outputWriter.add_obj_to_queue(diffDCT, movementVectors);
+						this.OUTPUT_WRITER.add_obj_to_queue(diffDCT, movementVectors);
 						
 						referenceImages.add(res);
 						release_old_reference_images(referenceImages);
@@ -219,7 +191,7 @@ public class EntryPoint {
 					
 					f.disposeWriterPermission();
 					
-					outputWriter.compress_result();
+					this.OUTPUT_WRITER.compress_result();
 					f.update_encoder_frame_count(filesCount + (filesCount / 10), filesCount, true);
 					
 					referenceImages.clear();
@@ -237,6 +209,34 @@ public class EntryPoint {
 		}
 		
 		return true;
+	}
+	
+	private void print_statistics(ArrayList<Vector> movementVectors, ArrayList<YCbCrMakroBlock> differences, Dimension dim) {
+		int areaVecs = 0, areaDiffs = 0;
+		
+		for (Vector v : movementVectors) {
+			areaVecs += Math.pow(v.getAppendedBlock().getSize(), 2);
+		}
+		
+		for (YCbCrMakroBlock b : differences) {
+			areaDiffs += Math.pow(b.getSize(), 2);
+		}
+		
+		System.out.println("Vecs: " + movementVectors.size() + " (" + areaVecs + ") : " + differences.size() + " (" + areaDiffs + ")");
+	}
+	
+	private String set_awaited_file_name(int i, String type) {
+		String prefix = "";
+		
+		if (i < 10) {
+			prefix = "000";
+		} else if (i < 100) {
+			prefix = "00";
+		} else if (i < 1000) {
+			prefix = "0";
+		}
+		
+		return prefix + i + type;
 	}
 	
 	public boolean start_decoding_process(Frame frame) {
