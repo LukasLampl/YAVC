@@ -55,9 +55,7 @@ First of all all frames are converted from ```RGB / ARGB``` to ```YCbCr / YUV```
 <details>  
 <summary>Reading the input</summary>  
   
-To start compressing the compressor needs a source. For YAVC it's a folder filled with a bunch of raw frames to compress.
-After pressing on ```Encode``` -> ```Start```, you'll be asked to select a folder, that contains the frames.
-Followed by that you should select a folder, in which the compressed YAVC file should be stored.
+To start compressing the compressor needs a source. For YAVC it's a folder filled with a bunch of raw frames to compress. The images have to be in ```%4d.bmp``` format to be processed. First the images are converted in "Pixel rasters" which are essentially just an array of integers holding the RGB values of the image.
 </details>
 
 <details>
