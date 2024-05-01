@@ -193,6 +193,10 @@ public class Frame extends JFrame {
 		this.ENCODE_PANEL.set_sobel_frame(img);
 	}
 	
+	public void set_decoder_preview(BufferedImage img) {
+		this.DECODE_PANEL.set_preview_image(img);
+	}
+	
 	private void update() {
 		this.repaint();
 		this.revalidate();

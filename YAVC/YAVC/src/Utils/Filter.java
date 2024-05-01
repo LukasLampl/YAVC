@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import Encoder.MakroBlockEngine;
-import Encoder.YCbCrComp;
 
 public class Filter {
 	private ColorManager COLOR_MANAGER = new ColorManager();
@@ -87,8 +86,7 @@ public class Filter {
 	private int[][] sobelY = {{3, 10, 3}, {0, 0, 0}, {-3, -10, -3}};
 	private BufferedImage sobel_image = null;
 	
-	public int[][] get_sobel_values(PixelRaster img) {
-		int[][] values = new int[img.getWidth()][img.getHeight()];
+	public void get_sobel_values(PixelRaster img, int[][] array) {
 		sobel_image = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 		
 		for (int x = 0; x < img.getWidth() - 2; x++) {
@@ -114,12 +112,10 @@ public class Filter {
 						sobelY[2][2] * this.COLOR_MANAGER.convert_RGB_to_GRAYSCALE(img.getRGB(x + 2, y + 2)));
 				
 				int val = (int)Math.sqrt(gX * gX + gY * gY);
-				values[x][y] = val;
+				array[x][y] = val;
 				sobel_image.setRGB(x, y, new Color(Math.min(val, 255), Math.min(val, 255), Math.min(val, 255)).getRGB());
 			}
 		}
-		
-		return values;
 	}
 	
 	public BufferedImage get_sobel_image() {
@@ -204,15 +200,11 @@ public class Filter {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-	
-	private int clip(double min, double max, double x) {
-		return (int)Math.max(min, Math.min(x, max));
-	}
+	}	
 	
 	private void deblock(int BS, YCbCrColor[][] p, YCbCrColor[][]q, Direction dir) {
-		double beta = 28;
-		double tc = 1;
+		double beta = 5;
+		double alpha = 3;
 		
 		for (int i = 0; i < p.length && i < q.length; i++) {
 			YCbCrColor p0 = null, p1 = null, p2 = null, p3 = null;
@@ -238,68 +230,15 @@ public class Filter {
 				q3 = q[i][q.length - 4];
 			}
 			
-			if ((p2.getY() - 2 * p1.getY() + p0.getY()) + (p2.getY() - 2 * p1.getY() + p0.getY()) + (q2.getY() - 2 * q1.getY() + q0.getY()) + (q2.getY() - 2 * q1.getY() + q0.getY()) < beta) {
+			if (BS == 0 && p0.getY() - q0.getY() < alpha && p1.getY() - p0.getY() < beta && q1.getY() - q0.getY() < beta) {
 				continue;
 			}
 
-			if (BS == 2) {
-				if ((p2.getY() - 2 * p1.getY() + p0.getY()) + (q2.getY() - 2 * q1.getY() + q0.getY()) < (beta / 8)
-					&& (p3.getY() - p0.getY()) + (q0.getY() - q3.getY()) < (beta / 8)
-					&& (p0.getY() - q0.getY()) < (2.5 * tc)) {
-					p0.setY((int)(p2.getY() + 2 * p1.getY() + 2 * p0.getY() + 2 * q0.getY() + q1.getY() + 4) >> 3);
-					p1.setY((int)(p2.getY() + p1.getY() + p0.getY() + q0.getY() + 2) >> 2);
-					p2.setY((int)(2 * p3.getY() + 3 * p2.getY() + p1.getY() + p0.getY() + q0.getY() + 4) >> 3);
-				}
+			if (BS == 4) {
 				
-				if ((q2.getY() - 2 * q1.getY() + q0.getY()) + (p2.getY() - 2 * p1.getY() + p0.getY()) < (beta / 8)
-					&& (q3.getY() - q0.getY()) + (p0.getY() - p3.getY()) < (beta / 8)
-					&& (q0.getY() - p0.getY()) < (2.5 * tc)) {
-					q0.setY((int)(q2.getY() + 2 * q1.getY() + 2 * q0.getY() + 2 * p0.getY() + p1.getY() + 4) >> 3);
-					q1.setY((int)(q2.getY() + q1.getY() + q0.getY() + p0.getY() + 2) >> 2);
-					q2.setY((int)(2 * q3.getY() + 3 * q2.getY() + q1.getY() + q0.getY() + p0.getY() + 4) >> 3);
-				}
 			} else {
-				if ((p2.getY() - 2 * p1.getY() + p0.getY()) + (p2.getY() - 2 * p1.getY() + p0.getY()) < ((3 / 16) * beta)
-					&& (p2.getY() - 2 * p1.getY() + p0.getY()) + (p2.getY() - 2 * p1.getY() + p0.getY()) < ((3 / 16) * beta)) {
-					int delta_F = clip(-tc, tc, (int)(9 * (q0.getY() - p0.getY()) - 3 * (q1.getY() - p1.getY()) + 8) >> 4);
-					int delta_P1 = clip(-tc, tc, (int)((((int)(p2.getY() + p0.getY() + 1)) >> 1) - p1.getY() + delta_F) >> 1);
-					int delta_Q1 = clip(-tc, tc, (int)((((int)(q2.getY() + q0.getY() + 1)) >> 1) - q1.getY() - delta_F) >> 1);
-					p0.setY(p0.getY() + delta_F);
-					q0.setY(q0.getY() - delta_F);
-					p1.setY(p1.getY() + delta_P1);
-					q1.setY(q1.getY() + delta_Q1);
-				}
+				
 			}
-		}
-	}
-	
-	private void filter_Cb_Cr(int BS, YCbCrColor[] p, YCbCrColor[] q, YCbCrComp comp) {
-		int alpha = 1;
-		int beta = 2;
-		
-		double p0 = comp == YCbCrComp.CR ? p[0].getCr() : p[0].getCb();
-		double p1 = comp == YCbCrComp.CR ? p[2].getCr() : p[2].getCb();
-		double q0 = comp == YCbCrComp.CR ? q[0].getCr() : q[0].getCb();
-		double q1 = comp == YCbCrComp.CR ? q[2].getCr() : q[2].getCb();
-		
-		if (!(BS != 0 && Math.abs(p0 - q0) < alpha && Math.abs(p1 - p0) < beta && Math.abs(q1 - q0) < beta)) {
-			return;
-		}
-		
-		double t_p0 = p0;
-		double t_q0 = q0;
-		
-		if (BS == 4) {
-			t_p0 = ((int)(2 * p1 + p0 + q1 + 2) >> 2);
-			t_q0 = ((int)(2 * q1 + q0 + p1 + 2) >> 2);
-		}
-		
-		if (comp == YCbCrComp.CR) {
-			p[0].setCr(t_p0);
-			q[0].setCr(t_q0);	
-		} else {
-			p[0].setCb(t_p0);
-			q[0].setCb(t_q0);
 		}
 	}
 }

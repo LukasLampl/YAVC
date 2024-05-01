@@ -30,6 +30,7 @@ public class YCbCrMakroBlock {
 	private int referenceDrawback = 0;
 	private int size = 0;
 	private boolean edgeBlock = false;
+	private int complexity = 0;
 
 	public YCbCrMakroBlock(YCbCrColor[][] colors, Point position, int size) {
 		this.colors = colors;
@@ -116,5 +117,13 @@ public class YCbCrMakroBlock {
 		}
 		
 		return new YCbCrMakroBlock(cols, new Point(this.position.x + px, this.position.y + py), size);
+	}
+
+	public int getComplexity() {
+		return complexity;
+	}
+
+	public void setComplexity(int complexity) {
+		this.complexity = complexity;
 	}
 }

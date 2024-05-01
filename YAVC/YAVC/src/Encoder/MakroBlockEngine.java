@@ -58,13 +58,15 @@ public class MakroBlockEngine {
 	
 	private ArrayList<YCbCrMakroBlock> divide_down_MakroBlock(YCbCrMakroBlock block, int[][] edges, int size) {
 		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
+		int rawDetail = calculate_detail(edges, block.getPosition().x, block.getPosition().y, size);
 		
 		if (size <= 4) {
+			block.setComplexity(rawDetail);
 			blocks.add(block);
 			return blocks;
 		}
 		
-		double detail = calculate_detail(edges, block.getPosition().x, block.getPosition().y, size);
+		double detail = (double)rawDetail / (double)(size * size);
 		boolean passed = false;
 		
 		switch (size) {
@@ -88,6 +90,7 @@ public class MakroBlockEngine {
 				 blocks.addAll(divide_down_MakroBlock(parts[i], edges, size / 2));
 			}
 		} else {
+			block.setComplexity(rawDetail);
 			blocks.add(block);
 		}
 		
@@ -102,8 +105,8 @@ public class MakroBlockEngine {
 	 * 			int y => Y coordinate of the block;
 	 * 			int size => Size of the block;
 	 */
-	private double calculate_detail(int edges[][], int x, int y, int size) {
-		double sum = 0;
+	private int calculate_detail(int edges[][], int x, int y, int size) {
+		int sum = 0;
 		
 		for (int j = 0; j < size; j++) {
 			if (j + x + 2 >= edges.length) {
@@ -119,7 +122,7 @@ public class MakroBlockEngine {
 			}
 		}
 		
-		return sum / (double)(size * size);
+		return sum;
 	}
 	
 	/*

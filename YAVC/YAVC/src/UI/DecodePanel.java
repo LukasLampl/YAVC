@@ -24,11 +24,17 @@ package UI;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -39,6 +45,7 @@ public class DecodePanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
 	private JLabel frameCountLabel = new JLabel("0/0 Frames");
+	private JLabel previewHolderLabel = new JLabel();
 	private JProgressBar bar = new JProgressBar();
 	
 	private ToggleButton startBtn = new ToggleButton("Start");
@@ -49,7 +56,59 @@ public class DecodePanel extends JPanel {
 		setBackground(ComponentColor.DEFAULT_COLOR);
 		setLayout(new BorderLayout());
 		
+		add(get_preview_panel(), BorderLayout.CENTER);
 		add(get_control_panel(frame), BorderLayout.SOUTH);
+	}
+	
+	private JPanel get_preview_panel() {
+		JPanel holder = new JPanel();
+		holder.setLayout(new BorderLayout());
+		holder.setBackground(ComponentColor.DEFAULT_COLOR);
+		holder.setBorder(BorderFactory.createEmptyBorder(20, 17, 20, 17));
+		
+		JPanel resFramePanel = create_std_panel();
+		previewHolderLabel = create_std_label(null);
+		resFramePanel.add(create_std_label("Preview"));
+		resFramePanel.add(previewHolderLabel);
+		
+		holder.add(resFramePanel, BorderLayout.CENTER);
+		
+		return holder;
+	}
+	
+	private JLabel create_std_label(String text) {
+		JLabel l = new JLabel(text);
+		l.setBackground(ComponentColor.DROP_SHADOW_COLOR);
+		
+		if (text != null) {
+			l.setVerticalTextPosition(JLabel.TOP);
+			l.setHorizontalTextPosition(JLabel.LEFT);
+			l.setForeground(ComponentColor.TEXT_COLOR);
+			l.setFont(new Font("Arial", Font.PLAIN, 14));
+		}
+		
+		return l;
+	}
+	
+	private JPanel create_std_panel() {
+		JPanel p = new JPanel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void paintComponent(Graphics g) {
+				Graphics2D g2D = (Graphics2D)g.create();
+				g2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2D.setColor(getBackground());
+				g2D.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
+				g2D.dispose();
+			}
+		};
+		
+		p.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+		p.setBackground(ComponentColor.DROP_SHADOW_COLOR);
+		p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+		
+		return p;
 	}
 	
 	private JPanel get_control_panel(Frame frame) {
@@ -121,5 +180,17 @@ public class DecodePanel extends JPanel {
 		
 		double per = ((double)(frame + 1) / (double)maxFrames) * 100;
 		this.bar.setValue((int)Math.round(per));
+	}
+	
+	public void set_preview_image(BufferedImage img) {
+		this.previewHolderLabel.setIcon(resize_image(img));
+	}
+	
+	private ImageIcon resize_image(BufferedImage img) {
+		float factor = (float)img.getHeight() / (float)img.getWidth();
+		int width = (int)(((float)this.getWidth() / 6 * 5) - (float)this.getWidth() / 16 * 2);
+		int height = (int)(factor * width);
+		
+		return new ImageIcon(img.getScaledInstance(width, height, Image.SCALE_FAST));
 	}
 }

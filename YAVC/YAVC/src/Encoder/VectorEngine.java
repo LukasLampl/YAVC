@@ -48,10 +48,12 @@ public class VectorEngine {
 	 * 			(Vectors are applied to the differences);
 	 * 			int maxMADTolerance => Max MAD tolerance
 	 */
-	public ArrayList<Vector> calculate_movement_vectors(ArrayList<PixelRaster> refs, ArrayList<YCbCrMakroBlock> diff, int maxSADTolerance) {
+	public ArrayList<Vector> calculate_movement_vectors(ArrayList<PixelRaster> refs, ArrayList<YCbCrMakroBlock> diff, int maxSADTolerance, int colors) {
 		int threads = Runtime.getRuntime().availableProcessors();
 		final int maxGuesses = refs.size();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		
+		init_sad_values(colors);
 		
 		ArrayList<Vector> vectors = new ArrayList<Vector>(diff.size());
 		ArrayList<Future<Vector>> fvecs = new ArrayList<Future<Vector>>(vectors.size());
@@ -140,6 +142,11 @@ public class VectorEngine {
 	 * 			BufferedImage prevFrame => Image of the previous frame;
 	 * 			int maxSADTolerance => Max tolerance of the SAD
 	 */
+	private double SAD_4x4_BLOCK = 0;
+	private double SAD_8x8_BLOCK = 0;
+	private double SAD_16x16_BLOCK = 0;
+	private double SAD_32x32_BLOCK = 0;
+	
 	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, PixelRaster prevFrame, int maxSADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
 		HashSet<Point> set = new HashSet<Point>();
@@ -219,25 +226,37 @@ public class VectorEngine {
 		switch (blockSize) {
 		case 32:
 			//Low filtering (Reduce distortion)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * blockSize) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_32x32_BLOCK) ? null : mostEqualBlock;
 			break;
 		case 16:
 			//Moderate filtering (Reduce distortion; Get details)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 5.7) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_16x16_BLOCK) ? null : mostEqualBlock;
 			break;
 		case 8:
 			//High filtering (Reduce distortion; Get details; Get Edges)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 3.0) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_8x8_BLOCK) ? null : mostEqualBlock;
 			break;
 		case 4:
-			//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * blockSize * 1.9) ? null : mostEqualBlock;
+			if (blockToBeSearched.getComplexity() >= 2048) {
+				mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_4x4_BLOCK * 64) ? null : mostEqualBlock;
+			} else {
+				//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
+				mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_4x4_BLOCK) ? null : mostEqualBlock;
+			}
 			break;
 		default:
 			return null;
 		}
 		
 		return mostEqualBlock;
+	}
+	
+	private void init_sad_values(int colors) {
+		double colorFac = (16581375 - colors) * 5e-9;
+		this.SAD_4x4_BLOCK = 4 * colorFac;
+		this.SAD_8x8_BLOCK = 24 * colorFac;
+		this.SAD_16x16_BLOCK = 48 * colorFac;
+		this.SAD_32x32_BLOCK = 78 * colorFac;
 	}
 	
 	/*

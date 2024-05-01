@@ -57,7 +57,7 @@ public class EntryPoint {
 	private OutputWriter OUTPUT_WRITER = null;
 	
 	
-	public boolean start_encode(Frame f) {
+	public boolean start_encode(Frame frame) {
 		this.EN_STATUS = Status.RUNNING;
 		
 		try {
@@ -70,7 +70,7 @@ public class EntryPoint {
 			chooser.showOpenDialog(null);
 			File output = chooser.getSelectedFile();
 			
-			this.OUTPUT_WRITER = new OutputWriter(output.getAbsolutePath(), f);
+			this.OUTPUT_WRITER = new OutputWriter(output.getAbsolutePath(), frame);
 			
 			if (input == null || output == null) {
 				return false;
@@ -80,10 +80,11 @@ public class EntryPoint {
 				try {
 					long timeStart = System.currentTimeMillis();
 					ArrayList<PixelRaster> referenceImages = new ArrayList<PixelRaster>(config.MAX_BACK_REF);
-
 					PixelRaster prevImage = null;
 					PixelRaster currentImage = null;
 					
+					Dimension dim = null;
+					int[][] edges = null;
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
@@ -92,32 +93,34 @@ public class EntryPoint {
 							output.delete();
 						}
 						
-						f.update_encoder_frame_count(i, filesCount, false);
+						frame.update_encoder_frame_count(i, filesCount, false);
 						String name = set_awaited_file_name(i, ".bmp");
-						File frame = new File(input.getAbsolutePath() + "/" + name);
+						File frameFile = new File(input.getAbsolutePath() + "/" + name);
 						
-						if (!frame.exists()) {
-							System.out.println("SKIP:" + frame.getAbsolutePath());
+						if (!frameFile.exists()) {
+							System.out.println("SKIP:" + frameFile.getAbsolutePath());
 							continue;
 						}
 						
 						if (prevImage == null) {
-							prevImage = new PixelRaster(ImageIO.read(frame));
+							prevImage = new PixelRaster(ImageIO.read(frameFile));
 							referenceImages.add(prevImage);
 							this.OUTPUT_WRITER.bake_meta_data(prevImage, filesCount);
 							this.OUTPUT_WRITER.bake_start_frame(prevImage);
+							
+							dim = new Dimension(prevImage.getWidth(), prevImage.getHeight());
+							edges = new int[dim.width][dim.height];
 							continue;
 						}
 						
-						currentImage = new PixelRaster(ImageIO.read(frame));
+						currentImage = new PixelRaster(ImageIO.read(frameFile));
 						
-						int[][] edges = this.FILTER.get_sobel_values(currentImage);
+						this.FILTER.get_sobel_values(currentImage, edges);
 						this.FILTER.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
-						f.set_previews(prevImage, currentImage);
-						f.set_sobel_image(this.FILTER.get_sobel_image());
+						frame.set_previews(prevImage, currentImage);
+						frame.set_sobel_image(this.FILTER.get_sobel_image());
 						
 						ArrayList<YCbCrMakroBlock> curImgBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(currentImage, edges, config.SUPER_BLOCK);
-						Dimension dim = new Dimension(currentImage.getWidth(), currentImage.getHeight());
 						
 						//This only adds an I-Frame if 'i' is a 80th frame and a change
 						//detection lied 10 frames ahead or a change detection has triggered.
@@ -143,15 +146,14 @@ public class EntryPoint {
 						}
 						
 						ArrayList<YCbCrMakroBlock> differences = this.MAKROBLOCK_DIFFERENCE_ENGINE.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
-						f.set_MBDiv_image(this.OUTPUT_WRITER.draw_MB_outlines(dim, curImgBlocks));
-						f.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
+						frame.set_MBDiv_image(this.OUTPUT_WRITER.draw_MB_outlines(dim, curImgBlocks));
+						frame.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
 //						ArrayList<Vector> movementVectors = null;
-						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, f.get_vec_sad_tolerance());
-
+						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.SCENE.get_color_count());
 						print_statistics(movementVectors, differences, dim);
 						
-						f.setVectorizedImage(this.VECTOR_ENGINE.construct_vector_path(dim, movementVectors));
+						frame.setVectorizedImage(this.VECTOR_ENGINE.construct_vector_path(dim, movementVectors));
 
 						BufferedImage result = this.OUTPUT_WRITER.build_Frame(prevImage, referenceImages, differences, movementVectors, 3);
 						
@@ -176,12 +178,12 @@ public class EntryPoint {
 						//Just for validation
 						res = this.OUTPUT_WRITER.reconstruct_DCT_image(diffDCT, res);
 						
-						try {
-							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-						
+//						try {
+//							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
+//						} catch (Exception e) {
+//							e.printStackTrace();
+//						}
+//						
 						this.OUTPUT_WRITER.add_obj_to_queue(diffDCT, movementVectors);
 						
 						referenceImages.add(res);
@@ -189,10 +191,10 @@ public class EntryPoint {
 						prevImage = res;
 					}
 					
-					f.disposeWriterPermission();
+					frame.disposeWriterPermission();
 					
 					this.OUTPUT_WRITER.compress_result();
-					f.update_encoder_frame_count(filesCount + (filesCount / 10), filesCount, true);
+					frame.update_encoder_frame_count(filesCount + (filesCount / 10), filesCount, true);
 					
 					referenceImages.clear();
 					
@@ -287,11 +289,12 @@ public class EntryPoint {
 //					}
 					
 //					if (vecs != null) {
-//						filter.apply_deblocking_filter(vecs, new PixelRaster(result));
+//						this.FILTER.apply_deblocking_filter(vecs, new PixelRaster(result));
 //					}
 					
 					BufferedImage outputImg = this.FILTER.apply_gaussian_blur(result, 1);
 					
+					frame.set_decoder_preview(outputImg);
 					dataPipeValveEngine.release_image(outputImg);
 					prevFrame = result;
 					referenceImages.add(result);
