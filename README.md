@@ -195,10 +195,10 @@ All the frames are measured by their "original" size, which means in `.bmp` form
   
 |  Video name  | Original size | YAVC size (old) | YAVC size (new) | Decrease (old) | Decrease (new) | Resolution | Frames | FPS |
 |--------------|---------------|-----------------|-----------------|----------------|----------------|------------|--------|-----|
-| Big Buck Bunny | 348 MB | 34.4 MB | 18.1 MB | 90.1 % | 94.8 % | 1280x720 | 132 | 25 |
-| Sunset | 3.89 GB | 0.99 GB | 395 MB | 74.5 % | 89.9 % | 1280x720 | 1512 | 25 |
-| Road in city | 0,99 GB | 408 MB | 137 MB | 58.8 % | 86.2 % | 1920x1080 | 171 | 30 |
-| Watering a flower | 495 MB | 53.8 MB | 20.1 MB | 89.1 % | 95.5 % | 640x360 | 752 | 25 |
+| Big Buck Bunny | 348 MB | 34.4 MB | 21.8 MB | 90.1 % | 93.7 % | 1280x720 | 132 | 25 |
+| Sunset | 3.89 GB | 0.99 GB | 291 MB | 74.5 % | 92.5 % | 1280x720 | 1512 | 25 |
+| Road in city | 0,99 GB | 408 MB | 99.4 MB | 58.8 % | 90.0 % | 1920x1080 | 171 | 30 |
+| Watering a flower | 495 MB | 53.8 MB | 20.4 MB | 89.1 % | 95.8 % | 640x360 | 752 | 25 |
 
 # 4. Contact: #  
 **E-Mail:** lampl.lukas@outlook.com
