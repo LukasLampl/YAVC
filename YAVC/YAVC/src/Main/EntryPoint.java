@@ -149,40 +149,17 @@ public class EntryPoint {
 						frame.set_MBDiv_image(this.OUTPUT_WRITER.draw_MB_outlines(dim, curImgBlocks));
 						frame.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
-//						ArrayList<Vector> movementVectors = null;
 						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.SCENE.get_color_count());
 						print_statistics(movementVectors, differences, dim);
 						
 						frame.setVectorizedImage(this.VECTOR_ENGINE.construct_vector_path(dim, movementVectors));
 
 						BufferedImage result = this.OUTPUT_WRITER.build_Frame(prevImage, referenceImages, differences, movementVectors, 3);
-						
-//						try {
-//							ImageIO.write(outputWriter.build_Frame(prevImage, differences, movementVectors, 2), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
-//							ImageIO.write(outputWriter.build_Frame(prevImage, differences, null, 1), "png", new File(output.getAbsolutePath() + "/D_" + i + ".png"));
-//							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/R_" + i + ".png"));
-//						} catch (Exception e) {
-//							e.printStackTrace();
-//						}
-						
 						PixelRaster res = new PixelRaster(result);
 						ArrayList<DCTObject> diffDCT = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(differences);
 						
-//						try {
-//							ImageIO.write(outputWriter.reconstruct_DCT_image(diffDCT, prevImage.getWidth(), prevImage.getHeight()), "png", new File(output.getAbsolutePath() + "/D_R_" + i + ".png"));
-//						} catch (Exception e) {
-//							e.printStackTrace();
-//						}
-						
 						//Just for validation
 						res = this.OUTPUT_WRITER.reconstruct_DCT_image(diffDCT, res);
-						
-//						try {
-//							ImageIO.write(result, "png", new File(output.getAbsolutePath() + "/DCT_" + i + ".png"));
-//						} catch (Exception e) {
-//							e.printStackTrace();
-//						}
-//						
 						this.OUTPUT_WRITER.add_obj_to_queue(diffDCT, movementVectors);
 						
 						referenceImages.add(res);
@@ -280,17 +257,6 @@ public class EntryPoint {
 					
 					ArrayList<Vector> vecs = dataPipeEngine.scrape_vectors(frameCounter++);
 					BufferedImage result = dataPipeEngine.build_frame(vecs, referenceImages, prevFrame, currFrame);
-					
-//					try {
-//						ImageIO.write(result, "png", new File("C:\\Users\\Lukas Lampl\\Documents\\result\\UP_" + frameCounter + ".png"));
-//					} catch (Exception e) {
-//						e.printStackTrace();
-//					}
-					
-//					if (vecs != null) {
-//						this.FILTER.apply_deblocking_filter(vecs, new PixelRaster(result));
-//					}
-					
 					BufferedImage outputImg = this.FILTER.apply_gaussian_blur(result, 1);
 					
 					frame.set_decoder_preview(outputImg);

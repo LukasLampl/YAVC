@@ -22,18 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package Utils;
 
 import java.awt.Color;
-import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.util.ArrayList;
-
-import javax.imageio.ImageIO;
-
-import Encoder.MakroBlockEngine;
 
 public class Filter {
 	private ColorManager COLOR_MANAGER = new ColorManager();
-	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
 	
 	public BufferedImage apply_gaussian_blur(BufferedImage img, int radius) {
 		BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -154,90 +146,6 @@ public class Filter {
 				}
 				
 				img2.setRGB(x, y, pixel1);
-			}
-		}
-	}
-	
-	private int c = 0;
-	//NEIGHBOURBLOCKS IN FOLLOWING ORDER: TOP, LEFT, BOTTOM, RIGHT!
-	public void apply_deblocking_filter(ArrayList<Vector> vecs, PixelRaster builtImg) {
-		if (vecs != null) {
-			for (Vector v : vecs) {
-				Point nP = new Point(v.getStartingPoint().x - v.getReferenceSize(), v.getStartingPoint().y);
-				YCbCrColor q[][] = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(v.getStartingPoint(), builtImg, v.getReferenceSize()).getColors();
-				YCbCrColor p[][] = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(nP, builtImg, v.getReferenceSize()).getColors();
-				int BS = 0;
-				
-				switch (v.getReferenceSize()) {
-				case 32:
-					BS = 4;
-					break;
-				case 16:
-					BS = 3;
-					break;
-				case 8:
-					BS = 2;
-					break;
-				case 4:
-					BS = 1;
-					break;
-				}
-				
-				deblock(BS, q, p, Direction.VERTICAL);
-				deblock(BS, q, p, Direction.HORIZONTAL);
-				
-				for (int y = 0; y < v.getReferenceSize(); y++) {
-					for (int x = 0; x < v.getReferenceSize(); x++) {
-						builtImg.setRGB(x + v.getStartingPoint().x, y + v.getStartingPoint().y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(q[y][x]).getRGB());
-						builtImg.setRGB(x + nP.x, y + nP.y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(p[y][x]).getRGB());
-					}
-				}
-			}
-		}
-		
-		try {
-			ImageIO.write(builtImg.toBufferedImage(), "png", new File("C:\\Users\\Lukas Lampl\\Documents\\result\\UP_" + c++ + ".png"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}	
-	
-	private void deblock(int BS, YCbCrColor[][] p, YCbCrColor[][]q, Direction dir) {
-		double beta = 5;
-		double alpha = 3;
-		
-		for (int i = 0; i < p.length && i < q.length; i++) {
-			YCbCrColor p0 = null, p1 = null, p2 = null, p3 = null;
-			YCbCrColor q0 = null, q1 = null, q2 = null, q3 = null;
-			
-			if (dir == Direction.VERTICAL) {
-				p0 = p[0][i];
-				p1 = p[1][i];
-				p2 = p[2][i];
-				p3 = p[3][i];
-				q0 = q[q.length - 1][i];
-				q1 = q[q.length - 2][i];
-				q2 = q[q.length - 3][i];
-				q3 = q[q.length - 4][i];
-			} else if (dir == Direction.HORIZONTAL) {
-				p0 = p[i][0];
-				p1 = p[i][1];
-				p2 = p[i][2];
-				p3 = p[i][3];
-				q0 = q[i][q.length - 1];
-				q1 = q[i][q.length - 2];
-				q2 = q[i][q.length - 3];
-				q3 = q[i][q.length - 4];
-			}
-			
-			if (BS == 0 && p0.getY() - q0.getY() < alpha && p1.getY() - p0.getY() < beta && q1.getY() - q0.getY() < beta) {
-				continue;
-			}
-
-			if (BS == 4) {
-				
-			} else {
-				
 			}
 		}
 	}
