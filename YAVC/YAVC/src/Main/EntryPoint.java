@@ -157,7 +157,6 @@ public class EntryPoint {
 
 						BufferedImage result = this.OUTPUT_WRITER.build_Frame(prevImage, referenceImages, differences, movementVectors, 3);
 						
-						
 //						try {
 //							ImageIO.write(outputWriter.build_Frame(prevImage, differences, movementVectors, 2), "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
 //							ImageIO.write(outputWriter.build_Frame(prevImage, differences, null, 1), "png", new File(output.getAbsolutePath() + "/D_" + i + ".png"));
