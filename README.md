@@ -50,7 +50,7 @@ It is relatively simple and the only major issues may occur at the different sli
 
 # 3. How it works #
 I'll keep everything simple and try to explain it as good as possible.  
-First of all all frames are converted from ```RGB / ARGB``` to ```YCbCr / YUV```. Furthermore the colors are then subsampled from `4:4:4` to `4:2:0`
+First of all all frames are converted from ```RGB / ARGB``` to ```YCbCr / YUV```. The conversion takes place, in order to exploit the human eye (Humans detect differences in luma better than chroma). Furthermore the colors are then subsampled from `4:4:4` to `4:2:0`, since you won't ever see all details in a ```4:4:4``` video.
   
 <details>  
 <summary>Reading the input</summary>  
@@ -63,7 +63,9 @@ Followed by that you should select a folder, in which the compressed YAVC file s
 <details>
 <summary>Edges & Textures</summary>
   
-Afterall this compressor works by exploiting redundancy, to avoid compressing smaller-fine details like the textures of a T-Shirt or leaves of a tree, YAVC consists of a texture and edge detection algorithm (Scharr-Operator / Sobel-Operator). The frame gets read in and the ```Sobel-Operator (Scharr-Operator)``` values are calculated. The higher the value the more "complexity" is in that area (by complexity I mean edges and textures or "area of interest").
+Afterall this compressor works by exploiting redundancy, to avoid compressing smaller-fine details like the textures of a T-Shirt or leaves of a tree, YAVC consists of a texture and edge detection algorithm (Scharr-Operator / Sobel-Operator). The frame gets read in and the ```Sobel-Operator (Scharr-Operator)``` values are calculated. The higher the value the more "complexity" is in that area (by complexity I mean edges and textures or "area of interest").  
+
+Finally the compressor has an 2D-array of integers, that match up with the input image. So if you'd pick the edge magnitude at position 54, 67 and compare to the original image, you'll see, that the edge magnitudes match up perfectly.
 </details>
 
 <details>
@@ -79,7 +81,7 @@ To make it more clear, _the human eye is more sensitive to changes in contrast t
 <details>
 <summary>Makroblock partitioning</summary>  
   
-Followed by the texture and edge determination is the Makroblock partitioning. To achieve that the compressor uses the generated values of the ```"Edge & Texture"``` detection and puts ```"Areas of interest"```  at parts, that have a lot of textures and edges. This happens, since textures and edges should be as detailed as possible. The partitioning itself is by dividing a ```Superblock (32x32)``` to smaller Subblocks. Every Subblock has its own threshold, at which it divides again. The available blocksizes are: _32x32_, _16x16_, _8x8_ and _4x4_.  
+Followed by the texture and edge determination is the Makroblock partitioning. To achieve that the compressor uses the generated values of the ```"Edge & Texture"``` detection and puts ```"Areas of interest"```  at parts, that have a lot of textures and edges. This happens, since textures and edges should be as detailed as possible. The partitioning itself is by dividing a ```Superblock (32x32)``` to smaller Subblocks, if a certain details threshold is smaller than the actual detail in the block. Every Subblock has its own threshold, at which it divides again. The available blocksizes are: _32x32_, _16x16_, _8x8_ and _4x4_.  
   
 > The threshold contains the variable ```size```, that stands for the block size. In addition to that the ```detail``` is normalized by the size.
     
@@ -143,9 +145,48 @@ In order for the vectors and DCT-II coefficients to be stored there is a strict 
 | 0x06 | 00000000 00000111 | Newline of Coefficient matrix |
 | 0x07 | 00000000 00001000 | DCT-II matrix end |
   
-Like the table shows the Coefficients all have their place behind each other.  
-Another specialty is the encoding of the coefficients, which occures with Bitshifting for negative values (1 << 14 = negative number).  
-For Vectors every value has its own character except of ```size``` and ```reference drawback``` (shifted into one value).
+There's no special order in which the different data has to appear, the only restriction is, that a datapack (DCT or vectors) have to be after the indicator and can't be mixed up.  
+
+### DCT-II ###
+After the DCT-II inidicator 0x02 the matrices in the differences that remained are placed. For that each coefficient has its own 2 bytes. To prevent a number from going into the reserved area, an offset is added. If the number is negative, the 14<sup>th</sup> is flipped to a 1 (1 << 14). The number is just written with the following syntax:  
+
+```
+If (number is negative) then
+  b = ((1 << 14) | ((number + offset) & 0xFFF))
+Else
+  b = ((number + offset) & 0xFFF)
+```
+   
+After each row in the coefficient matrix a _new line inidicator (0x06)_ is placed. The chroma values are processed in that scheme too. Furthermore the position of that particular matrix is written with 4 bytes behind the actual matrix. At the end of each matrix a _matrix end inidicator (0x07)_ is placed.  
+To keep is short, this is the syntax:  
+
+```
+{Y-Matrix} -> 0x03 -> {Cb-Matrix} -> 0x04 -> {Cr-Matrix} -> 0x05 -> {Position} -> 0x07
+```
+  
+And a matrix for instance:  
+
+```
+0x3a 0xbb 0x20 0xee -> 0x06 -> 0x45 0x0e 0x01 0x2c -> 0x34 -> ect.
+```
+
+### Vectors ###
+The start of the vectors is marked with 0x01. The vectors only contain the following information: Start position, SpanX, SpanY, Reference, Size. Here's a table with the max values of the properties:  
+
+| Start Position X | Start Position Y | Span X | Span Y | Reference | Size |
+|------------------|------------------|--------|--------|-----------|------|
+| 65491 | 65491 | 64 | 64 | 10 | 32 |
+
+By that you can see what types need more memory and which can be summed up. The position X and Y get their own 2 bytes (+ offset). Also the span X and span Y get their own, since they can get into the negative values (calculated as equal as the negative DCT-II coefficients). Only the reference and size are small enough to store in 2 bytes. For that YAVC does the following bitshifting:  
+
+```
+b = ((((reference & 0xFF) << 8) | (reference & 0xFF)) + offset)
+```
+
+Now every vector has exactly 10 bytes storing all the necessarry information.  
+
+### Layout ###
+The normal layout is pretty forward, first all Coefficients of the DCT-II then followed by all movement vectors.
 </details>
 
 # 4. Statistics #
