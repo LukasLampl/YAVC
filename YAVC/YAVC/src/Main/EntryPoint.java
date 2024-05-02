@@ -61,12 +61,14 @@ public class EntryPoint {
 		this.EN_STATUS = Status.RUNNING;
 		
 		try {
-			JFileChooser chooser = new JFileChooser("Choose a destination");
+			JFileChooser chooser = new JFileChooser();
 			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			chooser.setDialogTitle("Select your frames");
 			chooser.showOpenDialog(null);
 			
 			File input = chooser.getSelectedFile();
 			
+			chooser.setDialogTitle("Chooser a destination");
 			chooser.showOpenDialog(null);
 			File output = chooser.getSelectedFile();
 			
@@ -232,7 +234,7 @@ public class EntryPoint {
 				grabber.slice(file);
 				
 				DataPipeEngine dataPipeEngine = new DataPipeEngine(grabber);
-				DataPipeValveEngine dataPipeValveEngine = new DataPipeValveEngine("C:\\Users\\Lukas Lampl\\Documents");
+				DataPipeValveEngine dataPipeValveEngine = new DataPipeValveEngine(file.getParent());
 				
 				ArrayList<BufferedImage> referenceImages = new ArrayList<BufferedImage>(config.MAX_BACK_REF);
 				
