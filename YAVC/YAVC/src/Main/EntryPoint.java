@@ -88,11 +88,7 @@ public class EntryPoint {
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
-					for (int i = 0; i < filesCount; i++, changeDetectDistance++) {
-						if (this.EN_STATUS == Status.STOPPED) {
-							output.delete();
-						}
-						
+					for (int i = 0; i < filesCount && this.EN_STATUS == Status.RUNNING; i++, changeDetectDistance++) {
 						frame.update_encoder_frame_count(i, filesCount, false);
 						String name = set_awaited_file_name(i, ".bmp");
 						File frameFile = new File(input.getAbsolutePath() + "/" + name);
@@ -150,7 +146,7 @@ public class EntryPoint {
 						frame.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
 						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.SCENE.get_color_count());
-						print_statistics(movementVectors, differences, dim);
+//						print_statistics(movementVectors, differences, dim);
 						
 						frame.setVectorizedImage(this.VECTOR_ENGINE.construct_vector_path(dim, movementVectors));
 
