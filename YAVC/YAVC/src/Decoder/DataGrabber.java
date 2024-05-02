@@ -74,7 +74,8 @@ public class DataGrabber {
 		File md_file = new File(this.cache.getAbsolutePath() + "/META.DESC");
 		
 		if (!md_file.exists()) {
-			System.err.println("No meta data found, file corrupted?");
+			System.err.println("No meta data found! > Abort process");
+			System.err.println("File corrupted?");
 			System.exit(0);
 		}
 		
@@ -92,7 +93,7 @@ public class DataGrabber {
 		File sf_file = new File(this.cache.getAbsolutePath() + "/SF.YAVCF");
 		
 		if (!sf_file.exists()) {
-			System.err.println("No start frame found!");
+			System.err.println("No start frame found! > Abort process");
 			System.exit(0);
 		}
 		

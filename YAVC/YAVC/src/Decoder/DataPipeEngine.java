@@ -26,10 +26,7 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.ArrayList;
-
-import javax.imageio.ImageIO;
 
 import Encoder.MakroBlockEngine;
 import Main.config;
@@ -79,12 +76,6 @@ public class DataPipeEngine {
 			render.setRGB(x++, y, Integer.parseInt(s));
 		}
 		
-		try {
-			ImageIO.write(render, "png", new File("C:\\Users\\Lukas Lampl\\Documents\\result\\sf.png"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
 		return render;
 	}
 	
@@ -94,13 +85,13 @@ public class DataPipeEngine {
 	 * Params: int frameNumber => Currently read frame
 	 */
 	public boolean hasNext(int frameNumber) {
-		return frameNumber + 2 >= this.MAX_FRAMES ? false : true;
+		return frameNumber + 3 >= this.MAX_FRAMES ? false : true;
 	}
 	
 	/*
 	 * Purpose: Build the next frame based on the FRAME_START_POSITION
 	 * Return Type: BufferedImage => Built image
-	 * Params: void
+	 * Params: int frameNumber => Number of frame to scrape
 	 */
 	public BufferedImage scrape_next_frame(int frameNumber) {
 		BufferedImage render = new BufferedImage(this.DIMENSION.width, this.DIMENSION.height, BufferedImage.TYPE_INT_ARGB);
@@ -219,7 +210,7 @@ public class DataPipeEngine {
 		ArrayList<Vector> vecs = new ArrayList<Vector>();
 		
 		if (this.CURRENT_FRAME_DATA == null) {
-			System.err.println("No more data! (abort)");
+			System.err.println("No more data! > abort");
 			return null;
 		}
 		
@@ -329,33 +320,11 @@ public class DataPipeEngine {
 		return render;
 	}
 	
-	public BufferedImage build_smoothed_image(ArrayList<YCbCrMakroBlock> smoothedBlocks, BufferedImage prevImg) {
-		BufferedImage render = new BufferedImage(prevImg.getWidth(), prevImg.getHeight(), BufferedImage.TYPE_INT_RGB);
-		Graphics2D g2d = (Graphics2D)render.createGraphics();
-		g2d.drawImage(prevImg, 0, 0, prevImg.getWidth(), prevImg.getHeight(), null, null);
-		g2d.dispose();
-		
-		for (YCbCrMakroBlock b : smoothedBlocks) {
-			YCbCrColor[][] cols = b.getColors();
-			
-			for (int y = 0; y < b.getSize(); y++) {
-				if (b.getPosition().y + y >= render.getHeight() || b.getPosition().y + y < 0) {
-					continue;
-				}
-				
-				for (int x = 0; x < b.getSize(); x++) {
-					if (b.getPosition().x + x >= render.getWidth() || b.getPosition().x + x < 0) {
-						continue;
-					}
-					
-					render.setRGB(b.getPosition().x + x, b.getPosition().y + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB());
-				}
-			}
-		}
-		
-		return render;
-	}
-	
+	/*
+	 * Purpose: Read in the Metadata
+	 * Return Type: void
+	 * Params: String metaFileContent => Content of the Metafile
+	 */
 	private void scrape_meta_data(String metaFileContent) {
 		int start = metaFileContent.indexOf("META[D[");
 		StringBuilder rawDimension = new StringBuilder(16);
