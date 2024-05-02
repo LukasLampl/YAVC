@@ -82,11 +82,20 @@ public class YCbCrMakroBlock {
 		this.size = size;
 	}
 	
+	/*
+	 * Purpose: Splits a bigger MakroBlock to a smaller one
+	 * Return Type: YCbCrMakroBlock[] => Array of smaller blocks
+	 * Params: int size => Split size
+	 */
 	public YCbCrMakroBlock[] splitToSmaller(int size) {
 		if (this.colors == null) {
 			System.err.println("Can't execute split!");
 			System.err.println("Colors is NULL, nothing to split!");
-			System.exit(0);
+			return null;
+		} else if (size <= 0) {
+			System.err.println("Can't execute split!");
+			System.err.println("Split to size 0 not possible!");
+			return null;
 		}
 		
 		YCbCrMakroBlock[] b = new YCbCrMakroBlock[colors.length / size * colors[0].length / size];
@@ -94,25 +103,35 @@ public class YCbCrMakroBlock {
 		
 		for (int y = 0; y < this.colors.length; y += size) {
 			for (int x = 0; x < this.colors[y].length; x += size) {
-				b[index++] = getSubBlock(size, x, y, index);
+				b[index++] = getSubBlock(size, x, y);
 			}
 		}
 		
 		return b;
 	}
 	
-	private YCbCrMakroBlock getSubBlock(int size, int px, int py, int index) {
+	/*
+	 * Purpose: Gets a Subblock from the current block
+	 * Return Type: YCbCrMakroBlock => Smaller block
+	 * Params: int size => Size of the smaller block;
+	 * 			int px => Position X from color array;
+	 * 			int py => Position Y from color array
+	 */
+	private YCbCrMakroBlock getSubBlock(int size, int px, int py) {
 		YCbCrColor[][] cols = new YCbCrColor[size][size];
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
-				if (py + y >= this.colors.length
-					|| px + x >= this.colors[0].length) {
+				int posY = py + y;
+				int posX = px + x;
+				
+				if (posY >= this.colors.length
+					|| posX >= this.colors[0].length) {
 					cols[y][x] = new YCbCrColor(0, 0, 0, 255);
 					continue;
 				}
 				
-				cols[y][x] = this.colors[y + py][x + px];
+				cols[y][x] = this.colors[posY][posX];
 			}
 		}
 		

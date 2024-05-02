@@ -338,6 +338,13 @@ public class OutputWriter {
 	}
 	
 	public PixelRaster reconstruct_DCT_image(ArrayList<DCTObject> objs, PixelRaster img) {
+		if (objs == null || objs.size() == 0) {
+			System.err.println("No Objects to reverse (DCT).");
+			return img;
+		} else if (img == null) {
+			System.err.println("No reference > Work without reference (Encoding error?)");
+		}
+		
 		PixelRaster render = img;
 		
 		for (DCTObject obj : objs) {

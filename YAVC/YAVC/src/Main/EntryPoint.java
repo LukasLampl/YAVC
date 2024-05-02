@@ -56,7 +56,6 @@ public class EntryPoint {
 	private VectorEngine VECTOR_ENGINE = new VectorEngine();
 	private OutputWriter OUTPUT_WRITER = null;
 	
-	
 	public boolean start_encode(Frame frame) {
 		this.EN_STATUS = Status.RUNNING;
 		
@@ -111,13 +110,12 @@ public class EntryPoint {
 							dim = new Dimension(prevImage.getWidth(), prevImage.getHeight());
 							edges = new int[dim.width][dim.height];
 							prevHistogram = new int[dim.width][dim.height];
-							curHistogram = new int[dim.width][dim.height];
-							
 							this.FILTER.get_sobel_values(prevImage, edges, prevHistogram);
 							continue;
 						}
 						
 						currentImage = new PixelRaster(ImageIO.read(frameFile));
+						curHistogram = new int[dim.width][dim.height];
 						
 						this.FILTER.get_sobel_values(currentImage, edges, curHistogram);
 						this.FILTER.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
@@ -149,7 +147,7 @@ public class EntryPoint {
 							continue;
 						}
 						
-						ArrayList<YCbCrMakroBlock> differences = this.MAKROBLOCK_DIFFERENCE_ENGINE.get_MakroBlock_difference(curImgBlocks, prevImage, currentImage);
+						ArrayList<YCbCrMakroBlock> differences = this.MAKROBLOCK_DIFFERENCE_ENGINE.get_MakroBlock_difference(curImgBlocks, prevImage);
 						frame.set_MBDiv_image(this.OUTPUT_WRITER.draw_MB_outlines(dim, curImgBlocks));
 						frame.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						

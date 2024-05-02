@@ -24,18 +24,21 @@ package Encoder;
 import java.awt.Color;
 import java.util.HashSet;
 
-import Utils.PixelRaster;
-
 public class Scene {
 	private HashSet<Color> currentColors = new HashSet<Color>();
 	/*
 	 * Purpose: Detect whether the scene has changed / shot has changed between two images
 	 * Return Type: boolean => true = scene changes; false = scene almost the same
-	 * Params: BufferedImage img1 => Previous image;
-	 * 			BufferedImage img2 => Current image
+	 * Params: int[][] histogram1 => Previous histogram;
+	 * 			int[][] histogram2 => Current histogram
 	 * Note: THIS ALGORITHM MIGHT FAIL OR FALSE TRIGGER SINCE IMAGES CAN'T BE "COMPARED"
 	 */
 	public boolean scene_change_detected(int[][] histogram1, int[][]histogram2) {
+		if (histogram1 == null || histogram2 == null) {
+			System.err.println("Can't evaluate " + histogram1 + " and " + histogram2 + "; Due one is NULL!");
+			return true;
+		}
+		
 		this.currentColors.clear();
 		int difference = compute_difference_between_histograms(histogram1, histogram2);
 		

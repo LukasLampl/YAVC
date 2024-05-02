@@ -21,13 +21,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Encoder;
 
-import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 
+import Main.config;
 import Utils.ColorManager;
 import Utils.DCTObject;
-import Utils.MakroBlock;
 import Utils.PixelRaster;
 import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
@@ -38,9 +37,22 @@ public class MakroBlockEngine {
 	/*
 	 * Purpose: Get a list of MakroBlocks out of an image
 	 * Return Type: ArrayList<MakroBlock> => MakroBlocks of the image
-	 * Params: BufferedImage img => Image from which the MakroBlocks should be ripped off
+	 * Params: PixelRaster img => Image from which the MB's should be get out of,
+	 * 			int[][] edge => Edges and Textures in original frame;
+	 * 			int startSize => Size from which to start dividing down (STD::32x32)
 	 */
 	public ArrayList<YCbCrMakroBlock> get_makroblocks_from_image(PixelRaster img, int[][] edges, int startSize) {
+		if (img == null) {
+			System.err.println("Frame NULL, can't partition NULL!");
+			return null;
+		} else if (edges == null) {
+			System.err.println("Can't find \"details\" > abort MB partition!");
+			return null;
+		} else if (startSize <= 0) {
+			System.err.println("Partitioning in size 0 or lower not possible! > Set size to 32x32.");
+			startSize = config.SUPER_BLOCK;
+		}
+		
 		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
 		
 		int width = img.getWidth();
@@ -56,6 +68,13 @@ public class MakroBlockEngine {
 		return blocks;
 	}
 	
+	/*
+	 * Purpose: Recursively divide down MB's according to their detail level
+	 * Return Type: ArrayList<YCbCrMakroBlock> => List of down splitted blocks
+	 * Params: YCbCrMakroBlock block => Block to divide down;
+	 * 			int edges[][] => Edges in the image;
+	 * 			int size => Size of the current down divided MB
+	 */
 	private ArrayList<YCbCrMakroBlock> divide_down_MakroBlock(YCbCrMakroBlock block, int[][] edges, int size) {
 		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
 		int rawDetail = calculate_detail(edges, block.getPosition().x, block.getPosition().y, size);
@@ -126,44 +145,6 @@ public class MakroBlockEngine {
 	}
 	
 	/*
-	 * Purpose: Converts a list of MakroBlocks to an list of YUVMakroBlocks
-	 * Return Type: ArrayList<YUVMakroBlock> => Converted MakroBlocks list
-	 * Params: ArrayList<MakroBlock> blocks => List of MakroBlocks to be converted
-	 */
-	public ArrayList<YCbCrMakroBlock> convert_MakroBlocks_to_YCbCrMarkoBlocks(ArrayList<MakroBlock> blocks) {
-		ArrayList<YCbCrMakroBlock> convertedBlocks = new ArrayList<YCbCrMakroBlock>(blocks.size());
-		
-		for (MakroBlock b : blocks) {
-			convertedBlocks.add(convert_single_MakroBlock_to_YCbCrMakroBlock(b));
-		}
-
-		return convertedBlocks;
-	}
-	
-	/*
-	 * Purpose: Converts a single MakroBlock to an YUVMakroBlock
-	 * Return Type: YUVMakroBlock => Converted MakroBlock
-	 * Params: MakroBlock block => MakroBlock to be converted
-	 */
-	public YCbCrMakroBlock convert_single_MakroBlock_to_YCbCrMakroBlock(MakroBlock block) {
-		YCbCrColor[][] cols = new YCbCrColor[block.getSize()][block.getSize()];
-		boolean[][] colorIgnores = block.getColorIgnore();
-		int[][] colors = block.getColors();
-		
-		for (int y = 0; y < block.getSize(); y++) {
-			for (int x = 0; x < block.getSize(); x++) {
-				cols[y][x] = this.COLOR_MANAGER.convert_RGB_to_YCbCr(new Color(colors[y][x]));
-				
-				if (colorIgnores[y][x] == true) {
-					cols[y][x].setA(255);
-				}
-			}
-		}
-		
-		return new YCbCrMakroBlock(cols, block.getPosition(), block.getSize());
-	}
-	
-	/*
 	 * Purpose: Subsample a whole YCbCrMakroBlock array
 	 * Return Type: void
 	 * Params: ArrayList<YCbCrMakroBlock> blocks => Blocks to subsample
@@ -210,6 +191,11 @@ public class MakroBlockEngine {
 	 * Params: ArrayList<YCbCrMakroBlock> blocks => Blocks to convert
 	 */
 	public ArrayList<DCTObject> apply_DCT_on_blocks(ArrayList<YCbCrMakroBlock> blocks) {
+		if (blocks == null) {
+			System.err.println("Can't apply DCT-II on NULL! > Skip");
+			return null;
+		}
+		
 		ArrayList<DCTObject> obj = new ArrayList<DCTObject>(blocks.size());
 		
 		for (YCbCrMakroBlock b : blocks) {

@@ -38,11 +38,18 @@ public class MakroDifferenceEngine {
 	/*
 	 * Purpose: Get the differences between the MakroBlocks of two lists
 	 * Return Type: ArrayList<MakroBlocks> => List of differences
-	 * Params: ArrayList<MakroBlock> list1 => List1 to be compared with list2;
-	 * 			ArrayList<MakroBlock> list2 => List2 to be compared with list1;
-	 * 			BufferedImage img => Image in which the current MakroBlocks are located in;
+	 * Params: ArrayList<YCbCrMakroBlock> list => List of MB's to compare with previous frame;
+	 * 			PixelRaster prevImg => Previous image to compare to
 	 */
-	public ArrayList<YCbCrMakroBlock> get_MakroBlock_difference(ArrayList<YCbCrMakroBlock> list, PixelRaster prevImg, PixelRaster curImg) {
+	public ArrayList<YCbCrMakroBlock> get_MakroBlock_difference(ArrayList<YCbCrMakroBlock> list, PixelRaster prevImg) {
+		if (list == null) {
+			System.err.println("No Makroblocks to compare!");
+			return null;
+		} else if (prevImg == null) {
+			System.err.println("No reference for differenciating!");
+			return null;
+		}
+		
 		ArrayList<YCbCrMakroBlock> diffs = new ArrayList<YCbCrMakroBlock>();
 		ArrayList<Future<YCbCrMakroBlock>> fmbs = new ArrayList<Future<YCbCrMakroBlock>>();
 

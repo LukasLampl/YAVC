@@ -27,6 +27,12 @@ import java.awt.image.BufferedImage;
 public class Filter {
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	
+	/*
+	 * Purpose: Apply the gaussian blur filter to an image
+	 * Return Type: BufferedImage => Blurred image
+	 * Params: BufferedImage img => Image to blur;
+	 * 			int radius => Strength of the blurring
+	 */
 	public BufferedImage apply_gaussian_blur(BufferedImage img, int radius) {
 		BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		double sigma = Math.max(((double)radius / 2), 1);
@@ -74,12 +80,30 @@ public class Filter {
 		return render;
 	}
 	
+	/*
+	 * Purpose: Get the Sobel-Scharr values from the image for Edge & Texture detection
+	 * Return Type: void
+	 * Params: PixelRaster img => Image to get the Sobel magnitude from;
+	 * 			int[][] array => Array to store the values inside;
+	 * 			int[][] colorHistogram => Histogram of the colors in the current frame
+	 */
 	private int[][] sobelX = {{3, 0, -3}, {10, 0, -10}, {3, 0, -3}};
 	private int[][] sobelY = {{3, 10, 3}, {0, 0, 0}, {-3, -10, -3}};
 	private BufferedImage sobel_image = null;
 	
 	public void get_sobel_values(PixelRaster img, int[][] array, int[][] colorHistogram) {
-		sobel_image = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+		if (img == null) {
+			System.err.println("No image to process! > Skip");
+			return;
+		} else if (array == null) {
+			System.err.println("Array for sobel values NULL, can't store in NULL!");
+			return;
+		} else if (colorHistogram == null) {
+			System.err.println("Colorhistogram not initialized or NULL!");
+			return;
+		}
+		
+		this.sobel_image = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 		
 		for (int x = 0; x < img.getWidth() - 2; x++) {
 			for (int y = 0; y < img.getHeight() - 2; y++) {
@@ -117,16 +141,21 @@ public class Filter {
 	}
 	
 	public BufferedImage get_sobel_image() {
-		return this.sobel_image;
+		return this.sobel_image == null ? new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB) : this.sobel_image;
 	}
 	
 	/*
 	 * Purpose: Damp the RGB color of ´´´img2´´´ so a lot of redundancy appears
 	 * Return Type: void => img2 is set automatically
-	 * Params: BufferedImage img1 => Reference image;
-	 * 			BufferedImage img2 => Image to damp;
+	 * Params: PixelRaster img1 => Reference image;
+	 * 			PixelRaster img2 => Image to damp;
 	 */
 	public void damp_frame_colors(PixelRaster img1, PixelRaster img2) {
+		if (img1 == null || img2 == null) {
+			System.err.println("No frames to damp colors in!");
+			return;
+		}
+		
 		//Error on dimension mismatching
 		if (img1.getWidth() != img2.getWidth() || img1.getHeight() != img2.getHeight()) {
 			System.err.println("Images are not compareable!");

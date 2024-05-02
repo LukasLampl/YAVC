@@ -43,12 +43,20 @@ public class VectorEngine {
 	/*
 	 * Purpose: Get the MovementVectors between two frames and removes a match from the differences
 	 * Return Type: ArrayList<Vector> => Movement vectors
-	 * Params: BufferedImage prevFrame => Previous frame image;
-	 * 			ArrayList<MakroBlock> diff => Differences between the previous and current frame
-	 * 			(Vectors are applied to the differences);
-	 * 			int maxMADTolerance => Max MAD tolerance
+	 * Params: ArrayList<PixelRaster> refs => Reference frames;
+	 * 			ArrayList<YCbCrMakroBlock> diffs => Differences from the current to the previous frame;
+	 * 			int maxSADTolerance => Max SAD tolerance;
+	 * 			int colors => Amount of colors in an image;
 	 */
 	public ArrayList<Vector> calculate_movement_vectors(ArrayList<PixelRaster> refs, ArrayList<YCbCrMakroBlock> diff, int maxSADTolerance, int colors) {
+		if (refs == null) {
+			System.err.println("Computing movement without reference impossible! > abort");
+			return null;
+		} else if (diff == null) {
+			System.err.println("No Makroblocks to process! > abort");
+			return null;
+		}
+		
 		int threads = Runtime.getRuntime().availableProcessors();
 		final int maxGuesses = refs.size();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -117,7 +125,12 @@ public class VectorEngine {
 		return vectors;
 	}
 	
-	private YCbCrMakroBlock evaluate_best_guesses(YCbCrMakroBlock bestGuesses[]) {
+	/*
+	 * Purpose: Get the best guess out of all candidates
+	 * Return Type: YCbCrMakroBlock => Best matching blocks
+	 * Params: YCbCrMakroBlock[] bestGuess => Blocks to evaluate
+	 */
+	private YCbCrMakroBlock evaluate_best_guesses(YCbCrMakroBlock[] bestGuesses) {
 		YCbCrMakroBlock bestGuess = null;
 		
 		for (int i = 0; i < bestGuesses.length; i++) {
@@ -139,7 +152,7 @@ public class VectorEngine {
 	 * Purpose: Search the most equal MakroBlock from the previous frame using Three-Step-Search
 	 * Return Type: YCbCrMakroBlock => Most similar MakroBlock
 	 * Params: YCbCrMakroBlock blockToBeSearched => MakroBlock to be matched in the previous frame;
-	 * 			BufferedImage prevFrame => Image of the previous frame;
+	 * 			PixelRaster prevFrame => Image of the previous frame;
 	 * 			int maxSADTolerance => Max tolerance of the SAD
 	 */
 	private double SAD_4x4_BLOCK = 0;
@@ -279,9 +292,9 @@ public class VectorEngine {
 	
 	/*
 	 * Purpose: Calculate the equality between an array of colors (in Integer form)
-	 * Return Type: int => Equality; The lower the more equal the colors; -1 = out of tolerance
-	 * Params: int[][] colors1 => List 1 of int colors;
-	 * 			int[][] colors2 => Second list of int colors;
+	 * Return Type: int => Equality; The lower the more equal the colors
+	 * Params: YCbCrColor[][] colors1 => List 1 of colors;
+	 * 			YCbCrColor[][] colors2 => Second list of colors;
 	 */
 	public double get_SAD_of_colors(YCbCrColor[][] colors1, YCbCrColor[][] colors2) {
 		double resY = 0;

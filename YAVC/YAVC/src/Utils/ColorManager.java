@@ -27,7 +27,7 @@ import Encoder.YCbCrComp;
 
 public class ColorManager {
 	/*
-	 * Purpose: Convert a RGB color to an YUV color
+	 * Purpose: Convert a RGB color to an YCbCr color
 	 * Return Type: YUVColor => Converted color
 	 * Params: Color color => Color to be converted
 	 */
@@ -38,10 +38,20 @@ public class ColorManager {
 		return new YCbCrColor(Y, Cb, Cr);
 	}
 	
+	/*
+	 * Purpose: Convert an int RGB color to an YCbCr color
+	 * Return Type: YUVColor => Converted color
+	 * Params: int color => Color to be converted
+	 */
 	public YCbCrColor convert_RGB_to_YCbCr(int color) {
 		return convert_RGB_to_YCbCr(new Color(color));
 	}
 	
+	/*
+	 * Purpose: Convert a YCbCr color to an RGB color
+	 * Return Type: YUVColor => Converted color
+	 * Params: YCbCrColor color => Color to be converted
+	 */
 	public Color convert_YCbCr_to_RGB(YCbCrColor color) {
 		int red = (int)Math.round(color.getY() + 1.402 * (color.getCr() - 128));
 		int green = (int)Math.round(color.getY() - 0.344136 * (color.getCb() - 128) - 0.714136 * (color.getCr() - 128));
@@ -49,11 +59,22 @@ public class ColorManager {
 		return new Color(Math.min(Math.max(red, 0), 255), Math.min(Math.max(green, 0), 255), Math.min(Math.max(blue, 0), 255));
 	}
 	
+	/*
+	 * Purpose: Convert an int RGB color to grayscale
+	 * Return Type: int => Grayscale value
+	 * Params: int argb => ARGB value to convert
+	 */
 	public int convert_RGB_to_GRAYSCALE(int argb) {
 		Color col = new Color(argb);
 		return (int)Math.round(col.getRed() * 0.299 + col.getGreen() * 0.587 + col.getBlue() * 0.114);
 	}
 	
+	/*
+	 * Purpose: Subsamples one componente of an YCbCrColor array
+	 * Return Type: double[][] => subsampled component
+	 * Params: YCbCrColor[][] color => Color array to subsample;
+	 * 			YCbCrComp comp => Component to subsample
+	 */
 	public double[][] get_YCbCr_comp_sub_sample(YCbCrColor[][] color, YCbCrComp comp, int size) {
 		double[][] sub = new double[size / 2][size / 2];
 		
