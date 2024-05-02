@@ -40,10 +40,6 @@ import Utils.YCbCrMakroBlock;
 public class Frame extends JFrame {
 	private static final long serialVersionUID = 1L;
 	
-	private float DAMING_TOLERANCE = 0.75F;
-	private int EDGE_TOLERANCE = 4;
-	private int VEC_SAD_TOLERANCE = 32768;
-	
 	private boolean WRITER_ACTIVE = true;
 	
 	private ColorManager COLOR_MANAGER = new ColorManager();
@@ -96,17 +92,9 @@ public class Frame extends JFrame {
 	public void disposeWriterPermission() {
 		this.WRITER_ACTIVE = false;
 	}
-
-	public float get_damping_tolerance() {
-		return this.DAMING_TOLERANCE;
-	}
-	
-	public int get_edge_tolerance() {
-		return this.EDGE_TOLERANCE;
-	}
 	
 	public int get_vec_sad_tolerance() {
-		return this.VEC_SAD_TOLERANCE;
+		return this.ENCODE_PANEL.get_SAD_tolerance();
 	}
 	
 	public void update_encoder_frame_count(int currentFrame, int totalFrame, boolean percentOnly) {

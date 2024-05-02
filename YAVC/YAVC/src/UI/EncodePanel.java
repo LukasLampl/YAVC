@@ -53,7 +53,6 @@ import Utils.PixelRaster;
 public class EncodePanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
-	private double COLOR_DAMPING_TOLERANCE = 0.75;
 	private int SAD_TOLERANCE = 32768;
 	
 	private JLabel prevFrameLabel = null;
@@ -93,21 +92,6 @@ public class EncodePanel extends JPanel {
 		cons.weightx = 1.0;
 		cons.insets = new Insets(0, 4, 0, 4);
 		
-		Hashtable<Integer, JLabel> colDampTable = new Hashtable<Integer, JLabel>();
-		colDampTable.put(0, create_label("0%"));
-		colDampTable.put(50, create_label("50%"));
-		colDampTable.put(100, create_label("100%"));
-		
-		CustomSlider colDampSlider = new CustomSlider(0, 100, (int)(this.COLOR_DAMPING_TOLERANCE * 100));
-		JPanel colDampPanel = create_std_ctrl_panel("Damping equality", colDampTable, colDampSlider);
-		
-		colDampSlider.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				COLOR_DAMPING_TOLERANCE = (double)colDampSlider.getValue() / 100;
-			}
-		});
-		
 		Hashtable<Integer, JLabel> maxSADTable = new Hashtable<Integer, JLabel>();
 		maxSADTable.put(0, create_label("Precise"));
 		maxSADTable.put(524288, create_label("Less precise"));
@@ -119,12 +103,10 @@ public class EncodePanel extends JPanel {
 		maxSADSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				COLOR_DAMPING_TOLERANCE = maxSADSlider.getValue();
+				SAD_TOLERANCE = maxSADSlider.getValue();
 			}
 		});
-		
-		holder.add(colDampPanel, cons);
-		cons.gridx++;
+
 		holder.add(maxSADPanel, cons);
 		
 		return holder;
@@ -365,6 +347,10 @@ public class EncodePanel extends JPanel {
 	
 	public void set_vec_frame(BufferedImage img) {
 		this.vecFrameLabel.setIcon(resize_image(img));
+	}
+	
+	public int get_SAD_tolerance() {
+		return this.SAD_TOLERANCE;
 	}
 	
 	private ImageIcon resize_image(PixelRaster img) {
