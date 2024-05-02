@@ -346,6 +346,12 @@ public class VectorEngine {
 			case 4:
 				g2d.setColor(Color.GREEN);
 				break;
+			case 5:
+				g2d.setColor(Color.CYAN);
+				break;
+			case 6:
+				g2d.setColor(Color.LIGHT_GRAY);
+				break;
 			default:
 				g2d.setColor(Color.MAGENTA);
 				break;
