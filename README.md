@@ -138,10 +138,10 @@ In order for the vectors and DCT-II coefficients to be stored there is a strict 
 | 0x01 | 00000000 00000001 | Start of movement vectors |
 | 0x02 | 00000000 00000010 | Start of DCT-II Coefficients |
 | 0x03 | 00000000 00000011 | End of Y - Coefficients |
-| 0x04 | 00000000 00000101 | End of Cb - Coefficients |
-| 0x05 | 00000000 00000110 | End of Cr - Coefficients |
-| 0x06 | 00000000 00000111 | Newline of Coefficient matrix |
-| 0x07 | 00000000 00001000 | DCT-II matrix end |
+| 0x04 | 00000000 00000100 | End of Cb - Coefficients |
+| 0x05 | 00000000 00000101 | End of Cr - Coefficients |
+| 0x06 | 00000000 00000110 | Newline of Coefficient matrix |
+| 0x07 | 00000000 00000111 | DCT-II matrix end |
   
 There's no special order in which the different data has to appear, the only restriction is, that a datapack (DCT or vectors) have to be after the indicator and can't be mixed up.  
 
