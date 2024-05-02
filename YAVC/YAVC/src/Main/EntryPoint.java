@@ -87,6 +87,8 @@ public class EntryPoint {
 					
 					Dimension dim = null;
 					int[][] edges = null;
+					int[][] prevHistogram = null;
+					int[][] curHistogram = null;
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
@@ -108,12 +110,16 @@ public class EntryPoint {
 							
 							dim = new Dimension(prevImage.getWidth(), prevImage.getHeight());
 							edges = new int[dim.width][dim.height];
+							prevHistogram = new int[dim.width][dim.height];
+							curHistogram = new int[dim.width][dim.height];
+							
+							this.FILTER.get_sobel_values(prevImage, edges, prevHistogram);
 							continue;
 						}
 						
 						currentImage = new PixelRaster(ImageIO.read(frameFile));
 						
-						this.FILTER.get_sobel_values(currentImage, edges);
+						this.FILTER.get_sobel_values(currentImage, edges, curHistogram);
 						this.FILTER.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
 						frame.set_previews(prevImage, currentImage);
 						frame.set_sobel_image(this.FILTER.get_sobel_image());
@@ -122,7 +128,7 @@ public class EntryPoint {
 						
 						//This only adds an I-Frame if 'i' is a 80th frame and a change
 						//detection lied 10 frames ahead or a change detection has triggered.
-						boolean sceneChanged = this.SCENE.scene_change_detected(prevImage, currentImage);
+						boolean sceneChanged = this.SCENE.scene_change_detected(prevHistogram, curHistogram);
 						
 						if (sceneChanged == true) {
 							System.out.println("Shot change dectedted at frame " + i);
@@ -163,6 +169,7 @@ public class EntryPoint {
 						referenceImages.add(res);
 						release_old_reference_images(referenceImages);
 						prevImage = res;
+						prevHistogram = curHistogram;
 					}
 					
 					frame.disposeWriterPermission();

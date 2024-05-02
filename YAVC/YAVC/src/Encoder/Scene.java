@@ -35,15 +35,12 @@ public class Scene {
 	 * 			BufferedImage img2 => Current image
 	 * Note: THIS ALGORITHM MIGHT FAIL OR FALSE TRIGGER SINCE IMAGES CAN'T BE "COMPARED"
 	 */
-	public boolean scene_change_detected(PixelRaster img1, PixelRaster img2) {
+	public boolean scene_change_detected(int[][] histogram1, int[][]histogram2) {
 		this.currentColors.clear();
-		int[][] histogram1 = get_histogram(img1);
-		int[][] histogram2 = get_histogram(img2);
-		
 		int difference = compute_difference_between_histograms(histogram1, histogram2);
 		
 		//normalize the values
-		double normalDiff = difference / (double)((img1.getWidth() * img1.getHeight() * 2));
+		double normalDiff = difference / (double)((histogram1.length * histogram1[0].length * 2));
 		
 		//If the normalized values are above 1.0 the scene might have changed
 		if (normalDiff > 1.0) {
@@ -70,27 +67,6 @@ public class Scene {
 		}
 		
 		return sum;
-	}
-	
-	/*
-	 * Purpose: Creates a representative histogram of the given image
-	 * Return Type: int[][] => 3 histograms with all 3 colors (r, g, b)
-	 * Params: BufferedImage img => Image from which a histogram should be created
-	 */
-	private int[][] get_histogram(PixelRaster img) {
-		int[][] histogram = new int[3][256]; //3 for 'r', 'g', 'b'
-		
-		for (int y = 0; y < img.getHeight(); y++) {
-			for (int x = 0; x < img.getWidth(); x++) {
-				Color col = new Color(img.getRGB(x, y));
-				histogram[0][col.getRed()]++;
-				histogram[1][col.getGreen()]++;
-				histogram[2][col.getBlue()]++;
-				this.currentColors.add(col);
-			}
-		}
-		
-		return histogram;
 	}
 	
 	public int get_color_count() {
