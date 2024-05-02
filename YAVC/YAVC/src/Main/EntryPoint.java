@@ -86,8 +86,8 @@ public class EntryPoint {
 					
 					Dimension dim = null;
 					int[][] edges = null;
-					int[][] prevHistogram = null;
-					int[][] curHistogram = null;
+					int[][] prevHistogram = new int[3][256];
+					int[][] curHistogram = new int[3][256];
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
@@ -109,13 +109,12 @@ public class EntryPoint {
 							
 							dim = new Dimension(prevImage.getWidth(), prevImage.getHeight());
 							edges = new int[dim.width][dim.height];
-							prevHistogram = new int[dim.width][dim.height];
 							this.FILTER.get_sobel_values(prevImage, edges, prevHistogram);
 							continue;
 						}
 						
 						currentImage = new PixelRaster(ImageIO.read(frameFile));
-						curHistogram = new int[dim.width][dim.height];
+						curHistogram = new int[3][256];
 						
 						this.FILTER.get_sobel_values(currentImage, edges, curHistogram);
 						this.FILTER.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
@@ -126,14 +125,13 @@ public class EntryPoint {
 						
 						//This only adds an I-Frame if 'i' is a 80th frame and a change
 						//detection lied 10 frames ahead or a change detection has triggered.
-						boolean sceneChanged = this.SCENE.scene_change_detected(prevHistogram, curHistogram);
+						boolean sceneChanged = this.SCENE.scene_change_detected(prevHistogram, curHistogram, dim);
 						
 						if (sceneChanged == true) {
 							System.out.println("Shot change dectedted at frame " + i);
 						}
 						
-						if (this.SCENE.get_color_count() <= 750) {
-							System.out.println("Mini-mode active!");
+						if (this.FILTER.get_color_count() <= 750) {
 							curImgBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(currentImage, edges, config.SMALL_BLOCK);
 						}
 						
@@ -143,6 +141,7 @@ public class EntryPoint {
 							referenceImages.clear();
 							referenceImages.add(currentImage);
 							prevImage = currentImage;
+							prevHistogram = curHistogram;
 							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
 							continue;
 						}
@@ -151,7 +150,7 @@ public class EntryPoint {
 						frame.set_MBDiv_image(this.OUTPUT_WRITER.draw_MB_outlines(dim, curImgBlocks));
 						frame.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
-						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.SCENE.get_color_count());
+						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.FILTER.get_color_count());
 //						print_statistics(movementVectors, differences, dim);
 						
 						frame.setVectorizedImage(this.VECTOR_ENGINE.construct_vector_path(dim, movementVectors));

@@ -23,6 +23,7 @@ package Utils;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.util.HashSet;
 
 public class Filter {
 	private ColorManager COLOR_MANAGER = new ColorManager();
@@ -91,6 +92,8 @@ public class Filter {
 	private int[][] sobelY = {{3, 10, 3}, {0, 0, 0}, {-3, -10, -3}};
 	private BufferedImage sobel_image = null;
 	
+	private HashSet<Color> currentColors = new HashSet<Color>();
+	
 	public void get_sobel_values(PixelRaster img, int[][] array, int[][] colorHistogram) {
 		if (img == null) {
 			System.err.println("No image to process! > Skip");
@@ -102,11 +105,18 @@ public class Filter {
 			System.err.println("Colorhistogram not initialized or NULL!");
 			return;
 		}
-		
+
+		this.currentColors.clear();
 		this.sobel_image = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 		
 		for (int x = 0; x < img.getWidth() - 2; x++) {
 			for (int y = 0; y < img.getHeight() - 2; y++) {
+				Color col = new Color(img.getRGB(x, y));
+				colorHistogram[0][col.getRed()]++;
+				colorHistogram[1][col.getGreen()]++;
+				colorHistogram[2][col.getBlue()]++;
+				this.currentColors.add(col);
+				
 				double gX = (sobelX[0][0] * this.COLOR_MANAGER.convert_RGB_to_GRAYSCALE(img.getRGB(x, y)) +
 							sobelX[0][1] * this.COLOR_MANAGER.convert_RGB_to_GRAYSCALE(img.getRGB(x + 1, y)) +
 							sobelX[0][2] * this.COLOR_MANAGER.convert_RGB_to_GRAYSCALE(img.getRGB(x + 2, y))) +
@@ -129,12 +139,6 @@ public class Filter {
 				
 				int val = (int)Math.sqrt(gX * gX + gY * gY);
 				array[x][y] = val;
-				
-				Color col = new Color(img.getRGB(x, y));
-				colorHistogram[0][col.getRed()]++;
-				colorHistogram[1][col.getGreen()]++;
-				colorHistogram[2][col.getBlue()]++;
-				
 				sobel_image.setRGB(x, y, new Color(Math.min(val, 255), Math.min(val, 255), Math.min(val, 255)).getRGB());
 			}
 		}
@@ -142,6 +146,10 @@ public class Filter {
 	
 	public BufferedImage get_sobel_image() {
 		return this.sobel_image == null ? new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB) : this.sobel_image;
+	}
+	
+	public int get_color_count() {
+		return this.currentColors.size();
 	}
 	
 	/*
