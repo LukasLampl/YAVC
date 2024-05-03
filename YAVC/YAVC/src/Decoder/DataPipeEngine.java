@@ -34,7 +34,6 @@ import Utils.ColorManager;
 import Utils.DCTObject;
 import Utils.PixelRaster;
 import Utils.Vector;
-import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
 
 public class DataPipeEngine {
@@ -173,19 +172,18 @@ public class DataPipeEngine {
 		
 		for (YCbCrMakroBlock b : blocks) {
 			Point p = b.getPosition();
-			YCbCrColor[][] cols = b.getColors();
 			
-			for (int y = 0; y < cols.length; y++) {
+			for (int y = 0; y < b.getSize(); y++) {
 				if (p.y + y >= this.DIMENSION.height) {
 					continue;
 				}
 				
-				for (int x = 0; x < cols[y].length; x++) {
+				for (int x = 0; x < b.getSize(); x++) {
 					if (p.x + x >= this.DIMENSION.width) {
 						continue;
 					}
 					
-					render.setRGB(p.x + x, p.y + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB());
+					render.setRGB(p.x + x, p.y + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(b.getReversedSubSampleColor(x, y)).getRGB());
 				}
 			}
 		}
@@ -286,10 +284,9 @@ public class DataPipeEngine {
 			for (Vector vec : vecs) {
 				PixelRaster ref = rasterSet.get(referenceImages.size() - vec.getReferenceDrawback());
 				YCbCrMakroBlock block = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(vec.getStartingPoint(), ref, vec.getReferenceSize());
-				YCbCrColor[][] cols = block.getColors();
 				
-				for (int y = 0; y < block.getColors().length; y++) {
-					for (int x = 0; x < block.getColors()[y].length; x++) {
+				for (int y = 0; y < block.getSize(); y++) {
+					for (int x = 0; x < block.getSize(); x++) {
 						int vecEndX = vec.getStartingPoint().x + vec.getSpanX();
 						int vecEndY = vec.getStartingPoint().y + vec.getSpanY();
 						
@@ -300,11 +297,11 @@ public class DataPipeEngine {
 							continue;
 						}
 						
-						if (cols[y][x].getA() == 255) { //ASCII for YAVC
+						if (block.getAVal(x, y) == 255) { //ASCII for YAVC
 							continue;
 						}
 						
-						vectors.setRGB(vecEndX + x, vecEndY + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB());
+						vectors.setRGB(vecEndX + x, vecEndY + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(block.getReversedSubSampleColor(x, y)).getRGB());
 					}
 				}
 			}
