@@ -43,7 +43,6 @@ import Utils.ColorManager;
 import Utils.DCTObject;
 import Utils.PixelRaster;
 import Utils.Vector;
-import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
 
 public class OutputWriter {
@@ -350,16 +349,16 @@ public class OutputWriter {
 		for (DCTObject obj : objs) {
 			YCbCrMakroBlock block = this.MAKRO_BLOCK_ENGINE.apply_IDCT(obj);
 			
-			for (int y = 0; y < block.getColors().length; y++) {
-				for (int x = 0; x < block.getColors()[y].length; x++) {
+			for (int y = 0; y < block.getSize(); y++) {
+				for (int x = 0; x < block.getSize(); x++) {
 					if (block.getPosition().x + x >= img.getWidth()
 						|| block.getPosition().y + y >= img.getHeight()) {
 						continue;
 					}
 					
-					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(block.getColors()[y][x]).getRGB();
+					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(block.getReversedSubSampleColor(x, y)).getRGB();
 					
-					if (block.getColors()[y][x].getA() == 1.0) {
+					if (block.getAVal(x, y) == 1.0) {
 						continue;
 					}
 					
@@ -398,9 +397,9 @@ public class OutputWriter {
 						continue;
 					}
 					
-					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(block.getColors()[y][x]).getRGB();
+					int col = this.COLOR_MANAGER.convert_YCbCr_to_RGB(block.getReversedSubSampleColor(x, y)).getRGB();
 					
-					if (block.getColors()[y][x].getA() == 1.0) {
+					if (block.getAVal(x, y) == 1.0) {
 						continue;
 					}
 					
@@ -412,7 +411,7 @@ public class OutputWriter {
 		if (vecs != null) {
 			for (Vector vec : vecs) {
 				PixelRaster s = refs.get(refs.size() - vec.getReferenceDrawback());
-				YCbCrColor[][] cols = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(vec.getStartingPoint(), s, vec.getReferenceSize()).getColors();
+				YCbCrMakroBlock cols = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(vec.getStartingPoint(), s, vec.getReferenceSize());
 				int size = vec.getReferenceSize();
 				
 				for (int y = 0; y < size; y++) {
@@ -427,11 +426,11 @@ public class OutputWriter {
 							continue;
 						}
 						
-						if (cols[y][x].getA() == 1.0) {
+						if (cols.getAVal(x, y) == 1.0) {
 							continue;
 						}
 						
-						int color = this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB();
+						int color = this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols.getReversedSubSampleColor(x, y)).getRGB();
 						
 						img_v.setRGB(vecEndX + x, vecEndY + y, color);
 					}

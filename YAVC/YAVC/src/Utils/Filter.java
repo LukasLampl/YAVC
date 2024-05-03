@@ -177,12 +177,12 @@ public class Filter {
 			for (int x = 0; x < width; x++) {
 				int pixel1 = img1.getRGB(x, y);
 				int pixel2 = img2.getRGB(x, y);
-				YCbCrColor prevCol = this.COLOR_MANAGER.convert_RGB_to_YCbCr(pixel1);
-				YCbCrColor curCol = this.COLOR_MANAGER.convert_RGB_to_YCbCr(pixel2);
+				double[] prevCol = this.COLOR_MANAGER.convert_RGB_to_YCbCr(pixel1);
+				double[] curCol = this.COLOR_MANAGER.convert_RGB_to_YCbCr(pixel2);
 				
-				double deltaY = Math.abs(prevCol.getY() - curCol.getY());
-				double deltaCb = Math.abs(prevCol.getCb() - curCol.getCb());
-				double deltaCr = Math.abs(prevCol.getCr() - curCol.getCr());
+				double deltaY = Math.abs(prevCol[0] - curCol[0]);
+				double deltaCb = Math.abs(prevCol[1] - curCol[1]);
+				double deltaCr = Math.abs(prevCol[2] - curCol[2]);
 				
 				if (deltaY > 3.0 || deltaCb > 8.0 || deltaCr > 8.0) {
 					continue;

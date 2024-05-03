@@ -35,7 +35,6 @@ import java.util.concurrent.Future;
 
 import Utils.PixelRaster;
 import Utils.Vector;
-import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
 
 public class VectorEngine {
@@ -193,7 +192,7 @@ public class VectorEngine {
 				
 				set.add(p);
 				YCbCrMakroBlock blockAtPosP = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(p, prevFrame, blockSize);
-				double sad = get_SAD_of_colors(blockAtPosP.getColors(), blockToBeSearched.getColors());
+				double sad = get_SAD_of_colors(blockAtPosP, blockToBeSearched);
 				
 				if (sad < lowestSAD) {
 					lowestSAD = sad;
@@ -227,7 +226,7 @@ public class VectorEngine {
 			}
 			
 			YCbCrMakroBlock blockAtPosP = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(p, prevFrame, blockSize);
-			double sad = get_SAD_of_colors(blockAtPosP.getColors(), blockToBeSearched.getColors());
+			double sad = get_SAD_of_colors(blockAtPosP, blockToBeSearched);
 			
 			if (sad < lowestSAD) {
 				lowestSAD = sad;
@@ -296,25 +295,25 @@ public class VectorEngine {
 	 * Params: YCbCrColor[][] colors1 => List 1 of colors;
 	 * 			YCbCrColor[][] colors2 => Second list of colors;
 	 */
-	public double get_SAD_of_colors(YCbCrColor[][] colors1, YCbCrColor[][] colors2) {
+	public double get_SAD_of_colors(YCbCrMakroBlock block1, YCbCrMakroBlock block2) {
 		double resY = 0;
 		double resCb = 0;
 		double resCr = 0;
 		double resA = 0;
 		
-		for (int y = 0; y < colors1.length; y++) {
-			for (int x = 0; x < colors1[y].length; x++) {
-				YCbCrColor prevCol = colors1[y][x];
-				YCbCrColor curCol = colors2[y][x];
+		for (int y = 0; y < block1.getSize(); y++) {
+			for (int x = 0; x < block1.getSize(); x++) {
+				double[] YCbCrCol1 = block1.getReversedSubSampleColor(x, y);
+				double[] YCbCrCol2 = block2.getReversedSubSampleColor(x, y);
 
-				resY += Math.abs(prevCol.getY() - curCol.getY());
-				resCb += Math.abs(prevCol.getCb() - curCol.getCb());
-				resCr += Math.abs(prevCol.getCr() - curCol.getCr());
-				resA += Math.abs(prevCol.getA() - curCol.getA());
+				resY += Math.abs(YCbCrCol1[0] - YCbCrCol2[0]);
+				resCb += Math.abs(YCbCrCol1[1] - YCbCrCol2[1]);
+				resCr += Math.abs(YCbCrCol1[2] - YCbCrCol2[2]);
+				resA += Math.abs(YCbCrCol1[3] - YCbCrCol2[3]);
 			}
 		}
 		
-		return (Math.pow(resY, 3) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(colors1.length * colors1.length);
+		return (Math.pow(resY, 3) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(block1.getSize() * block1.getSize());
 	}
 	
 	/*

@@ -38,4 +38,5 @@ public class config {
 	public static final char DCT_CR_END_DEF = (char)5;
 	public static final char DCT_MATRIX_NL_DEF = (char)6;
 	public static final char DCT_POS_END_DEF = (char)7;
+	public static final char NEW_FRAME_DEF = (char)8;
 }

@@ -29,7 +29,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import Utils.PixelRaster;
-import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
 
 public class MakroDifferenceEngine {
@@ -63,10 +62,8 @@ public class MakroDifferenceEngine {
 				final Point pos = list.get(i).getPosition();
 				
 				Callable<YCbCrMakroBlock> task = () -> {
-					YCbCrColor[][] colors1 = list.get(index).getColors();
-					
-					YCbCrMakroBlock refBlock = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(pos, prevImg, size);
-					YCbCrColor[][] colors2 = refBlock.getColors();
+					YCbCrMakroBlock colors1 = list.get(index);
+					YCbCrMakroBlock colors2 = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(pos, prevImg, size);
 					
 					double sumY = 0;
 					double sumCb = 0;
@@ -74,12 +71,12 @@ public class MakroDifferenceEngine {
 					
 					for (int y = 0; y < size; y++) {
 						for (int x = 0; x < size; x++) {
-							YCbCrColor col1 = colors1[y][x];
-							YCbCrColor col2 = colors2[y][x];
+							double[] col1 = colors1.getReversedSubSampleColor(x, y);
+							double[] col2 = colors2.getReversedSubSampleColor(x, y);
 							
-							sumY += Math.abs(col1.getY() - col2.getY());
-							sumCb += Math.abs(col1.getCb() - col2.getCb());
-							sumCr += Math.abs(col1.getCr() - col2.getCr());
+							sumY += Math.abs(col1[0] - col2[0]);
+							sumCb += Math.abs(col1[1] - col2[1]);
+							sumCr += Math.abs(col1[2] - col2[2]);
 						}
 					}
 					

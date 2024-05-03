@@ -91,7 +91,7 @@ public class EntryPoint {
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
-					for (int i = 0; i < filesCount && this.EN_STATUS == Status.RUNNING; i++, changeDetectDistance++) {
+					for (int i = 192; i < filesCount && this.EN_STATUS == Status.RUNNING; i++, changeDetectDistance++) {
 						frame.update_encoder_frame_count(i, filesCount, false);
 						String name = set_awaited_file_name(i, ".bmp");
 						File frameFile = new File(input.getAbsolutePath() + "/" + name);
@@ -149,19 +149,19 @@ public class EntryPoint {
 						ArrayList<YCbCrMakroBlock> differences = this.MAKROBLOCK_DIFFERENCE_ENGINE.get_MakroBlock_difference(curImgBlocks, prevImage);
 						frame.set_MBDiv_image(this.OUTPUT_WRITER.draw_MB_outlines(dim, curImgBlocks));
 						frame.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
-						
+
 						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.FILTER.get_color_count());
-//						print_statistics(movementVectors, differences, dim);
+						print_statistics(movementVectors, differences, dim);
 						
 						frame.setVectorizedImage(this.VECTOR_ENGINE.construct_vector_path(dim, movementVectors));
 
 						BufferedImage result = this.OUTPUT_WRITER.build_Frame(prevImage, referenceImages, differences, movementVectors, 3);
 						PixelRaster res = new PixelRaster(result);
-						ArrayList<DCTObject> diffDCT = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(differences);
-						
-						//Just for validation
-						res = this.OUTPUT_WRITER.reconstruct_DCT_image(diffDCT, res);
-						this.OUTPUT_WRITER.add_obj_to_queue(diffDCT, movementVectors);
+//						ArrayList<DCTObject> diffDCT = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(differences);
+//						
+//						//Just for validation
+//						res = this.OUTPUT_WRITER.reconstruct_DCT_image(diffDCT, res);
+//						this.OUTPUT_WRITER.add_obj_to_queue(diffDCT, movementVectors);
 						
 						referenceImages.add(res);
 						release_old_reference_images(referenceImages);

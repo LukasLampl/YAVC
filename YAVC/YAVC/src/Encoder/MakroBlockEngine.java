@@ -28,7 +28,6 @@ import Main.config;
 import Utils.ColorManager;
 import Utils.DCTObject;
 import Utils.PixelRaster;
-import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
 
 public class MakroBlockEngine {
@@ -145,47 +144,6 @@ public class MakroBlockEngine {
 	}
 	
 	/*
-	 * Purpose: Subsample a whole YCbCrMakroBlock array
-	 * Return Type: void
-	 * Params: ArrayList<YCbCrMakroBlock> blocks => Blocks to subsample
-	 */
-	public void sub_sample_YCbCrMakroBlocks(ArrayList<YCbCrMakroBlock> blocks) {
-		for (YCbCrMakroBlock b : blocks) {
-			sub_sample_YCbCrMakroBlock(b);
-		}
-	}
-	
-	/*
-	 * Purpose: Subsample a YCbCrMakroBlock down to 4:2:0
-	 * Return Type: void
-	 * Params: YCbCrMakroBlock block => Block to subsample
-	 */
-	private void sub_sample_YCbCrMakroBlock(YCbCrMakroBlock block) {
-		YCbCrColor[][] cols = block.getColors();
-		
-		for (int y = 0; y < cols.length; y += 2) {
-			if (y < 0 || y + 1 >= cols.length) {
-				continue;
-			}
-			
-			for (int x = 0; x < cols[y].length; x += 2) {
-				if (x < 0 || x >= cols[y].length) {
-					continue;
-				}
-				
-				double CbVal = (cols[x][y].getCb() + cols[x + 1][y].getCb() + cols[x][y + 1].getCb() + cols[x + 1][y + 1].getCb()) / 4;
-				double CrVal = (cols[x][y].getCr() + cols[x + 1][y].getCr() + cols[x][y + 1].getCr() + cols[x + 1][y + 1].getCr()) / 4;
-				cols[x + 1][y].setCb(CbVal);
-				cols[x + 1][y + 1].setCb(CbVal);
-				cols[x][y + 1].setCb(CbVal);
-				cols[x + 1][y].setCr(CrVal);
-				cols[x + 1][y + 1].setCr(CrVal);
-				cols[x][y + 1].setCr(CrVal);
-			}
-		}
-	}
-	
-	/*
 	 * Purpose: Run the DCT-II for a list of YCbCrMakroBlocks
 	 * Return Type: ArrayList<DCTObject> => List with all DCT coefficients
 	 * Params: ArrayList<YCbCrMakroBlock> blocks => Blocks to convert
@@ -219,31 +177,6 @@ public class MakroBlockEngine {
 		return x == 0 ? 1 / Math.sqrt(2) : 1;
 	}
 	
-	/*
-	 * Purpose: Reverse the subsampling of colors from a 2x2 to 4x4 matrix
-	 * Return Type: void
-	 * Params: YCbCrColor[][] target => Target to write results into;
-	 * 			double[][] coCb => Cb coefficients;
-	 * 			double[][] coCr => Cr coefficients
-	 */
-	private void reverse_subsample(YCbCrColor[][] target, double[][] coCb, double[][] coCr) {
-		for (int y = 0; y < target.length; y += 2) {
-			for (int x = 0; x < target.length; x += 2) {
-				double cb = coCb[x / 2][y / 2];
-				double cr = coCr[x / 2][y / 2];
-				
-				target[x][y].setCb(cb);
-				target[x + 1][y].setCb(cb);
-				target[x][y + 1].setCb(cb);
-				target[x + 1][y + 1].setCb(cb);
-				target[x][y].setCr(cr);
-				target[x + 1][y].setCr(cr);
-				target[x][y + 1].setCr(cr);
-				target[x + 1][y + 1].setCr(cr);
-			}
-		}
-	}
-	
 	private ArrayList<DCTObject> apply_DCT(YCbCrMakroBlock block) {
 		ArrayList<DCTObject> objs = new ArrayList<DCTObject>(block.getSize() * block.getSize() / 16);
 		YCbCrMakroBlock[] blocks = block.splitToSmaller(4);
@@ -261,19 +194,12 @@ public class MakroBlockEngine {
 	 * Params: YCbCrMakroBlock block => Block to process
 	 */
 	private DCTObject apply_DCT_to_single_4x4_block(YCbCrMakroBlock block) {
-		double[][] CbCol = this.COLOR_MANAGER.get_YCbCr_comp_sub_sample(block.getColors(), YCbCrComp.CB, block.getSize());
-		double[][] CrCol = this.COLOR_MANAGER.get_YCbCr_comp_sub_sample(block.getColors(), YCbCrComp.CR, block.getSize());
+		double[][] CbCol = block.getChromaCb();
+		double[][] CrCol = block.getCromaCr();
 		
-		double[][] YCol = new double[block.getSize()][block.getSize()];
 		double[][] CbCo = new double[block.getSize() / 2][block.getSize() / 2];
 		double[][] CrCo = new double[block.getSize() / 2][block.getSize() / 2];
-		
-		for (int x = 0; x < block.getSize(); x++) {
-			for (int y = 0; y < block.getSize(); y++) {
-				YCol[x][y] = block.getColors()[x][y].getY();
-			}
-		}
-		
+
 		int m = block.getSize() / 2;
 		
 		for (int v = 0; v < m; v++) {
@@ -295,7 +221,7 @@ public class MakroBlockEngine {
             }
         }
 		
-		return new DCTObject(YCol, CbCo, CrCo, block.getPosition());
+		return new DCTObject(block.getYValues(), CbCo, CrCo, block.getPosition());
 	}
 	
 	/*
@@ -304,16 +230,8 @@ public class MakroBlockEngine {
 	 * Params: DCTObject obj => Object to apply IDCT-II to
 	 */
 	public YCbCrMakroBlock apply_IDCT(DCTObject obj) {
-		YCbCrColor[][] col = new YCbCrColor[obj.getSize()][obj.getSize()];
-		
-		for (int i = 0; i < col.length; i++) {
-			for (int n = 0; n < col[i].length; n++) {
-				col[i][n] = new YCbCrColor(obj.getY()[i][n], 0, 0);
-			}
-		}
-		
-		double[][] coCb = new double[obj.getSize() / 2][obj.getSize() / 2];
-		double[][] coCr = new double[obj.getSize() / 2][obj.getSize() / 2];
+		YCbCrMakroBlock block = new YCbCrMakroBlock(obj.getPosition(), obj.getSize());
+		block.setYValues(obj.getY());
 		int m = obj.getSize() / 2;
 		
 		for (int x = 0; x < m; x++) {
@@ -330,14 +248,11 @@ public class MakroBlockEngine {
 					}
 				}
 				
-				coCb[x][y] = CbSum;
-				coCr[x][y] = CrSum;
+				block.setChroma(x, y, CbSum, CrSum);
 			}
 		}
-		
-		reverse_subsample(col, coCb, coCr);
-		
-		return new YCbCrMakroBlock(col, obj.getPosition(), obj.getSize());
+
+		return block;
 	}
 	
 	/*
@@ -357,7 +272,7 @@ public class MakroBlockEngine {
 		 * | d | d | d | d | d | d | d | d |
 		 * +---+---+---+---+---+---+---+---+
 		 */
-		YCbCrColor[][] colors = new YCbCrColor[size][size];
+		YCbCrMakroBlock block = new YCbCrMakroBlock(position, size);
 		
 		int maxX = img.getWidth();
 		int maxY = img.getHeight();
@@ -365,25 +280,29 @@ public class MakroBlockEngine {
 		
 		for (int y = 0; y < size; y++) {
 			if (y + position.y >= maxY || y + position.y < 0) {
-				colors[y][0] = new YCbCrColor(0, 0, 0, 255);
+				block.setColor(0, y, 0, 0, 0, 255);
 				setRestToNil = true;
 			}
+			
+			int subSPosY = y / 2;
 			
 			for (int x = 0; x < size; x++) {
 				if (!setRestToNil) {
 					if (x + position.x >= maxX || x + position.x < 0) {
-						colors[y][x] = new YCbCrColor(0, 0, 0, 255);
+						block.setColor(x, 0, 0, 0, 0, 255);
 						continue;
 					}
 					
-					colors[y][x] = this.COLOR_MANAGER.convert_RGB_to_YCbCr(img.getRGB(x + position.x, y + position.y));
-			
+					int subSPosX = x / 2;
+					double[] YCbCr = this.COLOR_MANAGER.convert_RGB_to_YCbCr(img.getRGB(x + position.x, y + position.y));
+					block.setYVal(x, y, YCbCr[0]);
+					block.setChroma(subSPosX, subSPosY, YCbCr[1], YCbCr[2]);
 				} else {
-					colors[y][x] = new YCbCrColor(0, 0, 0, 255);
+					block.setColor(x, y, 0, 0, 0, 255);
 				}
 			}
 		}
 		
-		return new YCbCrMakroBlock(colors, position, size);
+		return block;
 	}
 }

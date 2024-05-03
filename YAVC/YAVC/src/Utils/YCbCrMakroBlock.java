@@ -24,7 +24,11 @@ package Utils;
 import java.awt.Point;
 
 public class YCbCrMakroBlock {
-	private YCbCrColor[][] colors = null;
+	private double[][] Y = null;
+	private double[][] Cb = null;
+	private double[][] Cr = null;
+	private double[][] A = null;
+	
 	private Point position = new Point(0, 0);
 	private double SAD = Float.MAX_VALUE;
 	private int referenceDrawback = 0;
@@ -32,16 +36,117 @@ public class YCbCrMakroBlock {
 	private boolean edgeBlock = false;
 	private int complexity = 0;
 
-	public YCbCrMakroBlock(YCbCrColor[][] colors, Point position, int size) {
-		this.colors = colors;
+	public YCbCrMakroBlock(double[][] Y, double[][] Cb, double[][] Cr, double[][] A, Point position, int size) {
+		this.Y = Y;
+		this.Cb = Cb;
+		this.Cr = Cr;
+		this.A = A;
 		this.position = position;
 		this.size = size;
 	}
 	
-	public YCbCrColor[][] getColors() {
-		return colors;
+	public YCbCrMakroBlock(Point position, int size) {
+		this.Y = new double[size][size];
+		this.Cb = new double[size / 2][size / 2];
+		this.Cr = new double[size / 2][size / 2];
+		this.A = new double[size][size];
+		this.position = position;
+		this.size = size;
 	}
 	
+	public double[][] getLuma() {
+		return this.Y;
+	}
+	
+	public double[][] getChromaCb() {
+		return this.Cb;
+	}
+	
+	public double[][] getCromaCr() {
+		return this.Cr;
+	}
+	
+	public void setYAndA(int x, int y, double Y, double A) {
+		if (this.Y == null || this.A == null) {
+			System.err.println("No YCbCr component!");
+			return;
+		}
+		
+		if (A > 0) {
+			this.A[x][y] = A;
+			return;
+		}
+		
+		this.Y[x][y] = Y;
+		this.A[x][y] = A;
+	}
+	
+	public void setColor(int x, int y, double Y, double Cb, double Cr, double A) {
+		if (this.Y == null || this.Cb == null || this.Cr == null || this.A == null) {
+			System.err.println("No YCbCr component!");
+			return;
+		}
+		
+		if (A > 0) {
+			this.A[x][y] = A;
+			return;
+		}
+		
+		this.Y[x][y] = Y;
+		this.Cb[x][y] = Cb;
+		this.Cr[x][y] = Cr;
+		this.A[x][y] = A;
+	}
+	
+	public double[] getReversedSubSampleColor(int x, int y) {
+		if (x < 0 || x >= this.size) {
+			System.err.println("Can't reverse subsampling, x out of bounds!");
+			return null;
+		} else if (y < 0 || y >= this.size) {
+			System.err.println("Can't reverse subsampling, y out of bounds!");
+			return null;
+		}
+		
+		int subSPosX = Math.round(x / 2);
+		int subSPosY = Math.round(y / 2);
+		return new double[] {this.Y[x][y], this.Cb[subSPosX][subSPosY], this.Cr[subSPosX][subSPosY], this.A[x][y]};
+	}
+	
+	public void setYVal(int x, int y, double Y) {
+		if (this.Y == null) {
+			System.err.println("No YCbCr component!");
+			return;
+		}
+		
+		this.Y[x][y] = Y;
+	}
+	
+	public double getYVal(int x, int y) {
+		return this.Y[x][y];
+	}
+	
+	public double[][] getYValues() {
+		return this.Y;
+	}
+	
+	public void setYValues(double[][] YValues) {
+		this.Y = YValues;
+	}
+	
+	public void setChroma(int x, int y, double Cb, double Cr) {
+		if (this.Cb == null || this.Cr == null) {
+			System.err.println("No YCbCr component!");
+			return;
+		}
+		
+		this.Cb[x][y] = Cb;
+		this.Cr[x][y] = Cr;
+	}
+	
+	public double getAVal(int x, int y) {
+		return this.A[x][y];
+	}
+
 	public Point getPosition() {
 		return position;
 	}
@@ -88,7 +193,7 @@ public class YCbCrMakroBlock {
 	 * Params: int size => Split size
 	 */
 	public YCbCrMakroBlock[] splitToSmaller(int size) {
-		if (this.colors == null) {
+		if (this.Y == null || this.Cb == null || this.Cr == null) {
 			System.err.println("Can't execute split!");
 			System.err.println("Colors is NULL, nothing to split!");
 			return null;
@@ -98,11 +203,11 @@ public class YCbCrMakroBlock {
 			return null;
 		}
 		
-		YCbCrMakroBlock[] b = new YCbCrMakroBlock[colors.length / size * colors[0].length / size];
+		YCbCrMakroBlock[] b = new YCbCrMakroBlock[this.size / size * this.size / size];
 		int index = 0;
 		
-		for (int y = 0; y < this.colors.length; y += size) {
-			for (int x = 0; x < this.colors[y].length; x += size) {
+		for (int y = 0; y < this.size; y += size) {
+			for (int x = 0; x < this.size; x += size) {
 				b[index++] = getSubBlock(size, x, y);
 			}
 		}
@@ -118,24 +223,26 @@ public class YCbCrMakroBlock {
 	 * 			int py => Position Y from color array
 	 */
 	private YCbCrMakroBlock getSubBlock(int size, int px, int py) {
-		YCbCrColor[][] cols = new YCbCrColor[size][size];
+		YCbCrMakroBlock block = new YCbCrMakroBlock(new Point(this.position.x + px, this.position.y + py), size);
 		
 		for (int y = 0; y < size; y++) {
+			int posY = py + y;
+			
 			for (int x = 0; x < size; x++) {
-				int posY = py + y;
 				int posX = px + x;
 				
-				if (posY >= this.colors.length
-					|| posX >= this.colors[0].length) {
-					cols[y][x] = new YCbCrColor(0, 0, 0, 255);
+				if (posY >= this.size
+					|| posX >= this.size) {
+					block.setColor(y, x, 0, 0, 0, 255);
 					continue;
 				}
 				
-				cols[y][x] = this.colors[posY][posX];
+				block.setYAndA(x, y, this.Y[posX][posY], this.A[posX][posY]);
+				block.setChroma(x / 2, y / 2, this.Cb[posX / 2][posY / 2], this.Cr[posX / 2][posY / 2]);
 			}
 		}
 		
-		return new YCbCrMakroBlock(cols, new Point(this.position.x + px, this.position.y + py), size);
+		return block;
 	}
 
 	public int getComplexity() {

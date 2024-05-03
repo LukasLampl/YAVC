@@ -34,7 +34,6 @@ import javax.swing.JPanel;
 import Main.EntryPoint;
 import Utils.ColorManager;
 import Utils.PixelRaster;
-import Utils.YCbCrColor;
 import Utils.YCbCrMakroBlock;
 
 public class Frame extends JFrame {
@@ -140,7 +139,6 @@ public class Frame extends JFrame {
 		
 		for (YCbCrMakroBlock block : differences) {
 			int size = block.getSize();
-			YCbCrColor[][] cols = block.getColors();
 			
 			for (int y = 0; y < size; y++) {
 				for (int x = 0; x < size; x++) {
@@ -149,11 +147,18 @@ public class Frame extends JFrame {
 						continue;
 					}
 					
-					if (cols[y][x].getA() == 255) { //ASCII for YAVC
+					if (block.getAVal(x, y) == 255) { //ASCII for YAVC
 						continue;
 					}
 					
-					render.setRGB(block.getPosition().x + x, block.getPosition().y + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(cols[y][x]).getRGB());
+					double[] YCbCrCol = block.getReversedSubSampleColor(x, y);
+					
+					if (YCbCrCol == null) {
+						System.err.println("Something went wrong at reverse sub sampling! > Set color to WHITE.");
+						YCbCrCol = new double[] {255, 0, 0};
+					}
+					
+					render.setRGB(block.getPosition().x + x, block.getPosition().y + y, this.COLOR_MANAGER.convert_YCbCr_to_RGB(YCbCrCol[0], YCbCrCol[1], YCbCrCol[2]).getRGB());
 				}
 			}
 		}
