@@ -63,7 +63,7 @@ public class MakroDifferenceEngine {
 				
 				Callable<YCbCrMakroBlock> task = () -> {
 					YCbCrMakroBlock colors1 = list.get(index);
-					YCbCrMakroBlock colors2 = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(pos, prevImg, size);
+					YCbCrMakroBlock colors2 = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(pos, prevImg, size, null);
 					
 					double sumY = 0;
 					double sumCb = 0;

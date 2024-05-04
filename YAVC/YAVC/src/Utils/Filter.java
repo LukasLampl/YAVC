@@ -23,6 +23,7 @@ package Utils;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.HashSet;
 
 public class Filter {
@@ -80,7 +81,7 @@ public class Filter {
 		
 		return render;
 	}
-	
+
 	/*
 	 * Purpose: Get the Sobel-Scharr values from the image for Edge & Texture detection
 	 * Return Type: void
@@ -91,7 +92,6 @@ public class Filter {
 	private int[][] sobelX = {{3, 0, -3}, {10, 0, -10}, {3, 0, -3}};
 	private int[][] sobelY = {{3, 10, 3}, {0, 0, 0}, {-3, -10, -3}};
 	private BufferedImage sobel_image = null;
-	
 	private HashSet<Color> currentColors = new HashSet<Color>();
 	
 	public void get_sobel_values(PixelRaster img, int[][] array, int[][] colorHistogram) {
@@ -106,15 +106,24 @@ public class Filter {
 			return;
 		}
 
+		boolean firstColInHistogram = true;
 		this.currentColors.clear();
 		this.sobel_image = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 		
 		for (int x = 0; x < img.getWidth() - 2; x++) {
 			for (int y = 0; y < img.getHeight() - 2; y++) {
 				Color col = new Color(img.getRGB(x, y));
-				colorHistogram[0][col.getRed()]++;
-				colorHistogram[1][col.getGreen()]++;
-				colorHistogram[2][col.getBlue()]++;
+				
+				if (firstColInHistogram) {
+					colorHistogram[0][col.getRed()] = 1;
+					colorHistogram[1][col.getGreen()] = 1;
+					colorHistogram[2][col.getBlue()] = 1;
+					firstColInHistogram = false;
+				} else {
+					colorHistogram[0][col.getRed()]++;
+					colorHistogram[1][col.getGreen()]++;
+					colorHistogram[2][col.getBlue()]++;
+				}
 				this.currentColors.add(col);
 				
 				double gX = (sobelX[0][0] * this.COLOR_MANAGER.convert_RGB_to_GRAYSCALE(img.getRGB(x, y)) +
@@ -137,9 +146,26 @@ public class Filter {
 						sobelY[2][1] * this.COLOR_MANAGER.convert_RGB_to_GRAYSCALE(img.getRGB(x + 1, y + 2)) +
 						sobelY[2][2] * this.COLOR_MANAGER.convert_RGB_to_GRAYSCALE(img.getRGB(x + 2, y + 2)));
 				
-				int val = (int)Math.sqrt(gX * gX + gY * gY);
+				int val = Math.min((int)Math.sqrt(gX * gX + gY * gY), 255);
 				array[x][y] = val;
-				sobel_image.setRGB(x, y, new Color(Math.min(val, 255), Math.min(val, 255), Math.min(val, 255)).getRGB());
+			}
+		}
+		
+		supress_noise(array, 0.7, 255);
+	}
+
+	private void supress_noise(int[][] sobel, double tolerance, int max) {
+		int tol = (int)(max - max * tolerance);
+		
+		for (int x = 0; x < sobel.length; x++) {
+			for (int y = 0; y < sobel[x].length; y++) {
+				if (sobel[x][y] < tol) {
+					sobel[x][y] = 0;
+				} else {
+					sobel[x][y] = 255;
+				}
+				
+				sobel_image.setRGB(x, y, new Color(sobel[x][y], sobel[x][y], sobel[x][y]).getRGB());
 			}
 		}
 	}
@@ -191,5 +217,9 @@ public class Filter {
 				img2.setRGB(x, y, pixel1);
 			}
 		}
+	}
+	
+	public void apply_deblocking(PixelRaster result, ArrayList<YCbCrMakroBlock> blocks) {
+		
 	}
 }

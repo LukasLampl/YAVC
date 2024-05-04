@@ -283,7 +283,7 @@ public class DataPipeEngine {
 			
 			for (Vector vec : vecs) {
 				PixelRaster ref = rasterSet.get(referenceImages.size() - vec.getReferenceDrawback());
-				YCbCrMakroBlock block = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(vec.getStartingPoint(), ref, vec.getReferenceSize());
+				YCbCrMakroBlock block = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(vec.getStartingPoint(), ref, vec.getReferenceSize(), null);
 				
 				for (int y = 0; y < block.getSize(); y++) {
 					for (int x = 0; x < block.getSize(); x++) {

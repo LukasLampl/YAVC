@@ -161,6 +161,7 @@ public class VectorEngine {
 	
 	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, PixelRaster prevFrame, int maxSADTolerance) {
 		YCbCrMakroBlock mostEqualBlock = null;
+		YCbCrMakroBlock cachedBlock = null;
 		HashSet<Point> set = new HashSet<Point>();
 		int searchWindow = 64; //NEVER ABOVE 64 (BIGGER THAN 1 Byte for range and high computational complexity)
 		int blockSize = blockToBeSearched.getSize();
@@ -191,12 +192,12 @@ public class VectorEngine {
 				}
 				
 				set.add(p);
-				YCbCrMakroBlock blockAtPosP = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(p, prevFrame, blockSize);
-				double sad = get_SAD_of_colors(blockAtPosP, blockToBeSearched);
+				cachedBlock = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(p, prevFrame, blockSize, cachedBlock);
+				double sad = get_SAD_of_colors(cachedBlock, blockToBeSearched);
 				
 				if (sad < lowestSAD) {
 					lowestSAD = sad;
-					mostEqualBlock = blockAtPosP;
+					mostEqualBlock = cachedBlock;
 					mostEqualBlock.setSAD(sad);
 					initPos = p;
 				}
@@ -225,12 +226,12 @@ public class VectorEngine {
 				continue;
 			}
 			
-			YCbCrMakroBlock blockAtPosP = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(p, prevFrame, blockSize);
-			double sad = get_SAD_of_colors(blockAtPosP, blockToBeSearched);
+			cachedBlock = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(p, prevFrame, blockSize, cachedBlock);
+			double sad = get_SAD_of_colors(cachedBlock, blockToBeSearched);
 			
 			if (sad < lowestSAD) {
 				lowestSAD = sad;
-				mostEqualBlock = blockAtPosP;
+				mostEqualBlock = cachedBlock;
 				mostEqualBlock.setSAD(sad);
 			}
 		}
@@ -249,12 +250,8 @@ public class VectorEngine {
 			mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_8x8_BLOCK) ? null : mostEqualBlock;
 			break;
 		case 4:
-			if (blockToBeSearched.getComplexity() >= 2048) {
-				mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_4x4_BLOCK * 64) ? null : mostEqualBlock;
-			} else {
-				//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
-				mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_4x4_BLOCK) ? null : mostEqualBlock;
-			}
+			//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
+			mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_4x4_BLOCK) ? null : mostEqualBlock;
 			break;
 		default:
 			return null;
@@ -264,11 +261,11 @@ public class VectorEngine {
 	}
 	
 	private void init_sad_values(int colors) {
-		double colorFac = (16581375 - colors) * 5e-9;
-		this.SAD_4x4_BLOCK = 4 * colorFac;
-		this.SAD_8x8_BLOCK = 24 * colorFac;
-		this.SAD_16x16_BLOCK = 48 * colorFac;
-		this.SAD_32x32_BLOCK = 78 * colorFac;
+		double colorFac = (16581375 - colors) * 35e-9;
+		this.SAD_4x4_BLOCK = 4 * colorFac / 10;
+		this.SAD_8x8_BLOCK = 48 * colorFac;
+		this.SAD_16x16_BLOCK = 512 * colorFac;
+		this.SAD_32x32_BLOCK = 2048 * colorFac;
 	}
 	
 	/*
@@ -296,13 +293,14 @@ public class VectorEngine {
 	 * 			YCbCrColor[][] colors2 => Second list of colors;
 	 */
 	public double get_SAD_of_colors(YCbCrMakroBlock block1, YCbCrMakroBlock block2) {
+		int size = block1.getSize();
 		double resY = 0;
 		double resCb = 0;
 		double resCr = 0;
 		double resA = 0;
 		
-		for (int y = 0; y < block1.getSize(); y++) {
-			for (int x = 0; x < block1.getSize(); x++) {
+		for (int y = 0; y < size; y++) {
+			for (int x = 0; x < size; x++) {
 				double[] YCbCrCol1 = block1.getReversedSubSampleColor(x, y);
 				double[] YCbCrCol2 = block2.getReversedSubSampleColor(x, y);
 
@@ -313,7 +311,12 @@ public class VectorEngine {
 			}
 		}
 		
-		return (Math.pow(resY, 3) + Math.pow(resCb, 2) + Math.pow(resCr, 2) + Math.pow(resA, resA)) / (double)(block1.getSize() * block1.getSize());
+		resY = resY * resY * resY;
+		resCb = resCb * resCb;
+		resCr = resCr * resCr;
+		resA = Math.pow(resA, resA);
+		
+		return (resY + resCb + resCr + resA) / (double)(size * size);
 	}
 	
 	/*

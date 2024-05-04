@@ -91,7 +91,7 @@ public class EntryPoint {
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
-					for (int i = 192; i < filesCount && this.EN_STATUS == Status.RUNNING; i++, changeDetectDistance++) {
+					for (int i = 0; i < filesCount && this.EN_STATUS == Status.RUNNING; i++, changeDetectDistance++) {
 						frame.update_encoder_frame_count(i, filesCount, false);
 						String name = set_awaited_file_name(i, ".bmp");
 						File frameFile = new File(input.getAbsolutePath() + "/" + name);
@@ -114,7 +114,6 @@ public class EntryPoint {
 						}
 						
 						currentImage = new PixelRaster(ImageIO.read(frameFile));
-						curHistogram = new int[3][256];
 						
 						this.FILTER.get_sobel_values(currentImage, edges, curHistogram);
 						this.FILTER.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
@@ -157,11 +156,12 @@ public class EntryPoint {
 
 						BufferedImage result = this.OUTPUT_WRITER.build_Frame(prevImage, referenceImages, differences, movementVectors, 3);
 						PixelRaster res = new PixelRaster(result);
-//						ArrayList<DCTObject> diffDCT = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(differences);
-//						
-//						//Just for validation
-//						res = this.OUTPUT_WRITER.reconstruct_DCT_image(diffDCT, res);
-//						this.OUTPUT_WRITER.add_obj_to_queue(diffDCT, movementVectors);
+						ArrayList<DCTObject> diffDCT = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(differences);
+						
+						//Just for validation
+						res = this.OUTPUT_WRITER.reconstruct_DCT_image(diffDCT, res);
+						this.OUTPUT_WRITER.add_obj_to_queue(diffDCT, movementVectors);
+						this.FILTER.apply_deblocking(res, curImgBlocks);
 						
 						referenceImages.add(res);
 						release_old_reference_images(referenceImages);

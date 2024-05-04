@@ -59,7 +59,7 @@ public class MakroBlockEngine {
 		
 		for (int y = 0; y < height; y += startSize) {
 			for (int x = 0; x < width; x += startSize) {
-				YCbCrMakroBlock originBlock = get_single_makro_block(new Point(x, y), img, startSize);
+				YCbCrMakroBlock originBlock = get_single_makro_block(new Point(x, y), img, startSize, null);
 				blocks.addAll(divide_down_MakroBlock(originBlock, edges, startSize));
 			}
 		}
@@ -261,7 +261,7 @@ public class MakroBlockEngine {
 	 * Params: Point position => Position from where to grab the MakroBlock;
 	 * 			PixelRaster img => Image from which the MakroBlock should be grabbed
 	 */
-	public YCbCrMakroBlock get_single_makro_block(Point position, PixelRaster img, int size) {
+	public YCbCrMakroBlock get_single_makro_block(Point position, PixelRaster img, int size, YCbCrMakroBlock blockToFill) {
 		/*
 		 * Imagine the colors as a table:
 		 * +---+---+---+---+---+---+---+---+
@@ -272,7 +272,15 @@ public class MakroBlockEngine {
 		 * | d | d | d | d | d | d | d | d |
 		 * +---+---+---+---+---+---+---+---+
 		 */
-		YCbCrMakroBlock block = new YCbCrMakroBlock(position, size);
+		YCbCrMakroBlock block = null;
+		
+		if (blockToFill == null) {
+			block = new YCbCrMakroBlock(position, size);
+		} else {
+			block = blockToFill;
+			block.setPosition(position);
+			block.setSize(size);
+		}
 		
 		int maxX = img.getWidth();
 		int maxY = img.getHeight();
