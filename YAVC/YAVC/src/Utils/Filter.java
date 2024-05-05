@@ -151,7 +151,7 @@ public class Filter {
 			}
 		}
 		
-		supress_noise(array, 0.7, 255);
+		supress_noise(array, 0.65, 255);
 	}
 
 	private void supress_noise(int[][] sobel, double tolerance, int max) {
@@ -161,6 +161,8 @@ public class Filter {
 			for (int y = 0; y < sobel[x].length; y++) {
 				if (sobel[x][y] < tol) {
 					sobel[x][y] = 0;
+				} else if (sobel[x][y] > tol && sobel[x][y] < (tol + max * tolerance / 2)) {
+					sobel[x][y] = 128;
 				} else {
 					sobel[x][y] = 255;
 				}
@@ -215,6 +217,64 @@ public class Filter {
 				}
 				
 				img2.setRGB(x, y, pixel1);
+			}
+		}
+	}
+	
+	public void flatten_down_color(ArrayList<YCbCrMakroBlock> blocks) {
+		for (YCbCrMakroBlock b : blocks) {
+			//Flatten Y-Component
+			for (int x = 0; x < b.getSize(); x++) {
+				for (int y = 0; y < b.getSize(); y++) {
+					double Y0 = b.getYVal(x, y), Y1, Y2;
+					
+					if (x + 1 < b.getSize()) {
+						Y1 = b.getYVal(x + 1, y);
+					} else {
+						Y1 = b.getYVal(x - 1, y);
+					}
+					
+					if (x + 2 < b.getSize()) {
+						Y2 = b.getYVal(x + 2, y);
+					} else {
+						Y2 = b.getYVal(x - 2, y);
+					}
+					
+					if (Math.abs(Y0 - Y1) > 2.5) continue;
+					if (Math.abs(Y1 - Y2) < 3.5 && Math.abs(Y1 - Y2) > 2.0) continue;
+					
+					b.setYVal(x, y, (Y0 + Y1) / 2);
+				}
+			}
+			
+			//Flatten Cb & Cr Component
+			for (int x = 0; x < b.getSize() / 2; x++) {
+				for (int y = 0; y < b.getSize() / 2; y++) {
+					double Cb0 = b.getChromaCb(x, y), Cb1, Cb2;
+					double Cr0 = b.getChromaCb(x, y), Cr1, Cr2;
+					
+					if (x + 1 < b.getSize() / 2) {
+						Cb1 = b.getChromaCb(x + 1, y);
+						Cr1 = b.getChromaCr(x + 1, y);
+					} else if (x - 1 >= 0) {
+						Cb1 = b.getChromaCb(x - 1, y);
+						Cr1 = b.getChromaCr(x - 1, y);
+					} else continue;
+					
+					if (x + 2 < b.getSize() / 2) {
+						Cb2 = b.getChromaCb(x + 2, y);
+						Cr2 = b.getChromaCr(x + 2, y);
+					} else if (x - 2 >= 0) {
+						Cb2 = b.getChromaCb(x - 2, y);
+						Cr2 = b.getChromaCr(x - 1, y);
+					} else continue;
+					
+					if (Math.abs(Cb0 - Cb1) > 4.0 || Math.abs(Cr0 - Cr1) > 4.0) continue;
+					if ((Math.abs(Cb1 - Cb2) < 4.5 && Math.abs(Cb1 - Cb2) > 3.0)
+						|| (Math.abs(Cr1 - Cr2) < 4.5 && Math.abs(Cr1 - Cr2) > 3.0)) continue;
+					
+					b.setChroma(x, y, (Cb0 + Cb1) / 2, (Cr0 + Cr1) / 2);
+				}
 			}
 		}
 	}

@@ -42,9 +42,7 @@ public class Scene {
 		double normalDiff = difference / (double)((dim.width * dim.height * 2));
 		
 		//If the normalized values are above 1.0 the scene might have changed
-		if (normalDiff > 1.0) {
-			return true;
-		}
+		if (normalDiff > 1.0) return true;
 		
 		return false;
 	}

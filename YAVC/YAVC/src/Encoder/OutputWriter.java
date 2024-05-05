@@ -86,9 +86,7 @@ public class OutputWriter {
 	 * 			int frameNum => Number of frames in the video
 	 */
 	public void bake_meta_data(PixelRaster originalImage, int frameNum) {
-		if (originalImage == null) {
-			return;
-		}
+		if (originalImage == null) return;
 		
 		try {
 			String meta = "META["

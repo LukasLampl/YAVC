@@ -84,9 +84,7 @@ public class MakroDifferenceEngine {
 					double normalCb = sumCb / (size * size);
 					double normalCr = sumCr / (size * size);
 					
-					if (normalY > 1.55 || normalCb > 3.6 || normalCr > 3.6) {
-						return list.get(index);
-					}
+					if (normalY > 1.55 || normalCb > 3.6 || normalCr > 3.6) return list.get(index);
 					
 					return null;
 				};
@@ -98,9 +96,7 @@ public class MakroDifferenceEngine {
 				try {
 					YCbCrMakroBlock mb = f.get();
 					
-					if (mb != null) {
-						diffs.add(mb);
-					}
+					if (mb != null) diffs.add(mb);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

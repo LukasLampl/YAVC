@@ -44,9 +44,6 @@ public class MakroBlockEngine {
 		if (img == null) {
 			System.err.println("Frame NULL, can't partition NULL!");
 			return null;
-		} else if (edges == null) {
-			System.err.println("Can't find \"details\" > abort MB partition!");
-			return null;
 		} else if (startSize <= 0) {
 			System.err.println("Partitioning in size 0 or lower not possible! > Set size to 32x32.");
 			startSize = config.SUPER_BLOCK;
@@ -59,8 +56,12 @@ public class MakroBlockEngine {
 		
 		for (int y = 0; y < height; y += startSize) {
 			for (int x = 0; x < width; x += startSize) {
-				YCbCrMakroBlock originBlock = get_single_makro_block(new Point(x, y), img, startSize, null);
-				blocks.addAll(divide_down_MakroBlock(originBlock, edges, startSize));
+				if (edges != null) {
+					YCbCrMakroBlock originBlock = get_single_makro_block(new Point(x, y), img, startSize, null);
+					blocks.addAll(divide_down_MakroBlock(originBlock, edges, startSize));
+				} else {
+					blocks.add(get_single_makro_block(new Point(x, y), img, startSize, null));
+				}
 			}
 		}
 		
@@ -88,17 +89,19 @@ public class MakroBlockEngine {
 		boolean passed = false;
 		
 		switch (size) {
+		case 64:
+			passed = detail > size * 0.37 ? true : false; //Super Small pre-filtering (Find nearly all edges, that are crucial)
+			break;
 		case 32:
-			passed = detail > size * 0.46 ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
+			passed = detail > size * 0.52 ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
 			break;
 		case 16:
-			passed = detail > size * 1.29 ? true : false; //Moderate pre-filtering (Find edges of interest)
+			passed = detail > size * 1.35 ? true : false; //Moderate pre-filtering (Find edges of interest)
 			break;
 		case 8:
-			passed = detail > size * 2.74 ? true : false; //High pre-filtering (Get edges with really high interest)
+			passed = detail > size * 2.8 ? true : false; //High pre-filtering (Get edges with really high interest)
 			break;
-		default:
-			break;
+		default: break;
 		}
 		
 		if (passed == true) {
@@ -127,14 +130,10 @@ public class MakroBlockEngine {
 		int sum = 0;
 		
 		for (int j = 0; j < size; j++) {
-			if (j + x + 2 >= edges.length) {
-				continue;
-			}
+			if (j + x + 2 >= edges.length) continue;
 			
 			for (int k = 0; k < size; k++) {
-				if (k + y + 2 >= edges[j].length) {
-					continue;
-				}
+				if (k + y + 2 >= edges[j].length) continue;
 				
 				sum += edges[j + x][k + y];
 			}
@@ -157,9 +156,7 @@ public class MakroBlockEngine {
 		ArrayList<DCTObject> obj = new ArrayList<DCTObject>(blocks.size());
 		
 		for (YCbCrMakroBlock b : blocks) {
-			if (b.getSize() == 0) {
-				continue;
-			}
+			if (b.getSize() == 0) continue;
 			
 			ArrayList<DCTObject> dct = apply_DCT(b);
 			obj.addAll(dct);

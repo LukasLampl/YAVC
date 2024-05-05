@@ -133,9 +133,7 @@ public class VectorEngine {
 		YCbCrMakroBlock bestGuess = null;
 		
 		for (int i = 0; i < bestGuesses.length; i++) {
-			if (bestGuesses[i] == null) {
-				continue;
-			}
+			if (bestGuesses[i] == null) continue;
 			
 			if (bestGuess == null) {
 				bestGuess = bestGuesses[i];
@@ -180,9 +178,7 @@ public class VectorEngine {
 			searchPositions = get_hexagon_points(step, blockCenter);
 			
 			for (Point p : searchPositions) {
-				if (set.contains(p)) {
-					continue;
-				}
+				if (set.contains(p)) continue;
 				
 				if (p.x < minPos.x || p.y < minPos.y
 					|| p.x > maxPos.x || p.y > maxPos.y
@@ -253,8 +249,7 @@ public class VectorEngine {
 			//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
 			mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_4x4_BLOCK) ? null : mostEqualBlock;
 			break;
-		default:
-			return null;
+		default: return null;
 		}
 		
 		return mostEqualBlock;
@@ -376,7 +371,6 @@ public class VectorEngine {
 		}
 		
 		g2d.dispose();
-		
 		return render;
 	}
 }

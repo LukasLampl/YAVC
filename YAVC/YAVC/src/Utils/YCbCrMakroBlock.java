@@ -62,8 +62,16 @@ public class YCbCrMakroBlock {
 		return this.Cb;
 	}
 	
+	public double getChromaCb(int x, int y) {
+		return this.Cb[x][y];
+	}
+	
 	public double[][] getCromaCr() {
 		return this.Cr;
+	}
+	
+	public double getChromaCr(int x, int y) {
+		return this.Cr[x][y];
 	}
 	
 	public void setYAndA(int x, int y, double Y, double A) {

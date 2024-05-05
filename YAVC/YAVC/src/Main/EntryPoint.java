@@ -103,6 +103,11 @@ public class EntryPoint {
 						
 						if (prevImage == null) {
 							prevImage = new PixelRaster(ImageIO.read(frameFile));
+							
+							ArrayList<YCbCrMakroBlock> prevBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(prevImage, null, config.SUPER_BLOCK);
+							ArrayList<DCTObject> DCT = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(prevBlocks);
+							prevImage = this.OUTPUT_WRITER.reconstruct_DCT_image(DCT, prevImage);
+							
 							referenceImages.add(prevImage);
 							this.OUTPUT_WRITER.bake_meta_data(prevImage, filesCount);
 							this.OUTPUT_WRITER.bake_start_frame(prevImage);
@@ -146,9 +151,10 @@ public class EntryPoint {
 						}
 						
 						ArrayList<YCbCrMakroBlock> differences = this.MAKROBLOCK_DIFFERENCE_ENGINE.get_MakroBlock_difference(curImgBlocks, prevImage);
+						this.FILTER.flatten_down_color(differences);
 						frame.set_MBDiv_image(this.OUTPUT_WRITER.draw_MB_outlines(dim, curImgBlocks));
 						frame.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
-
+						
 						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.FILTER.get_color_count());
 						print_statistics(movementVectors, differences, dim);
 						
