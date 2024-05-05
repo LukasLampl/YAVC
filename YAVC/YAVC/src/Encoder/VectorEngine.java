@@ -39,6 +39,22 @@ import Utils.YCbCrMakroBlock;
 
 public class VectorEngine {
 	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
+	
+	private double SAD_4x4_BLOCK = 0;
+	private double SAD_8x8_BLOCK = 0;
+	private double SAD_16x16_BLOCK = 0;
+	private double SAD_32x32_BLOCK = 0;
+	
+	private void init_SAD_values(int colors, int similarColors) {
+		double colorFac = (16581375 - colors) * 35e-8;
+		double similarityFac = (double)similarColors / (double)colors;
+		
+		this.SAD_4x4_BLOCK = similarityFac * colorFac;
+		this.SAD_8x8_BLOCK = 2 * similarityFac * colorFac;
+		this.SAD_16x16_BLOCK = 8 * similarityFac * colorFac;
+		this.SAD_32x32_BLOCK = 16 * similarityFac * colorFac;
+	}
+	
 	/*
 	 * Purpose: Get the MovementVectors between two frames and removes a match from the differences
 	 * Return Type: ArrayList<Vector> => Movement vectors
@@ -47,7 +63,7 @@ public class VectorEngine {
 	 * 			int maxSADTolerance => Max SAD tolerance;
 	 * 			int colors => Amount of colors in an image;
 	 */
-	public ArrayList<Vector> calculate_movement_vectors(ArrayList<PixelRaster> refs, ArrayList<YCbCrMakroBlock> diff, int maxSADTolerance, int colors) {
+	public ArrayList<Vector> calculate_movement_vectors(ArrayList<PixelRaster> refs, ArrayList<YCbCrMakroBlock> diff, int maxSADTolerance, int colors, int similarColors, int[][] edges) {
 		if (refs == null) {
 			System.err.println("Computing movement without reference impossible! > abort");
 			return null;
@@ -60,7 +76,7 @@ public class VectorEngine {
 		final int maxGuesses = refs.size();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
-		init_sad_values(colors);
+		init_SAD_values(colors, similarColors);
 		
 		ArrayList<Vector> vectors = new ArrayList<Vector>(diff.size());
 		ArrayList<Future<Vector>> fvecs = new ArrayList<Future<Vector>>(vectors.size());
@@ -75,7 +91,9 @@ public class VectorEngine {
 					YCbCrMakroBlock[] bestGuesses = new YCbCrMakroBlock[maxGuesses];
 					
 					for (int i = 0; i < maxGuesses; i++) {
-						bestGuesses[i] = get_most_equal_MakroBlock(block, refs.get(i), maxSADTolerance);
+						YCbCrMakroBlock hexBest = compute_hexagonal_search(block, refs.get(i), maxSADTolerance, edges);
+//						bestGuesses[i] = compute_exhaustive_search(hexBest, refs.get(i));
+						bestGuesses[i] = hexBest;
 						
 						if (bestGuesses[i] != null) {
 							bestGuesses[i].setReferenceDrawback(maxGuesses - i);
@@ -152,12 +170,7 @@ public class VectorEngine {
 	 * 			PixelRaster prevFrame => Image of the previous frame;
 	 * 			int maxSADTolerance => Max tolerance of the SAD
 	 */
-	private double SAD_4x4_BLOCK = 0;
-	private double SAD_8x8_BLOCK = 0;
-	private double SAD_16x16_BLOCK = 0;
-	private double SAD_32x32_BLOCK = 0;
-	
-	private YCbCrMakroBlock get_most_equal_MakroBlock(YCbCrMakroBlock blockToBeSearched, PixelRaster prevFrame, int maxSADTolerance) {
+	private YCbCrMakroBlock compute_hexagonal_search(YCbCrMakroBlock blockToBeSearched, PixelRaster prevFrame, int maxSADTolerance, int[][] edges) {
 		YCbCrMakroBlock mostEqualBlock = null;
 		YCbCrMakroBlock cachedBlock = null;
 		HashSet<Point> set = new HashSet<Point>();
@@ -232,6 +245,8 @@ public class VectorEngine {
 			}
 		}
 		
+		double fac = ((256 * blockToBeSearched.getSize() - blockToBeSearched.getComplexity()) / (blockToBeSearched.getSize() * 4));
+		
 		switch (blockSize) {
 		case 32:
 			//Low filtering (Reduce distortion)
@@ -247,7 +262,7 @@ public class VectorEngine {
 			break;
 		case 4:
 			//Super High filtering (Reduce distortion; Get details; Get Edges; Move necessary)
-			mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_4x4_BLOCK) ? null : mostEqualBlock;
+			mostEqualBlock = (lowestSAD > maxSADTolerance * this.SAD_4x4_BLOCK * fac) ? null : mostEqualBlock;
 			break;
 		default: return null;
 		}
@@ -255,12 +270,39 @@ public class VectorEngine {
 		return mostEqualBlock;
 	}
 	
-	private void init_sad_values(int colors) {
-		double colorFac = (16581375 - colors) * 35e-9;
-		this.SAD_4x4_BLOCK = 4 * colorFac / 10;
-		this.SAD_8x8_BLOCK = 48 * colorFac;
-		this.SAD_16x16_BLOCK = 512 * colorFac;
-		this.SAD_32x32_BLOCK = 2048 * colorFac;
+	private YCbCrMakroBlock compute_exhaustive_search(YCbCrMakroBlock mostEqualBlock, PixelRaster ref) {
+		if (mostEqualBlock == null) return null;
+		
+		YCbCrMakroBlock best = null;
+		YCbCrMakroBlock cache = null;
+		double lowestSAD = mostEqualBlock.getSAD();
+		Point blockPos = mostEqualBlock.getPosition();
+		
+		int radius = 3;
+		
+		for (int u = -radius; u <= radius; u++) {
+			for (int v = -radius; v <= radius; v++) {
+				Point pos = new Point(blockPos.x + u, blockPos.y + v);
+				
+				if (pos.x < 0 || pos.x >= ref.getWidth()
+					|| pos.y < 0 || pos.y >= ref.getHeight()) {
+					continue;
+				}
+				
+				cache = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(pos, ref, mostEqualBlock.getSize(), cache);
+				
+				double SAD = get_SAD_of_colors(mostEqualBlock, cache);
+				
+				if (SAD < lowestSAD) {
+					best = cache.clone();
+					best.setSAD(SAD);
+					lowestSAD = SAD;
+				}
+			}
+		}
+		
+		
+		return best == null ? mostEqualBlock : best;
 	}
 	
 	/*

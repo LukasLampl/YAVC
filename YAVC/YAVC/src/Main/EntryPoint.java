@@ -38,6 +38,7 @@ import Encoder.OutputWriter;
 import Encoder.Scene;
 import Encoder.VectorEngine;
 import UI.Frame;
+import Utils.DCT;
 import Utils.DCTObject;
 import Utils.Filter;
 import Utils.PixelRaster;
@@ -51,6 +52,7 @@ public class EntryPoint {
 	
 	private Filter FILTER = new Filter();
 	private Scene SCENE = new Scene();
+	private DCT DCT = new DCT();
 	private MakroBlockEngine MAKROBLOCK_ENGINE = new MakroBlockEngine();
 	private MakroDifferenceEngine MAKROBLOCK_DIFFERENCE_ENGINE = new MakroDifferenceEngine();
 	private VectorEngine VECTOR_ENGINE = new VectorEngine();
@@ -86,12 +88,10 @@ public class EntryPoint {
 					
 					Dimension dim = null;
 					int[][] edges = null;
-					int[][] prevHistogram = new int[3][256];
-					int[][] curHistogram = new int[3][256];
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
-					for (int i = 0; i < filesCount && this.EN_STATUS == Status.RUNNING; i++, changeDetectDistance++) {
+					for (int i = 295; i < filesCount && this.EN_STATUS == Status.RUNNING; i++, changeDetectDistance++) {
 						frame.update_encoder_frame_count(i, filesCount, false);
 						String name = set_awaited_file_name(i, ".bmp");
 						File frameFile = new File(input.getAbsolutePath() + "/" + name);
@@ -105,22 +105,24 @@ public class EntryPoint {
 							prevImage = new PixelRaster(ImageIO.read(frameFile));
 							
 							ArrayList<YCbCrMakroBlock> prevBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(prevImage, null, config.SUPER_BLOCK);
-							ArrayList<DCTObject> DCT = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(prevBlocks);
+							ArrayList<DCTObject> DCT = this.DCT.apply_DCT_on_blocks(prevBlocks);
 							prevImage = this.OUTPUT_WRITER.reconstruct_DCT_image(DCT, prevImage);
 							
 							referenceImages.add(prevImage);
 							this.OUTPUT_WRITER.bake_meta_data(prevImage, filesCount);
 							this.OUTPUT_WRITER.bake_start_frame(prevImage);
 							
+							this.FILTER.get_sobel_values(prevImage, edges, this.SCENE.get_current_histogram());
+							this.SCENE.shift_histogram();
+							
 							dim = new Dimension(prevImage.getWidth(), prevImage.getHeight());
 							edges = new int[dim.width][dim.height];
-							this.FILTER.get_sobel_values(prevImage, edges, prevHistogram);
 							continue;
 						}
 						
 						currentImage = new PixelRaster(ImageIO.read(frameFile));
 						
-						this.FILTER.get_sobel_values(currentImage, edges, curHistogram);
+						this.FILTER.get_sobel_values(currentImage, edges, this.SCENE.get_current_histogram());
 						this.FILTER.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
 						frame.set_previews(prevImage, currentImage);
 						frame.set_sobel_image(this.FILTER.get_sobel_image());
@@ -129,7 +131,7 @@ public class EntryPoint {
 						
 						//This only adds an I-Frame if 'i' is a 80th frame and a change
 						//detection lied 10 frames ahead or a change detection has triggered.
-						boolean sceneChanged = this.SCENE.scene_change_detected(prevHistogram, curHistogram, dim);
+						boolean sceneChanged = this.SCENE.scene_change_detected(dim);
 						
 						if (sceneChanged == true) {
 							System.out.println("Shot change dectedted at frame " + i);
@@ -140,12 +142,13 @@ public class EntryPoint {
 						}
 						
 						if ((i % 80 == 0 && changeDetectDistance > 10) || sceneChanged) {
-							ArrayList<DCTObject> dct = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(curImgBlocks);
+							ArrayList<DCTObject> dct = this.DCT.apply_DCT_on_blocks(curImgBlocks);
 							this.OUTPUT_WRITER.add_obj_to_queue(dct, null);
 							referenceImages.clear();
 							referenceImages.add(currentImage);
+							
 							prevImage = currentImage;
-							prevHistogram = curHistogram;
+							this.SCENE.shift_histogram();
 							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
 							continue;
 						}
@@ -155,14 +158,18 @@ public class EntryPoint {
 						frame.set_MBDiv_image(this.OUTPUT_WRITER.draw_MB_outlines(dim, curImgBlocks));
 						frame.setDifferenceImage(differences, new Dimension(currentImage.getWidth(), currentImage.getHeight()));
 						
-						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.FILTER.get_color_count());
+//						System.out.println("PX:");
+//						System.out.println(differences.get(0).getReversedSubSampleColor(0, 0)[1] + ", " + differences.get(0).getReversedSubSampleColor(1, 0)[1] + "\n" + differences.get(0).getReversedSubSampleColor(0, 1)[1] + ", " + differences.get(0).getReversedSubSampleColor(1, 1)[1]);
+//						System.out.println(differences.get(0).getReversedSubSampleColor(2, 0)[1] + ", " + differences.get(0).getReversedSubSampleColor(3, 0)[1] + "\n" + differences.get(0).getReversedSubSampleColor(2, 1)[1] + ", " + differences.get(0).getReversedSubSampleColor(3, 1)[1]);
+						
+						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.FILTER.get_color_count(), this.FILTER.get_similar_colors(), edges);
 						print_statistics(movementVectors, differences, dim);
 						
 						frame.setVectorizedImage(this.VECTOR_ENGINE.construct_vector_path(dim, movementVectors));
 
 						BufferedImage result = this.OUTPUT_WRITER.build_Frame(prevImage, referenceImages, differences, movementVectors, 3);
 						PixelRaster res = new PixelRaster(result);
-						ArrayList<DCTObject> diffDCT = this.MAKROBLOCK_ENGINE.apply_DCT_on_blocks(differences);
+						ArrayList<DCTObject> diffDCT = this.DCT.apply_DCT_on_blocks(differences);
 						
 						//Just for validation
 						res = this.OUTPUT_WRITER.reconstruct_DCT_image(diffDCT, res);
@@ -172,7 +179,7 @@ public class EntryPoint {
 						referenceImages.add(res);
 						release_old_reference_images(referenceImages);
 						prevImage = res;
-						prevHistogram = curHistogram;
+						this.SCENE.shift_histogram();
 					}
 					
 					frame.disposeWriterPermission();

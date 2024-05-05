@@ -40,9 +40,14 @@ public class YCbCrMakroBlock {
 		this.Y = Y;
 		this.Cb = Cb;
 		this.Cr = Cr;
-		this.A = A;
 		this.position = position;
 		this.size = size;
+		
+		if (A == null) {
+			this.A = new double[size][size];
+		} else {
+			this.A = A;
+		}
 	}
 	
 	public YCbCrMakroBlock(Point position, int size) {
@@ -66,7 +71,7 @@ public class YCbCrMakroBlock {
 		return this.Cb[x][y];
 	}
 	
-	public double[][] getCromaCr() {
+	public double[][] getChromaCr() {
 		return this.Cr;
 	}
 	
@@ -259,5 +264,9 @@ public class YCbCrMakroBlock {
 
 	public void setComplexity(int complexity) {
 		this.complexity = complexity;
+	}
+	
+	public YCbCrMakroBlock clone() {
+		return new YCbCrMakroBlock(this.Y, this.Cb, this.Cr, this.A, this.position, this.size);
 	}
 }

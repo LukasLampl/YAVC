@@ -24,6 +24,7 @@ package Utils;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 
 public class Filter {
@@ -81,6 +82,53 @@ public class Filter {
 		
 		return render;
 	}
+	
+	public PixelRaster apply_gaussian_blur(PixelRaster img, int radius) {
+		PixelRaster render = new PixelRaster(img.getWidth(), img.getHeight());
+		double sigma = Math.max(((double)radius / 2), 1);
+		double[][] kernel = new double[radius][radius];
+		int mean = radius / 2;
+		
+		double sum = 0.0D;
+		
+		for (int x = 0; x < radius; x++) {
+			for (int y = 0; y < radius; y++) {
+				double value = Math.exp(-0.5 * (Math.pow((x - mean) / sigma, 2) + Math.pow((y - mean) / sigma, 2)) / (2 * Math.PI * sigma * sigma));
+				
+				kernel[x][y] = value;
+				sum += value;
+			}
+		}
+		
+		for (int x = 0; x < kernel.length; x++) {
+			for (int y = 0; y < kernel[x].length; y++) {
+				kernel[x][y] /= sum;
+			}
+		}
+		
+		for (int x = 0; x < img.getWidth(); x++) {
+			for (int y = 0; y < img.getHeight(); y++) {
+				int r = 0, g = 0, b = 0;
+				
+				for (int kx = 0; kx < radius; kx++) {
+					for (int ky = 0; ky < radius; ky++) {
+						int pX = Math.min(Math.max(x + kx, 0), img.getWidth() - 1);
+						int pY = Math.min(Math.max(y + ky, 0), img.getHeight() - 1);
+						Color col = new Color(img.getRGB(pX, pY));
+						
+						double kVal = kernel[kx][ky];
+						r += (int)(col.getRed() * kVal);
+						g += (int)(col.getGreen() * kVal);
+						b += (int)(col.getBlue() * kVal);
+					}
+				}
+				
+				render.setRGB(x, y, new Color(r, g, b).getRGB());
+			}
+		}
+		
+		return render;
+	}
 
 	/*
 	 * Purpose: Get the Sobel-Scharr values from the image for Edge & Texture detection
@@ -92,7 +140,10 @@ public class Filter {
 	private int[][] sobelX = {{3, 0, -3}, {10, 0, -10}, {3, 0, -3}};
 	private int[][] sobelY = {{3, 10, 3}, {0, 0, 0}, {-3, -10, -3}};
 	private BufferedImage sobel_image = null;
+	private int similarColors = 0;
+	
 	private HashSet<Color> currentColors = new HashSet<Color>();
+	private HashSet<Double> distances = new HashSet<Double>();
 	
 	public void get_sobel_values(PixelRaster img, int[][] array, int[][] colorHistogram) {
 		if (img == null) {
@@ -106,25 +157,21 @@ public class Filter {
 			return;
 		}
 
-		boolean firstColInHistogram = true;
+		int edgeSum = 0;
 		this.currentColors.clear();
+		this.distances.clear();
 		this.sobel_image = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 		
 		for (int x = 0; x < img.getWidth() - 2; x++) {
 			for (int y = 0; y < img.getHeight() - 2; y++) {
 				Color col = new Color(img.getRGB(x, y));
-				
-				if (firstColInHistogram) {
-					colorHistogram[0][col.getRed()] = 1;
-					colorHistogram[1][col.getGreen()] = 1;
-					colorHistogram[2][col.getBlue()] = 1;
-					firstColInHistogram = false;
-				} else {
-					colorHistogram[0][col.getRed()]++;
-					colorHistogram[1][col.getGreen()]++;
-					colorHistogram[2][col.getBlue()]++;
-				}
+				double dist = Math.sqrt(col.getRed() * col.getRed() + col.getGreen() * col.getGreen() + col.getBlue() * col.getBlue());
 				this.currentColors.add(col);
+				this.distances.add(dist);
+				
+				colorHistogram[0][col.getRed()]++;
+				colorHistogram[1][col.getGreen()]++;
+				colorHistogram[2][col.getBlue()]++;
 				
 				double gX = (sobelX[0][0] * this.COLOR_MANAGER.convert_RGB_to_GRAYSCALE(img.getRGB(x, y)) +
 							sobelX[0][1] * this.COLOR_MANAGER.convert_RGB_to_GRAYSCALE(img.getRGB(x + 1, y)) +
@@ -147,13 +194,38 @@ public class Filter {
 						sobelY[2][2] * this.COLOR_MANAGER.convert_RGB_to_GRAYSCALE(img.getRGB(x + 2, y + 2)));
 				
 				int val = Math.min((int)Math.sqrt(gX * gX + gY * gY), 255);
+				edgeSum += val;
 				array[x][y] = val;
 			}
 		}
 		
-		supress_noise(array, 0.65, 255);
+		ArrayList<Double> distArr = new ArrayList<Double>(this.distances);
+		Collections.sort(distArr);
+		
+		double per = (double)((100 - (edgeSum / (array.length * array[0].length))) / 100.0);
+		supress_noise(array, per, 255);
+		get_color_similarity(distArr);
 	}
 
+	private void get_color_similarity(ArrayList<Double> list) {
+		double temp = 0;
+		this.similarColors = 0;
+		
+		for (int i = 0; i < list.size(); i++) {
+			double distance = list.get(i);
+			
+			if (temp == 0) {
+				temp = distance;
+				continue;
+			}
+			
+			if (distance < temp + 12 || distance > temp - 12) {
+				this.similarColors++;
+				temp = distance;
+			}
+		}
+	}
+	
 	private void supress_noise(int[][] sobel, double tolerance, int max) {
 		int tol = (int)(max - max * tolerance);
 		
@@ -167,9 +239,13 @@ public class Filter {
 					sobel[x][y] = 255;
 				}
 				
-				sobel_image.setRGB(x, y, new Color(sobel[x][y], sobel[x][y], sobel[x][y]).getRGB());
+				this.sobel_image.setRGB(x, y, new Color(sobel[x][y], sobel[x][y], sobel[x][y]).getRGB());
 			}
 		}
+	}
+	
+	public int get_similar_colors() {
+		return this.similarColors;
 	}
 	
 	public BufferedImage get_sobel_image() {
@@ -240,7 +316,7 @@ public class Filter {
 						Y2 = b.getYVal(x - 2, y);
 					}
 					
-					if (Math.abs(Y0 - Y1) > 2.5) continue;
+					if (Math.abs(Y0 - Y1) > 2.0) continue;
 					if (Math.abs(Y1 - Y2) < 3.5 && Math.abs(Y1 - Y2) > 2.0) continue;
 					
 					b.setYVal(x, y, (Y0 + Y1) / 2);

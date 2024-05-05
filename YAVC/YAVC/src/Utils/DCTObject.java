@@ -24,24 +24,24 @@ package Utils;
 import java.awt.Point;
 
 public class DCTObject {
-	private double[][] Y = null;
+	private double[][] YDCT = null;
 	private double[][] CbDCT = null;
 	private double[][] CrDCT = null;
 	private final int size = 4;
 	private Point Position = null;
 	
 	public DCTObject(double[][] YDCT, double[][] CbDCT, double[][] CrDCT, Point pos) {
-		this.Y = YDCT;
+		this.YDCT = YDCT;
 		this.CbDCT = CbDCT;
 		this.CrDCT = CrDCT;
 		this.Position = pos;
 	}
 	
-	public double[][] getY() {
-		return Y;
+	public double[][] getYDCT() {
+		return YDCT;
 	}
-	public void setY(double[][] y) {
-		Y = y;
+	public void setYDCT(double[][] y) {
+		YDCT = y;
 	}
 	public double[][] getCbDCT() {
 		return CbDCT;

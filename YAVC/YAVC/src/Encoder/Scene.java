@@ -24,6 +24,9 @@ package Encoder;
 import java.awt.Dimension;
 
 public class Scene {
+	private int[][] prevHist = new int[3][256];
+	private int[][] curHist = new int[3][256];
+	
 	/*
 	 * Purpose: Detect whether the scene has changed / shot has changed between two images
 	 * Return Type: boolean => true = scene changes; false = scene almost the same
@@ -31,16 +34,17 @@ public class Scene {
 	 * 			int[][] histogram2 => Current histogram
 	 * Note: THIS ALGORITHM MIGHT FAIL OR FALSE TRIGGER SINCE IMAGES CAN'T BE "COMPARED"
 	 */
-	public boolean scene_change_detected(int[][] histogram1, int[][]histogram2, Dimension dim) {
-		if (histogram1 == null || histogram2 == null) {
-			System.err.println("Can't evaluate " + histogram1 + " and " + histogram2 + "; Due one is NULL!");
+	public boolean scene_change_detected(Dimension dim) {
+		if (this.prevHist == null || this.curHist == null) {
+			System.err.println("Can't evaluate " + this.prevHist + " and " + this.curHist + "; Due one is NULL!");
 			return true;
 		}
 		
-		int difference = compute_difference_between_histograms(histogram1, histogram2);
+		int difference = compute_difference_between_histograms(this.prevHist, this.curHist);
+		System.out.println("SCD: " + difference);
 		//normalize the values
-		double normalDiff = difference / (double)((dim.width * dim.height * 2));
-		
+		double normalDiff = difference / (double)((dim.width * dim.height));
+		System.out.println("SCD: " + normalDiff);
 		//If the normalized values are above 1.0 the scene might have changed
 		if (normalDiff > 1.0) return true;
 		
@@ -55,14 +59,33 @@ public class Scene {
 	 * 			int[][] hist2 => Second histogram
 	 */
 	private int compute_difference_between_histograms(int[][] hist1, int[][] hist2) {
-		int sum = 0;
+		int deltaRed = 0;
+		int deltaGreen = 0;
+		int deltaBlue = 0;
 		
-		for (int i = 0; i < hist1.length; i++) {
-			for (int n = 0; n < hist1[i].length; n++) {
-				sum += Math.abs(hist1[i][n] - hist2[i][n]);
-			}
+		for (int n = 0; n < hist1[0].length; n++) {
+			deltaRed += Math.abs(hist1[0][n] - hist2[0][n]);
+			deltaGreen += Math.abs(hist1[1][n] - hist2[1][n]);
+			deltaBlue += Math.abs(hist1[2][n] - hist2[2][n]);
 		}
 		
-		return sum;
+		return deltaRed + deltaGreen + deltaBlue;
 	}
+	
+	public void clone_histogram(int[][] target, int[][] org) {
+		for (int i = 0; i < org.length; i++) {
+			for (int n = 0; n < org[i].length; n++) {
+				target[i][n] = org[i][n];
+				org[i][n] = 0;
+			}
+		}
+	}
+	
+	public int[][] get_current_histogram() {
+		return this.curHist;
+	}
+	
+	public void shift_histogram() {
+		clone_histogram(this.prevHist, this.curHist);
+	}	
 }

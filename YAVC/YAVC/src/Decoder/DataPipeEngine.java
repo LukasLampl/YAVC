@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import Encoder.MakroBlockEngine;
 import Main.config;
 import Utils.ColorManager;
+import Utils.DCT;
 import Utils.DCTObject;
 import Utils.PixelRaster;
 import Utils.Vector;
@@ -39,6 +40,7 @@ import Utils.YCbCrMakroBlock;
 public class DataPipeEngine {
 	private DataGrabber GRABBER = null;
 	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
+	private DCT DCT = new DCT();
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	private Dimension DIMENSION = null;
 	
@@ -167,7 +169,7 @@ public class DataPipeEngine {
 				pos.setLocation(x, y);
 			}
 			
-			blocks.add(this.MAKRO_BLOCK_ENGINE.apply_IDCT(new DCTObject(YCols, CbCols, CrCols, pos)));
+			blocks.add(this.DCT.apply_IDCT(new DCTObject(YCols, CbCols, CrCols, pos)));
 		}
 		
 		for (YCbCrMakroBlock b : blocks) {

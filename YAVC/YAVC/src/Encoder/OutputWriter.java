@@ -40,6 +40,7 @@ import java.util.zip.ZipOutputStream;
 import Main.config;
 import UI.Frame;
 import Utils.ColorManager;
+import Utils.DCT;
 import Utils.DCTObject;
 import Utils.PixelRaster;
 import Utils.Vector;
@@ -50,6 +51,7 @@ public class OutputWriter {
 	private Frame FRAME = null;
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	private MakroBlockEngine MAKRO_BLOCK_ENGINE = new MakroBlockEngine();
+	private DCT DCT = new DCT();
 	private ArrayList<SequenceObject> QUEUE = new ArrayList<SequenceObject>(5);
 	
 	public OutputWriter(String path, Frame f) {
@@ -169,12 +171,12 @@ public class OutputWriter {
 			CbCoStr.append(config.DCT_CB_END_DEF);
 			CrCoStr.append(config.DCT_CR_END_DEF);
 			
-			for (int y = 0; y < dct.getY().length; y++) {
-				for (int x = 0; x < dct.getY()[y].length; x++) {
-					YCoStr.append((char)shift_DCT_bits(dct.getY()[y][x]));
+			for (int y = 0; y < dct.getSize(); y++) {
+				for (int x = 0; x < dct.getSize(); x++) {
+					YCoStr.append((char)shift_DCT_bits(dct.getYDCT()[y][x]));
 				}
 				
-				if (y + 1 < dct.getY().length) {
+				if (y + 1 < dct.getSize()) {
 					YCoStr.append(config.DCT_MATRIX_NL_DEF);
 				}
 			}
@@ -345,7 +347,7 @@ public class OutputWriter {
 		PixelRaster render = img;
 		
 		for (DCTObject obj : objs) {
-			YCbCrMakroBlock block = this.MAKRO_BLOCK_ENGINE.apply_IDCT(obj);
+			YCbCrMakroBlock block = this.DCT.apply_IDCT(obj);
 			
 			for (int y = 0; y < block.getSize(); y++) {
 				for (int x = 0; x < block.getSize(); x++) {

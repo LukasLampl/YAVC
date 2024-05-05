@@ -89,17 +89,14 @@ public class MakroBlockEngine {
 		boolean passed = false;
 		
 		switch (size) {
-		case 64:
-			passed = detail > size * 0.37 ? true : false; //Super Small pre-filtering (Find nearly all edges, that are crucial)
-			break;
 		case 32:
-			passed = detail > size * 0.52 ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
+			passed = detail > size * 0.23 ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
 			break;
 		case 16:
-			passed = detail > size * 1.35 ? true : false; //Moderate pre-filtering (Find edges of interest)
+			passed = detail > size * 1.14 ? true : false; //Moderate pre-filtering (Find edges of interest)
 			break;
 		case 8:
-			passed = detail > size * 2.8 ? true : false; //High pre-filtering (Get edges with really high interest)
+			passed = detail > size * 2.1 ? true : false; //High pre-filtering (Get edges with really high interest)
 			break;
 		default: break;
 		}
@@ -140,116 +137,6 @@ public class MakroBlockEngine {
 		}
 		
 		return sum;
-	}
-	
-	/*
-	 * Purpose: Run the DCT-II for a list of YCbCrMakroBlocks
-	 * Return Type: ArrayList<DCTObject> => List with all DCT coefficients
-	 * Params: ArrayList<YCbCrMakroBlock> blocks => Blocks to convert
-	 */
-	public ArrayList<DCTObject> apply_DCT_on_blocks(ArrayList<YCbCrMakroBlock> blocks) {
-		if (blocks == null) {
-			System.err.println("Can't apply DCT-II on NULL! > Skip");
-			return null;
-		}
-		
-		ArrayList<DCTObject> obj = new ArrayList<DCTObject>(blocks.size());
-		
-		for (YCbCrMakroBlock b : blocks) {
-			if (b.getSize() == 0) continue;
-			
-			ArrayList<DCTObject> dct = apply_DCT(b);
-			obj.addAll(dct);
-		}
-		
-		return obj;
-	}
-
-	/*
-	 * Purpose: Determines the factor for DCT-II
-	 * Return Type: double => Pre factor
-	 * Params: int x => k, n, u or v of DCT-II
-	 */
-	private double step(int x) {
-		return x == 0 ? 1 / Math.sqrt(2) : 1;
-	}
-	
-	private ArrayList<DCTObject> apply_DCT(YCbCrMakroBlock block) {
-		ArrayList<DCTObject> objs = new ArrayList<DCTObject>(block.getSize() * block.getSize() / 16);
-		YCbCrMakroBlock[] blocks = block.splitToSmaller(4);
-		
-		for (YCbCrMakroBlock b : blocks) {
-			objs.add(apply_DCT_to_single_4x4_block(b));
-		}
-		
-		return objs;
-	}
-	
-	/*
-	 * Purpose: Apply the DCT-II to a single YCbCrMakroBlock with subsampling of 2x2 chroma
-	 * Return Type: DCTObject => Object with all coefficients
-	 * Params: YCbCrMakroBlock block => Block to process
-	 */
-	private DCTObject apply_DCT_to_single_4x4_block(YCbCrMakroBlock block) {
-		double[][] CbCol = block.getChromaCb();
-		double[][] CrCol = block.getCromaCr();
-		
-		double[][] CbCo = new double[block.getSize() / 2][block.getSize() / 2];
-		double[][] CrCo = new double[block.getSize() / 2][block.getSize() / 2];
-
-		int m = block.getSize() / 2;
-		
-		for (int v = 0; v < m; v++) {
-            for (int u = 0; u < m; u++) {
-            	double CbSum = 0;
-            	double CrSum = 0;
-            	
-                for (int x = 0; x < m; x++) {
-                    for (int y = 0; y < m; y++) {
-                        double cos1 = Math.cos(((double)(2 * x + 1) * (double)u * Math.PI) / (double)(2 * m));
-                        double cos2 = Math.cos(((double)(2 * y + 1) * (double)v * Math.PI) / (double)(2 * m)); 
-                        CbSum += CbCol[y][x] * cos1 * cos2;
-                        CrSum += CrCol[y][x] * cos1 * cos2;
-                    }
-                }
-                
-                CbCo[v][u] = Math.round(step(v) * step(u) * CbSum);
-                CrCo[v][u] = Math.round(step(v) * step(u) * CrSum);
-            }
-        }
-		
-		return new DCTObject(block.getYValues(), CbCo, CrCo, block.getPosition());
-	}
-	
-	/*
-	 * Purpose: Apply the IDCT-II to a single YCbCrMakroBlock with subsampling of 2x2 chroma
-	 * Return Type: YCbCrMakroBlock => YCbCrMakroBlock with all DCTObject information
-	 * Params: DCTObject obj => Object to apply IDCT-II to
-	 */
-	public YCbCrMakroBlock apply_IDCT(DCTObject obj) {
-		YCbCrMakroBlock block = new YCbCrMakroBlock(obj.getPosition(), obj.getSize());
-		block.setYValues(obj.getY());
-		int m = obj.getSize() / 2;
-		
-		for (int x = 0; x < m; x++) {
-			for (int y = 0; y < m; y++) {
-				double CbSum = 0;
-				double CrSum = 0;
-				
-				for (int u = 0; u < m; u++) {
-					for (int v = 0; v < m; v++) {
-						double cos1 = Math.cos(((double)(2 * x + 1) * (double)u * Math.PI) / (double)(2 * m));
-                        double cos2 = Math.cos(((double)(2 * y + 1) * (double)v * Math.PI) / (double)(2 * m)); 
-                        CbSum += obj.getCbDCT()[u][v] * step(u) * step(v) * cos1 * cos2;
-                        CrSum += obj.getCrDCT()[u][v] * step(u) * step(v) * cos1 * cos2;
-					}
-				}
-				
-				block.setChroma(x, y, CbSum, CrSum);
-			}
-		}
-
-		return block;
 	}
 	
 	/*
