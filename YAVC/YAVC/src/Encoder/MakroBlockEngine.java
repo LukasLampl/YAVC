@@ -26,7 +26,6 @@ import java.util.ArrayList;
 
 import Main.config;
 import Utils.ColorManager;
-import Utils.DCTObject;
 import Utils.PixelRaster;
 import Utils.YCbCrMakroBlock;
 
@@ -40,7 +39,7 @@ public class MakroBlockEngine {
 	 * 			int[][] edge => Edges and Textures in original frame;
 	 * 			int startSize => Size from which to start dividing down (STD::32x32)
 	 */
-	public ArrayList<YCbCrMakroBlock> get_makroblocks_from_image(PixelRaster img, int[][] edges, int startSize) {
+	public ArrayList<YCbCrMakroBlock> get_CTU_blocks_from_image(PixelRaster img, int[][] edges, int startSize) {
 		if (img == null) {
 			System.err.println("Frame NULL, can't partition NULL!");
 			return null;
@@ -49,23 +48,23 @@ public class MakroBlockEngine {
 			startSize = config.SUPER_BLOCK;
 		}
 		
-		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
+		ArrayList<YCbCrMakroBlock> CTUs = new ArrayList<YCbCrMakroBlock>();
 		
 		int width = img.getWidth();
 		int height = img.getHeight();
 		
 		for (int y = 0; y < height; y += startSize) {
 			for (int x = 0; x < width; x += startSize) {
+				YCbCrMakroBlock originBlock = get_single_makro_block(new Point(x, y), img, startSize, null);
+				CTUs.add(originBlock);
+				
 				if (edges != null) {
-					YCbCrMakroBlock originBlock = get_single_makro_block(new Point(x, y), img, startSize, null);
-					blocks.addAll(divide_down_MakroBlock(originBlock, edges, startSize));
-				} else {
-					blocks.add(get_single_makro_block(new Point(x, y), img, startSize, null));
+					get_CU_blocks(originBlock, edges, startSize);
 				}
 			}
 		}
 		
-		return blocks;
+		return CTUs;
 	}
 	
 	/*
@@ -75,44 +74,18 @@ public class MakroBlockEngine {
 	 * 			int edges[][] => Edges in the image;
 	 * 			int size => Size of the current down divided MB
 	 */
-	private ArrayList<YCbCrMakroBlock> divide_down_MakroBlock(YCbCrMakroBlock block, int[][] edges, int size) {
-		ArrayList<YCbCrMakroBlock> blocks = new ArrayList<YCbCrMakroBlock>();
+	private void get_CU_blocks(YCbCrMakroBlock block, int[][] edges, int size) {
 		int rawDetail = calculate_detail(edges, block.getPosition().x, block.getPosition().y, size);
 		
 		if (size <= 4) {
-			block.setComplexity(rawDetail);
-			blocks.add(block);
-			return blocks;
+			return;
 		}
 		
-		double detail = (double)rawDetail / (double)(size * size);
-		boolean passed = false;
-		
-		switch (size) {
-		case 32:
-			passed = detail > size * 0.23 ? true : false; //Small pre-filtering (Find nearly all edges, that are crucial)
-			break;
-		case 16:
-			passed = detail > size * 1.14 ? true : false; //Moderate pre-filtering (Find edges of interest)
-			break;
-		case 8:
-			passed = detail > size * 2.1 ? true : false; //High pre-filtering (Get edges with really high interest)
-			break;
-		default: break;
+		block.slice_CU(size / 2);
+
+		for (YCbCrMakroBlock CU : block.get_CUs()) {
+			get_CU_blocks(CU, edges, size / 2);
 		}
-		
-		if (passed == true) {
-			YCbCrMakroBlock[] parts = block.splitToSmaller(size / 2);
-			
-			for (int i = 0; i < parts.length; i++) {
-				 blocks.addAll(divide_down_MakroBlock(parts[i], edges, size / 2));
-			}
-		} else {
-			block.setComplexity(rawDetail);
-			blocks.add(block);
-		}
-		
-		return blocks;
 	}
 	
 	/*

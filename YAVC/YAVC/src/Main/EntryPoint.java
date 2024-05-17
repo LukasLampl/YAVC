@@ -91,7 +91,7 @@ public class EntryPoint {
 					int filesCount = input.listFiles().length;
 					int changeDetectDistance = 0;
 					
-					for (int i = 295; i < filesCount && this.EN_STATUS == Status.RUNNING; i++, changeDetectDistance++) {
+					for (int i = 0; i < filesCount && this.EN_STATUS == Status.RUNNING; i++, changeDetectDistance++) {
 						frame.update_encoder_frame_count(i, filesCount, false);
 						String name = set_awaited_file_name(i, ".bmp");
 						File frameFile = new File(input.getAbsolutePath() + "/" + name);
@@ -104,16 +104,16 @@ public class EntryPoint {
 						if (prevImage == null) {
 							prevImage = new PixelRaster(ImageIO.read(frameFile));
 							
-							ArrayList<YCbCrMakroBlock> prevBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(prevImage, null, config.SUPER_BLOCK);
-							ArrayList<DCTObject> DCT = this.DCT.apply_DCT_on_blocks(prevBlocks);
-							prevImage = this.OUTPUT_WRITER.reconstruct_DCT_image(DCT, prevImage);
+//							ArrayList<YCbCrMakroBlock> prevBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(prevImage, null, config.SUPER_BLOCK);
+//							ArrayList<DCTObject> DCT = this.DCT.apply_DCT_on_blocks(prevBlocks);
+//							prevImage = this.OUTPUT_WRITER.reconstruct_DCT_image(DCT, prevImage);
 							
 							referenceImages.add(prevImage);
 							this.OUTPUT_WRITER.bake_meta_data(prevImage, filesCount);
 							this.OUTPUT_WRITER.bake_start_frame(prevImage);
 							
-							this.FILTER.get_sobel_values(prevImage, edges, this.SCENE.get_current_histogram());
-							this.SCENE.shift_histogram();
+//							this.FILTER.compute_details_and_textures_values(prevImage, edges, this.SCENE.get_current_histogram());
+//							this.SCENE.shift_histogram();
 							
 							dim = new Dimension(prevImage.getWidth(), prevImage.getHeight());
 							edges = new int[dim.width][dim.height];
@@ -122,36 +122,36 @@ public class EntryPoint {
 						
 						currentImage = new PixelRaster(ImageIO.read(frameFile));
 						
-						this.FILTER.get_sobel_values(currentImage, edges, this.SCENE.get_current_histogram());
+						this.FILTER.compute_details_and_textures_values(currentImage, edges, this.SCENE.get_current_histogram());
 						this.FILTER.damp_frame_colors(prevImage, currentImage); //CurrentImage gets updated automatically
 						frame.set_previews(prevImage, currentImage);
 						frame.set_sobel_image(this.FILTER.get_sobel_image());
 						
-						ArrayList<YCbCrMakroBlock> curImgBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(currentImage, edges, config.SUPER_BLOCK);
+						ArrayList<YCbCrMakroBlock> curImgBlocks = this.MAKROBLOCK_ENGINE.get_CTU_blocks_from_image(currentImage, edges, config.SUPER_BLOCK);
 						
 						//This only adds an I-Frame if 'i' is a 80th frame and a change
 						//detection lied 10 frames ahead or a change detection has triggered.
-						boolean sceneChanged = this.SCENE.scene_change_detected(dim);
-						
-						if (sceneChanged == true) {
-							System.out.println("Shot change dectedted at frame " + i);
-						}
-						
-						if (this.FILTER.get_color_count() <= 750) {
-							curImgBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(currentImage, edges, config.SMALL_BLOCK);
-						}
-						
-						if ((i % 80 == 0 && changeDetectDistance > 10) || sceneChanged) {
-							ArrayList<DCTObject> dct = this.DCT.apply_DCT_on_blocks(curImgBlocks);
-							this.OUTPUT_WRITER.add_obj_to_queue(dct, null);
-							referenceImages.clear();
-							referenceImages.add(currentImage);
-							
-							prevImage = currentImage;
-							this.SCENE.shift_histogram();
-							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
-							continue;
-						}
+//						boolean sceneChanged = this.SCENE.scene_change_detected(dim);
+//						
+//						if (sceneChanged == true) {
+//							System.out.println("Shot change dectedted at frame " + i);
+//						}
+//						
+//						if (this.FILTER.get_color_count() <= 750) {
+//							curImgBlocks = this.MAKROBLOCK_ENGINE.get_makroblocks_from_image(currentImage, edges, config.SMALL_BLOCK);
+//						}
+//						
+//						if ((i % 80 == 0 && changeDetectDistance > 10) || sceneChanged) {
+//							ArrayList<DCTObject> dct = this.DCT.apply_DCT_on_blocks(curImgBlocks);
+//							this.OUTPUT_WRITER.add_obj_to_queue(dct, null);
+//							referenceImages.clear();
+//							referenceImages.add(currentImage);
+//							
+//							prevImage = currentImage;
+//							this.SCENE.shift_histogram();
+//							changeDetectDistance = sceneChanged == true ? 0 : changeDetectDistance;
+//							continue;
+//						}
 						
 						ArrayList<YCbCrMakroBlock> differences = this.MAKROBLOCK_DIFFERENCE_ENGINE.get_MakroBlock_difference(curImgBlocks, prevImage);
 						this.FILTER.flatten_down_color(differences);
@@ -162,10 +162,11 @@ public class EntryPoint {
 //						System.out.println(differences.get(0).getReversedSubSampleColor(0, 0)[1] + ", " + differences.get(0).getReversedSubSampleColor(1, 0)[1] + "\n" + differences.get(0).getReversedSubSampleColor(0, 1)[1] + ", " + differences.get(0).getReversedSubSampleColor(1, 1)[1]);
 //						System.out.println(differences.get(0).getReversedSubSampleColor(2, 0)[1] + ", " + differences.get(0).getReversedSubSampleColor(3, 0)[1] + "\n" + differences.get(0).getReversedSubSampleColor(2, 1)[1] + ", " + differences.get(0).getReversedSubSampleColor(3, 1)[1]);
 						
-						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.FILTER.get_color_count(), this.FILTER.get_similar_colors(), edges);
-						print_statistics(movementVectors, differences, dim);
-						
-						frame.setVectorizedImage(this.VECTOR_ENGINE.construct_vector_path(dim, movementVectors));
+						ArrayList<Vector> movementVectors = null;
+//						ArrayList<Vector> movementVectors = this.VECTOR_ENGINE.calculate_movement_vectors(referenceImages, differences, frame.get_vec_sad_tolerance(), this.FILTER.get_color_count(), this.FILTER.get_similar_colors(), edges);
+//						print_statistics(movementVectors, differences, dim);
+//						
+//						frame.setVectorizedImage(this.VECTOR_ENGINE.construct_vector_path(dim, movementVectors));
 
 						BufferedImage result = this.OUTPUT_WRITER.build_Frame(prevImage, referenceImages, differences, movementVectors, 3);
 						PixelRaster res = new PixelRaster(result);

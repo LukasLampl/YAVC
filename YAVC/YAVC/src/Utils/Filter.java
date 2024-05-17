@@ -145,7 +145,7 @@ public class Filter {
 	private HashSet<Color> currentColors = new HashSet<Color>();
 	private HashSet<Double> distances = new HashSet<Double>();
 	
-	public void get_sobel_values(PixelRaster img, int[][] array, int[][] colorHistogram) {
+	public void compute_details_and_textures_values(PixelRaster img, int[][] array, int[][] colorHistogram) {
 		if (img == null) {
 			System.err.println("No image to process! > Skip");
 			return;

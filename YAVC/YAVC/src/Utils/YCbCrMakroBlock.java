@@ -22,8 +22,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package Utils;
 
 import java.awt.Point;
+import java.util.ArrayList;
 
 public class YCbCrMakroBlock {
+	private CodingType TYPE = CodingType.BLOCK;
+	private ArrayList<YCbCrMakroBlock> CUs = null;
+	
 	private double[][] Y = null;
 	private double[][] Cb = null;
 	private double[][] Cr = null;
@@ -57,6 +61,18 @@ public class YCbCrMakroBlock {
 		this.A = new double[size][size];
 		this.position = position;
 		this.size = size;
+	}
+	
+	public void init_CU() {
+		this.CUs = new ArrayList<YCbCrMakroBlock>(4);
+		this.TYPE = CodingType.CU;
+	}
+	
+	public void reset_block_color_data() {
+		this.A = null;
+		this.Y = null;
+		this.Cb = null;
+		this.Cr = null;
 	}
 	
 	public double[][] getLuma() {
@@ -200,32 +216,36 @@ public class YCbCrMakroBlock {
 		this.size = size;
 	}
 	
+	public ArrayList<YCbCrMakroBlock> get_CUs() {
+		return this.CUs;
+	}
+	
 	/*
 	 * Purpose: Splits a bigger MakroBlock to a smaller one
 	 * Return Type: YCbCrMakroBlock[] => Array of smaller blocks
 	 * Params: int size => Split size
 	 */
-	public YCbCrMakroBlock[] splitToSmaller(int size) {
+	public void slice_CU(int size) {
 		if (this.Y == null || this.Cb == null || this.Cr == null) {
 			System.err.println("Can't execute split!");
 			System.err.println("Colors is NULL, nothing to split!");
-			return null;
+			return;
 		} else if (size <= 0) {
 			System.err.println("Can't execute split!");
 			System.err.println("Split to size 0 not possible!");
-			return null;
+			return;
+		} else if (this.CUs == null) {
+			System.err.println("You need to init CUs first!");
+			return;
 		}
-		
-		YCbCrMakroBlock[] b = new YCbCrMakroBlock[this.size / size * this.size / size];
-		int index = 0;
-		
+
 		for (int y = 0; y < this.size; y += size) {
 			for (int x = 0; x < this.size; x += size) {
-				b[index++] = getSubBlock(size, x, y);
+				this.CUs.add(get_sub_block(size, x, y));
 			}
 		}
 		
-		return b;
+		reset_block_color_data();
 	}
 	
 	/*
@@ -235,7 +255,7 @@ public class YCbCrMakroBlock {
 	 * 			int px => Position X from color array;
 	 * 			int py => Position Y from color array
 	 */
-	private YCbCrMakroBlock getSubBlock(int size, int px, int py) {
+	private YCbCrMakroBlock get_sub_block(int size, int px, int py) {
 		YCbCrMakroBlock block = new YCbCrMakroBlock(new Point(this.position.x + px, this.position.y + py), size);
 		
 		for (int y = 0; y < size; y++) {

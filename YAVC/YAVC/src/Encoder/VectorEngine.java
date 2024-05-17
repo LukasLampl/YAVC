@@ -50,9 +50,9 @@ public class VectorEngine {
 		double similarityFac = (double)similarColors / (double)colors;
 		
 		this.SAD_4x4_BLOCK = similarityFac * colorFac;
-		this.SAD_8x8_BLOCK = 2 * similarityFac * colorFac;
-		this.SAD_16x16_BLOCK = 8 * similarityFac * colorFac;
-		this.SAD_32x32_BLOCK = 16 * similarityFac * colorFac;
+		this.SAD_8x8_BLOCK = 8 * similarityFac * colorFac;
+		this.SAD_16x16_BLOCK = 16 * similarityFac * colorFac;
+		this.SAD_32x32_BLOCK = 32 * similarityFac * colorFac;
 	}
 	
 	/*
@@ -97,6 +97,7 @@ public class VectorEngine {
 						
 						if (bestGuesses[i] != null) {
 							bestGuesses[i].setReferenceDrawback(maxGuesses - i);
+							
 						}
 					}
 					

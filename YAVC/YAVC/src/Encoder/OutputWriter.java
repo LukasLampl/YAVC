@@ -413,12 +413,11 @@ public class OutputWriter {
 				PixelRaster s = refs.get(refs.size() - vec.getReferenceDrawback());
 				YCbCrMakroBlock cols = this.MAKRO_BLOCK_ENGINE.get_single_makro_block(vec.getStartingPoint(), s, vec.getReferenceSize(), null);
 				int size = vec.getReferenceSize();
-				
+				int vecEndX = vec.getStartingPoint().x + vec.getSpanX();
+				int vecEndY = vec.getStartingPoint().y + vec.getSpanY();
+						
 				for (int y = 0; y < size; y++) {
 					for (int x = 0; x < size; x++) {
-						int vecEndX = vec.getStartingPoint().x + vec.getSpanX();
-						int vecEndY = vec.getStartingPoint().y + vec.getSpanY();
-						
 						if (vecEndX + x >= img_v.getWidth()
 							|| vecEndY + y >= img_v.getHeight()
 							|| vecEndX + x < 0
